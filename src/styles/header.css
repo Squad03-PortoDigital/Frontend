@@ -33,4 +33,5 @@
     width: 137px;
     display: flex;
     justify-content: right;
+    cursor: pointer;
 }
