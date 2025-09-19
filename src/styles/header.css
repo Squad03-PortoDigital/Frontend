@@ -1,0 +1,40 @@
+.header-container {
+    width: 100vw;
+    height: 7vh;
+    padding: 16px 24px;
+    background-color: #1E52A5;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    position: fixed; /* Fixando o header no topo */
+    top: 0;
+}
+
+.header {
+    width: 92vw;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-header-flap > img {
+    height: 30px;
+}
+
+.pesquisa-header-flap {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 8px;
+    padding: 8px 16px;
+    box-sizing: border-box;
+    width: 50%;
+}
+
+.logout-header {
+    width: 137px;
+    display: flex;
+    justify-content: right;
+    cursor: pointer;
+}

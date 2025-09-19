@@ -1,8 +1,12 @@
+import Header from "./components/Header"
+import Menu from "./components/Menu"
+
 function App() {
 
   return (
     <>
-      <h1>SQUAD 03 - FLAP</h1>
+      <Menu />
+      <Header />
     </>
   )
 }
