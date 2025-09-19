@@ -1,16 +1,17 @@
 .header-container {
-    width: 100%;
+    width: 100vw;
+    height: 7vh;
     padding: 16px 24px;
     background-color: #1E52A5;
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    position: fixed;
+    position: fixed; /* Fixando o header no topo */
     top: 0;
 }
 
 .header {
-    width: 92%;
+    width: 92vw;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
@@ -18,7 +19,7 @@
 }
 
 .logo-header-flap > img {
-    height: 35px;
+    height: 30px;
 }
 
 .pesquisa-header-flap {

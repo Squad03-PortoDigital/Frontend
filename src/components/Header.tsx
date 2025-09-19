@@ -16,23 +16,24 @@ export default function Header() {
                         InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                            <Menu size={20} strokeWidth={3} />
+                            <Menu size={18} strokeWidth={3} opacity={0.7} />
                             </InputAdornment>
                         ),
                         endAdornment: (
                             <InputAdornment position="end">
-                            <Search size={20} strokeWidth={3} />
+                            <Search size={18} strokeWidth={3} opacity={0.7} />
                             </InputAdornment>
                         ),
                         style: {
                             backgroundColor: "#cbd5f7", // cor de fundo do input
                             borderRadius: "8px",
                             width: "500px",
+                            height: "40px",
                         },
                         }}
                     />
                 </div>
-                <div className="logout-header"> <LogOut size={36} color="#fff"/> </div>
+                <div className="logout-header"> <LogOut size={32} color="#fff"/> </div>
             </div>
         </div>
     );

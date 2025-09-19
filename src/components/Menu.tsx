@@ -13,7 +13,7 @@ export default function Menu() {
                 </div>
 
                 <div className="menu-section">
-                    <h2 className="menu-item-titulo">Kanban</h2>
+                    <h2 className="menu-item-titulo">Kanban:</h2>
                     <div className="menu-item">
                         <House size={28} />
                         <div className="menu-item-nome">Tela inicial</div>
@@ -29,37 +29,37 @@ export default function Menu() {
                 </div>
 
                 <div className="menu-section">
-                    <h2 className="menu-item-titulo">Informações</h2>
+                    <h2 className="menu-item-titulo">Informações:</h2>
                     <div className="menu-item">
-                        <Calendar size={24} />
+                        <Calendar size={28} />
                         <div className="menu-item-nome">Calendário</div>
                     </div>
                     <div className="menu-item">
-                        <Bell size={24} />
+                        <Bell size={28} />
                         <div className="menu-item-nome">Notificações</div>
                     </div>
                 </div>
 
                 <div className="menu-section">
-                    <h2 className="menu-item-titulo">Gestor</h2>
+                    <h2 className="menu-item-titulo">Gestor:</h2>
                     <div className="menu-item">
-                        <ChartPie size={24} />
+                        <ChartPie size={28} />
                         <div className="menu-item-nome">Dashboard</div>
                     </div>
                     <div className="menu-item">
-                        <Users size={24} />
+                        <Users size={28} />
                         <div className="menu-item-nome">Equipe</div>
                     </div>
                 </div>
 
                 <div className="menu-section">
-                    <h2 className="menu-item-titulo">Mais</h2>
+                    <h2 className="menu-item-titulo">Mais:</h2>
                     <div className="menu-item">
-                        <Settings size={24} />
-                        <div className="menu-item-nome">Configurações</div>
+                        <Settings size={28} />
+                        <div className="menu-item-nome">Ajustes</div>
                     </div>
                     <div className="menu-item">
-                        <Info size={24} />
+                        <Info size={28} />
                         <div className="menu-item-nome">Ajuda</div>
                     </div>
                 </div>
