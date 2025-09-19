@@ -5,6 +5,8 @@
     box-sizing: border-box;
     display: flex;
     align-items: center;
+    position: fixed;
+    top: 0;
 }
 
 .header {

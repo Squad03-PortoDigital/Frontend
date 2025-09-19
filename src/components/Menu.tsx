@@ -1,7 +1,13 @@
+import "../styles/menu.css";
+
 export default function Menu() {
     return (
         <div className="menu-container">
             <div className="menu">
+                <div className="menu-perfil">
+                    <div className="menu-perfil-imagem"></div>
+                    <div className="menu-perfil-nome"></div>
+                </div>
                 <div className="menu-kanban">
                     <div className="menu-tela-inicial"></div>
                     <div className="menu-tela-arquivados"></div>
