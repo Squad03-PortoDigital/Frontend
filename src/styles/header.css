@@ -6,7 +6,8 @@
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    position: fixed; /* Fixando o header no topo */
+    position: fixed;
+    z-index: 10; /* sempre acima do menu */
     top: 0;
 }
 

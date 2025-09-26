@@ -1,0 +1,29 @@
+.app-grid {
+  display: grid;
+  grid-template-rows: 60px 1fr;   /* header fixo em cima */
+  grid-template-columns: 240px 1fr; /* menu + conteúdo */
+  grid-template-areas:
+    "header header"
+    "menu   content";
+  height: 100vh;
+}
+
+/* Header ocupa toda a linha do topo */
+.app-grid > header {
+  grid-area: header;
+  z-index: 10;
+}
+
+/* Menu só aparece abaixo do header */
+.app-grid > aside {
+  grid-area: menu;
+  height: 100%;
+}
+
+/* Conteúdo ocupa o resto */
+.app-content {
+  grid-area: content;
+  padding: 20px;
+  background-color: #f5f5f5;
+  overflow-y: auto;
+}
