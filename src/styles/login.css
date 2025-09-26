@@ -1,0 +1,79 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  height: 100%;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 40px;
+  width: 360px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.logo-login-flap > img {
+  height: 40px;
+  margin-bottom: 20px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 500; /* Inter Medium */
+  color: #333;
+}
+
+.input-group input {
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+}
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.forgot-link {
+  text-decoration: none;
+  font-weight: 600; 
+  color: #2a5bd7;
+}
+
+.login-button {
+  background: #2a5bd7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600; 
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background: #1e46a5;
+}
