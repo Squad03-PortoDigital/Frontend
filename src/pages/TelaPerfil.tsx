@@ -37,7 +37,7 @@ const TelaPerfil: React.FC = () => {
     <div className="profile-container">
       <h1 className="profile-title">Perfil</h1>
       <div className="profile-wrapper">
-        {/* Avatar + Form */}
+      
         <div className="profile-left">
           <h2 className="edit-title">
             Informações <PenLine size={27} color="#1E1E1E" style={{ opacity: 0.3 }} />

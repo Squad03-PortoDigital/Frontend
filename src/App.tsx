@@ -3,6 +3,7 @@ import Login from "./components/Login";
 import Menu from "./components/Menu";
 import Header from "./components/Header";
 import TelaPerfil, { initialUser } from "./pages/TelaPerfil";
+import Ajuda from "./pages/TelaAjuda"; 
 import "./App.css";
 
 export default function App() {
@@ -16,8 +17,7 @@ export default function App() {
           <div className="app-grid">
             <Header />
             <Menu user={initialUser} />
-            <main className="app-content">
-            </main>
+            <main className="app-content"></main>
           </div>
         }
       />
@@ -30,6 +30,19 @@ export default function App() {
             <Menu user={initialUser} />
             <main className="app-content">
               <TelaPerfil />
+            </main>
+          </div>
+        }
+      />
+
+      <Route
+        path="/ajuda"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <Ajuda />
             </main>
           </div>
         }

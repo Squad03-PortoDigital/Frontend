@@ -15,7 +15,7 @@ export default function Menu({ user }: MenuProps) {
   return (
     <aside className="menu-container">
       <div className="menu">
-        {/* Perfil */}
+        
         <Link to="/perfil" className="menu-perfil-item">
           <div className="menu-perfil-imagem">
             <img src={user.avatarUrl} alt={user.nome} />
@@ -23,7 +23,6 @@ export default function Menu({ user }: MenuProps) {
           <div className="menu-perfil-nome">{user.nome}</div>
         </Link>
 
-        {/* Menu normal */}
         <div className="menu-section">
           <h2 className="menu-item-titulo">Kanban:</h2>
           <Link to="/home" className="menu-item">
@@ -70,10 +69,10 @@ export default function Menu({ user }: MenuProps) {
             <Settings size={22} />
             <div className="menu-item-nome">Ajustes</div>
           </div>
-          <div className="menu-item">
+          <Link to="/ajuda" className="menu-item">
             <Info size={22} />
             <div className="menu-item-nome">Ajuda</div>
-          </div>
+            </Link>
         </div>
 
         <div className="menu-final">
