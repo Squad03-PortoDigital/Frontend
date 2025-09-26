@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import Menu from "./components/Menu";
 import Header from "./components/Header";
-import TelaPerfil from "./pages/TelaPerfil";
+import TelaPerfil, { initialUser } from "./pages/TelaPerfil";
 import "./App.css";
 
 export default function App() {
@@ -13,10 +13,12 @@ export default function App() {
       <Route
         path="/home"
         element={
-          <>
-            <Menu />
+          <div className="app-grid">
             <Header />
-          </>
+            <Menu user={initialUser} />
+            <main className="app-content">
+            </main>
+          </div>
         }
       />
 
@@ -25,7 +27,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu />
+            <Menu user={initialUser} />
             <main className="app-content">
               <TelaPerfil />
             </main>
