@@ -15,15 +15,15 @@ export default function Menu() {
                 <div className="menu-section">
                     <h2 className="menu-item-titulo">Kanban:</h2>
                     <div className="menu-item">
-                        <House size={28} />
+                        <House size={22} />
                         <div className="menu-item-nome">Tela inicial</div>
                     </div>
                     <div className="menu-item">
-                        <Archive size={28} />
+                        <Archive size={22} />
                         <div className="menu-item-nome">Arquivados</div>
                     </div>
                     <div className="menu-item">
-                        <SquareCheckBig size={28} />
+                        <SquareCheckBig size={22} />
                         <div className="menu-item-nome">Finalizados</div>
                     </div>
                 </div>
@@ -31,11 +31,11 @@ export default function Menu() {
                 <div className="menu-section">
                     <h2 className="menu-item-titulo">Informações:</h2>
                     <div className="menu-item">
-                        <Calendar size={28} />
+                        <Calendar size={22} />
                         <div className="menu-item-nome">Calendário</div>
                     </div>
                     <div className="menu-item">
-                        <Bell size={28} />
+                        <Bell size={22} />
                         <div className="menu-item-nome">Notificações</div>
                     </div>
                 </div>
@@ -43,11 +43,11 @@ export default function Menu() {
                 <div className="menu-section">
                     <h2 className="menu-item-titulo">Gestor:</h2>
                     <div className="menu-item">
-                        <ChartPie size={28} />
+                        <ChartPie size={22} />
                         <div className="menu-item-nome">Dashboard</div>
                     </div>
                     <div className="menu-item">
-                        <Users size={28} />
+                        <Users size={22} />
                         <div className="menu-item-nome">Equipe</div>
                     </div>
                 </div>
@@ -55,11 +55,11 @@ export default function Menu() {
                 <div className="menu-section">
                     <h2 className="menu-item-titulo">Mais:</h2>
                     <div className="menu-item">
-                        <Settings size={28} />
+                        <Settings size={22} />
                         <div className="menu-item-nome">Ajustes</div>
                     </div>
                     <div className="menu-item">
-                        <Info size={28} />
+                        <Info size={22} />
                         <div className="menu-item-nome">Ajuda</div>
                     </div>
                 </div>
