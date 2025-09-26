@@ -65,10 +65,10 @@ export default function Menu({ user }: MenuProps) {
 
         <div className="menu-section">
           <h2 className="menu-item-titulo">Mais:</h2>
-          <div className="menu-item">
+          <Link to="/ajustes" className="menu-item">
             <Settings size={22} />
             <div className="menu-item-nome">Ajustes</div>
-          </div>
+          </Link>
           <Link to="/ajuda" className="menu-item">
             <Info size={22} />
             <div className="menu-item-nome">Ajuda</div>

@@ -4,6 +4,7 @@ import Menu from "./components/Menu";
 import Header from "./components/Header";
 import TelaPerfil, { initialUser } from "./pages/TelaPerfil";
 import Ajuda from "./pages/TelaAjuda"; 
+import TelaAjustes from "./pages/TelaAjustes";
 import "./App.css";
 
 export default function App() {
@@ -43,6 +44,19 @@ export default function App() {
             <Menu user={initialUser} />
             <main className="app-content">
               <Ajuda />
+            </main>
+          </div>
+        }
+      />
+      
+      <Route
+        path="/ajustes"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <TelaAjustes /> 
             </main>
           </div>
         }
