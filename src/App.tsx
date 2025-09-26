@@ -1,14 +1,16 @@
-import Header from "./components/Header"
-import Menu from "./components/Menu"
+import Header from "./components/Header";
+import Menu from "./components/Menu";
+import TelaPerfil from "./pages/TelaPerfil";
+import "./App.css";
 
-function App() {
-
+export default function App() {
   return (
-    <>
-      <Menu />
+    <div className="app-grid">
       <Header />
-    </>
-  )
+      <Menu />
+      <main className="app-content">
+        <TelaPerfil />
+      </main>
+    </div>
+  );
 }
-
-export default App
