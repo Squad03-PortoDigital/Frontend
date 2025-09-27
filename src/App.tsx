@@ -1,16 +1,66 @@
-import Header from "./components/Header";
+import { Routes, Route } from "react-router-dom";
+import Login from "./components/Login";
 import Menu from "./components/Menu";
-import TelaPerfil from "./pages/TelaPerfil";
+import Header from "./components/Header";
+import TelaPerfil, { initialUser } from "./pages/TelaPerfil";
+import Ajuda from "./pages/TelaAjuda"; 
+import TelaAjustes from "./pages/TelaAjustes";
 import "./App.css";
 
 export default function App() {
   return (
-    <div className="app-grid">
-      <Header />
-      <Menu />
-      <main className="app-content">
-        <TelaPerfil />
-      </main>
-    </div>
+    <Routes>
+      <Route path="/" element={<Login />} />
+
+      <Route
+        path="/home"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content"></main>
+          </div>
+        }
+      />
+
+      <Route
+        path="/perfil"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <TelaPerfil />
+            </main>
+          </div>
+        }
+      />
+
+      <Route
+        path="/ajuda"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <Ajuda />
+            </main>
+          </div>
+        }
+      />
+      
+      <Route
+        path="/ajustes"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <TelaAjustes /> 
+            </main>
+          </div>
+        }
+      />
+    </Routes>
   );
 }
