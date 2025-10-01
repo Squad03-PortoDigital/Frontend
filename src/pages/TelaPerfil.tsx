@@ -35,87 +35,79 @@ const TelaPerfil: React.FC = () => {
 
   return (
     <div className="profile-container">
-      <h1 className="profile-title">Perfil</h1>
-      <div className="profile-wrapper">
-      
-        <div className="profile-left">
-          <h2 className="edit-title">
-            Informações <PenLine size={27} color="#1E1E1E" style={{ opacity: 0.3 }} />
-          </h2>
-          <div className="profile-main-content">
-            <div className="profile-header">
-              <div className="profile-avatar">
-                <img src={avatar} alt="Avatar" />
-                <span className="status-dot"></span>
+      <div className="profile-content">
+        <h1 className="profile-title">Perfil</h1>
+        <div className="profile-wrapper">
+        
+          <div className="profile-left">
+            <h2 className="edit-title">
+              Informações <PenLine size={24} color="#1E1E1E" style={{ opacity: 0.3, cursor: "pointer" }} />
+            </h2>
+            <div className="profile-main-content">
+              <div className="profile-header">
+                <div className="profile-avatar">
+                  <img src={avatar} alt="Avatar" />
+                  <span className="status-dot"></span>
+                </div>
               </div>
+              <form className="profile-form">
+                <label>Nome</label>
+                <input type="text" value={initialUser.nome} readOnly />
+                <label>Email</label>
+                <div className="input-icon">
+                  <Mail size={20} color="#717680" />
+                  <input type="email" value={initialUser.email} readOnly />
+                </div>
+                <label>Telefone</label>
+                <input type="text" value={initialUser.telefone} readOnly />
+                <label>Área de Atuação</label>
+                <input type="text" value={initialUser.areaAtuacao} readOnly />
+                <label>Bio</label>
+                <textarea value={initialUser.bio} readOnly />
+              </form>
             </div>
-
-            <form className="profile-form">
-              <label>Nome</label>
-              <input type="text" value={initialUser.nome} readOnly />
-
-              <label>Email</label>
-              <div className="input-icon">
-                <Mail size={20} color="#717680" />
-                <input type="email" value={initialUser.email} readOnly />
-              </div>
-
-              <label>Telefone</label>
-              <input type="text" value={initialUser.telefone} readOnly />
-
-              <label>Área de Atuação</label>
-              <input type="text" value={initialUser.areaAtuacao} readOnly />
-
-              <label>Bio</label>
-              <textarea value={initialUser.bio} readOnly />
-            </form>
           </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="profile-side">
-          <div className="card">
-            <h3>Projetos Relacionados</h3>
-            <ul>
-              {initialUser.projetos.map((proj) => (
-                <li key={proj}>
-                  <Dot size={20} color="#717680" fill="#717680" /> {proj}
-                </li>
-              ))}
-            </ul>
-            <button className="btn-link">
-              <Plus size={32} color="#1E1E1E" style={{ opacity: 0.3 }} />
-            </button>
-          </div>
-
-          <div className="card">
-            <h3>Administrar usuários</h3>
-
-            <div className="custom-select-wrapper">
-              <label>Email:</label>
-              <div className="input-icon" onClick={() => setDropdownOpen(!isDropdownOpen)}>
-                <User size={20} color="#717680" />
-                <input type="text" placeholder="Pesquisar membro" readOnly />
-                <ChevronDown size={20} color="#717680" />
-              </div>
-            </div>
-
-            <div className="custom-select-wrapper">
-              <label>Empresa:</label>
-              <div className="input-icon" onClick={() => setEmpresaDropdownOpen(!isEmpresaDropdownOpen)}>
-                <User size={20} color="#717680" />
-                <input type="text" placeholder="Empresa" readOnly />
-                <ChevronDown size={20} color="#717680" />
-              </div>
-            </div>
-
-            <div className="user-actions">
-              <button className="btn-remove">
-                <UserMinus size={22} /> Retirar
+          {/* Sidebar */}
+          <div className="profile-side">
+            <div className="card">
+              <h3>Projetos Relacionados</h3>
+              <ul>
+                {initialUser.projetos.map((proj) => (
+                  <li key={proj}>
+                    <Dot size={20} color="#717680" fill="#717680" /> {proj}
+                  </li>
+                ))}
+              </ul>
+              <button className="btn-link">
+                <Plus size={32} color="#1E1E1E" style={{ opacity: 0.3 }} />
               </button>
-              <button className="btn-invite">
-                <UserPlus size={22} /> Convidar
-              </button>
+            </div>
+            <div className="card">
+              <h3>Administrar usuários</h3>
+              <div className="custom-select-wrapper">
+                <label>Email:</label>
+                <div className="input-icon" onClick={() => setDropdownOpen(!isDropdownOpen)}>
+                  <User size={20} color="#717680" />
+                  <input type="text" placeholder="Pesquisar membro" readOnly />
+                  <ChevronDown size={20} color="#717680" />
+                </div>
+              </div>
+              <div className="custom-select-wrapper">
+                <label>Empresa:</label>
+                <div className="input-icon" onClick={() => setEmpresaDropdownOpen(!isEmpresaDropdownOpen)}>
+                  <User size={20} color="#717680" />
+                  <input type="text" placeholder="Empresa" readOnly />
+                  <ChevronDown size={20} color="#717680" style={{ marginRight: "20px" }} />
+                </div>
+              </div>
+              <div className="user-actions">
+                <button className="btn-remove">
+                  <UserMinus size={22} /> Retirar
+                </button>
+                <button className="btn-invite">
+                  <UserPlus size={22} /> Convidar
+                </button>
+              </div>
             </div>
           </div>
         </div>

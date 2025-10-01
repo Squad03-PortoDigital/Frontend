@@ -1,7 +1,7 @@
 .app-grid {
   display: grid;
   grid-template-rows: 60px 1fr;   /* header fixo em cima */
-  grid-template-columns: 240px 1fr; /* menu + conteúdo */
+  grid-template-columns: 210px 1fr; /* menu + conteúdo */
   grid-template-areas:
     "header header"
     "menu   content";
