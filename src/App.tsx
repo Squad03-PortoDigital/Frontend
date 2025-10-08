@@ -6,6 +6,7 @@ import TelaPerfil, { initialUser } from "./pages/TelaPerfil";
 import Ajuda from "./pages/TelaAjuda"; 
 import TelaAjustes from "./pages/TelaAjustes";
 import "./App.css";
+import TelaDetalhamento from "./pages/TelaDetalhamento";
 
 export default function App() {
   return (
@@ -19,6 +20,19 @@ export default function App() {
             <Header />
             <Menu user={initialUser} />
             <main className="app-content"></main>
+          </div>
+        }
+      />
+
+      <Route
+        path="/arquivados"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <TelaDetalhamento />
+            </main>
           </div>
         }
       />
