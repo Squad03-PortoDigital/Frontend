@@ -1,13 +1,39 @@
 import { Button } from "@mui/material";
 import "./TelaDetalhamento.css";
+import agentegpt from "../images/agentegpt-logo.png";
+import netizLogo from "../images/netiz-logo.png";
+import { useState } from "react";
 
 export default function TelaDetalhamento() {
+  // Lista inicial de tarefas
+  const [tasks, setTasks] = useState([
+    { id: 1, name: "Folder", done: false },
+    { id: 2, name: "Totens", done: false },
+    { id: 3, name: "Outdoors", done: false },
+    { id: 4, name: "Posters", done: true },
+  ]);
+
+  // Função que alterna o estado "done"
+  const toggleTask = (id: number) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, done: !task.done } : task
+      )
+    );
+  };
+
   return (
     <div className="detalhamento-container">
       <div className="detalhamento-content">
         <div className="detalhamento-header">
-          <div className="detalhamento-header-empresa"></div>
-          <div className="detalhamento-header-agente"></div>
+          <div className="detalhamento-header-empresa">
+            <div className="detalhamento-header-empresa-logo"><img src={netizLogo} alt="Logo da Empresa" /></div>
+            <span>Netiz</span>
+          </div>
+          <div className="detalhamento-header-agente">
+            <div className="detalhamento-header-agente-logo"><img src={agentegpt} alt="Logo do Agente" /></div>
+            <span>Ir para o ChatGPT</span>
+          </div>
         </div>
         <div className="detalhamento-title">
           <div className="detalhamento-title-text">
@@ -22,13 +48,13 @@ export default function TelaDetalhamento() {
           </div>
         </div>
         <div className="detalhamento-body">
-          <div className="detalhamento-body-descricao">
+          <div className="detalhamento-body-item">
             <h2>Descrição</h2>
             <p>Desenvolver uma campanha digital para promover o plano Internet Fibra 500 Mega da Netiz. A campanha deve destacar velocidade, estabilidade da conexão e benefícios 
 exclusivos para clientes novos. Incluir materiais para redes sociais, e-mail marketing 
 e anúncios pagos (Google Ads / Facebook Ads).</p>
           </div>
-          <div className="detalhamento-body-aceites">
+          <div className="detalhamento-body-item">
             <h2>Critérios de Aceite</h2>
             <ul>
               <li>Peças visuais (arte + texto) criadas em formato para Instagram, Facebook e WhatsApp.</li>
@@ -38,19 +64,29 @@ e anúncios pagos (Google Ads / Facebook Ads).</p>
               <li>Revisão final aprovada pela equipe de marketing.</li>
             </ul>
           </div>
-          <div className="detalhamento-body-links">
+          <div className="detalhamento-body-item">
             <h2>Links</h2>
             <ul>
               <li><a href="#">🔗 https://drive.google.com/netiz-campanha-fibra500</a></li>
             </ul>
           </div>
-          <div className="detalhamento-body-tasks">
+          <div className="detalhamento-body-item">
             <h2>Task List</h2>
-            <ul>
-              <li>[ ] Folder</li>
-              <li>[ ] Totens</li>
-              <li>[ ] Outdoors</li>
-              <li>[X] Posters</li>
+            <ul className="task-list">
+              {tasks.map((task) => (
+                <li
+                  key={task.id}
+                  className={`task-item ${task.done ? "done" : ""}`}
+                  onClick={() => toggleTask(task.id)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={task.done}
+                    onChange={() => toggleTask(task.id)}
+                  />
+                  <span>{task.name}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -69,6 +105,7 @@ e anúncios pagos (Google Ads / Facebook Ads).</p>
           <div className="detalhamento-comentarios">
             <h2 className="detalhamento-comentarios-title">Comentários</h2>
             <div className="detalhamento-comentarios-list">
+              <div className="detalhamento-comentarios-item"></div>
               <div className="detalhamento-comentarios-item"></div>
               <div className="detalhamento-comentarios-item"></div>
               <div className="detalhamento-comentarios-item"></div>
