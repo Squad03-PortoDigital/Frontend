@@ -29,10 +29,12 @@ export default function Menu({ user }: MenuProps) {
             <House size={22} />
             <div className="menu-item-nome">Tela inicial</div>
           </Link>
-          <div className="menu-item">
+
+          <Link to="/arquivados" className="menu-item">
             <Archive size={22} />
             <div className="menu-item-nome">Arquivados</div>
-          </div>
+          </Link>
+
           <div className="menu-item">
             <SquareCheckBig size={22} />
             <div className="menu-item-nome">Finalizados</div>

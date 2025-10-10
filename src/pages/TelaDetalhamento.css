@@ -1,0 +1,336 @@
+.detalhamento-container {
+  display: flex;
+  flex-direction: row;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  height: 85vh;
+}
+
+/* Estilos para o conteúdo principal e scrollbar da tarefa*/
+.detalhamento-content {
+  flex: 2;
+  margin-right: 20px;
+  background-color: #fff;
+  border: 10px solid #fff;
+  padding: 20px;
+  border-radius: 10px;
+  overflow-y: auto;
+}
+.detalhamento-content::-webkit-scrollbar {
+  width: 8px;
+  background-color: #fff;
+}
+.detalhamento-content::-webkit-scrollbar-thumb {
+  background-color: #e2e2e2;
+  border-radius: 4px;
+}
+.detalhamento-content::-webkit-scrollbar-thumb:hover {
+  background: #c9c9c9;
+}
+
+/* Estilos para o cabeçalho */
+.detalhamento-header {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.detalhamento-header-agente {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 7px;
+    border-radius: 20px;
+    border: 2px solid #000;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+
+}
+.detalhamento-header-agente:hover {
+    background-color: #264fa228;
+  }
+.detalhamento-header-agente-logo {
+    width: 20px;
+    height: 20px;
+    overflow: hidden;
+    display: flex;
+}
+.detalhamento-header-empresa {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    font-size: 40px;
+}
+.detalhamento-header-empresa-logo {
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    display: flex;
+}
+
+/* Estilos para o título e corpo do container de tarefa*/
+.detalhamento-title {
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #eee;
+  font-family: "Segoe UI", sans-serif;
+}
+.detalhamento-title-text h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Barra de progresso */
+.detalhamento-title-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  width: 65%;
+}
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background-color: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background-color: #264fa2;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.progress-label {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+/* Linha inferior de infos */
+.detalhamento-title-infos {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Avatares */
+.detalhamento-title-info-usuarios img {
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  margin-right: -6px;
+  border: 2px solid #fff;
+  background-color: #ccc;
+}
+
+/* Campos clicáveis (status, tempo, área) */
+.detalhamento-title-info {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+.detalhamento-title-info span {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+/* Dropdown */
+.dropdown {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+.dropdown li {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.dropdown li:hover {
+  background-color: #f2f2f2;
+}
+
+.detalhamento-body {
+  margin: 20px 0;
+}
+.detalhamento-body-item {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Estilos para a lista de tarefas */
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.task-item:hover {
+  background: #f1f1f1;
+}
+.task-item.done span {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.detalhamento-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  gap: 10px;
+}
+.detalhamento-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Estilos para a seção de histórico */
+.detalhamento-historico {
+  flex: 1;
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 10px;
+}
+.detalhamento-historico-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Estilos para a seção de comentários */
+.detalhamento-comentarios {
+  flex: 1;
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.detalhamento-comentarios-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+.detalhamento-comentarios-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 5px;
+  margin-bottom: 15px;
+
+  max-height: 300px;
+  min-height: 150px;
+}
+
+.detalhamento-comentarios-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: #f8f8f8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: background 0.2s;
+}
+.detalhamento-comentarios-item:hover {
+  background-color: #f2f2f2;
+}
+
+.comentario-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.comentario-conteudo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.comentario-texto {
+  font-size: 0.9rem;
+  color: #333;
+  margin: 0;
+}
+.comentario-data {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+.detalhamento-comentarios-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+.detalhamento-comentarios-input input {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border 0.2s;
+}
+.detalhamento-comentarios-input input:focus {
+  border-color: #264fa2;
+}
+.detalhamento-comentarios-input button {
+  background-color: #264fa2;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.detalhamento-comentarios-input button:hover {
+  background-color: #1d3d7d;
+}
+
+/* scrollbar da lista de comentários */
+.detalhamento-comentarios-list::-webkit-scrollbar {
+  width: 8px;
+}
+.detalhamento-comentarios-list::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 8px;
+}
+.detalhamento-comentarios-list::-webkit-scrollbar-thumb:hover {
+  background-color: #999;
+}
