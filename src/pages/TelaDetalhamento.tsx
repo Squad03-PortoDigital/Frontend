@@ -200,7 +200,7 @@ e anúncios pagos (Google Ads / Facebook Ads).</p>
         </div>
         <div className="detalhamento-footer">
           <Button variant="outlined">Cancelar</Button>
-          <Button variant="contained">Salvar alterações</Button>
+          <Button variant="contained" style={{ backgroundColor: "#264fa2"}}>Salvar alterações</Button>
         </div>
       </div>
       <div className="detalhamento-sections">

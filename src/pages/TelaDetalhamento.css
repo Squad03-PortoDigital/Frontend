@@ -46,7 +46,12 @@
     border-radius: 20px;
     border: 2px solid #000;
     font-size: 14px;
+    transition: background-color 0.3s ease;
+
 }
+.detalhamento-header-agente:hover {
+    background-color: #264fa228;
+  }
 .detalhamento-header-agente-logo {
     width: 20px;
     height: 20px;
