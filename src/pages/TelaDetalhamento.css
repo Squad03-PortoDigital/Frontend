@@ -317,3 +317,15 @@
 .detalhamento-comentarios-input button:hover {
   background-color: #1d3d7d;
 }
+
+/* scrollbar da lista de comentários */
+.detalhamento-comentarios-list::-webkit-scrollbar {
+  width: 8px;
+}
+.detalhamento-comentarios-list::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 8px;
+}
+.detalhamento-comentarios-list::-webkit-scrollbar-thumb:hover {
+  background-color: #999;
+}
