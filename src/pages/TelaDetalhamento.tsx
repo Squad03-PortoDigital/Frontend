@@ -5,6 +5,14 @@ import netizLogo from "../images/netiz-logo.png";
 import { useState } from "react";
 
 export default function TelaDetalhamento() {
+  
+  // Dropdowns da seção de informações no titulo
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [tempoOpen, setTempoOpen] = useState(false);
+  const [areaOpen, setAreaOpen] = useState(false);
+
+  const progresso = 80;
+
   // Lista inicial de tarefas
   const [tasks, setTasks] = useState([
     { id: 1, name: "Folder", done: false },
@@ -35,18 +43,75 @@ export default function TelaDetalhamento() {
             <span>Ir para o ChatGPT</span>
           </div>
         </div>
-        <div className="detalhamento-title">
-          <div className="detalhamento-title-text">
-            <h1>Criar campanha “Internet Fibra 500 Mega”</h1>
-          </div>
-          <div className="detalhamento-title-progress"></div>
-          <div className="detalhamento-title-infos">
-            <div className="detalhamento-title-info-usuarios"></div>
-            <div className="detalhamento-title-info-status"></div>
-            <div className="detalhamento-title-info-tempo"></div>
-            <div className="detalhamento-title-info-area"></div>
-          </div>
+<div className="detalhamento-title">
+      <div className="detalhamento-title-text">
+        <h1>Criar campanha “Internet Fibra 500 Mega”</h1>
+      </div>
+
+      <div className="detalhamento-title-progress">
+        <div className="progress-bar">
+          <div
+            className="progress-fill"
+            style={{ width: `${progresso}%` }}
+          ></div>
         </div>
+        <span className="progress-label">{progresso}%</span>
+      </div>
+
+      <div className="detalhamento-title-infos">
+        {/* Usuários */}
+        <div className="detalhamento-title-info-usuarios">
+          <img src="https://i.pravatar.cc/24?img=1" alt="GA" />
+          <img src="https://i.pravatar.cc/24?img=2" alt="CM" />
+          <img src="https://i.pravatar.cc/24?img=3" alt="MG" />
+        </div>
+
+        {/* Status */}
+        <div
+          className="detalhamento-title-info"
+          onClick={() => setStatusOpen(!statusOpen)}
+        >
+          <span>Status: TO DO ▼</span>
+          {statusOpen && (
+            <ul className="dropdown">
+              <li>TO DO</li>
+              <li>In Progress</li>
+              <li>Done</li>
+            </ul>
+          )}
+        </div>
+
+        {/* Tempo */}
+        <div
+          className="detalhamento-title-info"
+          onClick={() => setTempoOpen(!tempoOpen)}
+        >
+          <span>Tempo: xxxxxxx ▼</span>
+          {tempoOpen && (
+            <ul className="dropdown">
+              <li>1 semana</li>
+              <li>2 semanas</li>
+              <li>1 mês</li>
+            </ul>
+          )}
+        </div>
+
+        {/* Área */}
+        <div
+          className="detalhamento-title-info"
+          onClick={() => setAreaOpen(!areaOpen)}
+        >
+          <span>Área: xxxxxxx ▼</span>
+          {areaOpen && (
+            <ul className="dropdown">
+              <li>Marketing</li>
+              <li>Comercial</li>
+              <li>Design</li>
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
         <div className="detalhamento-body">
           <div className="detalhamento-body-item">
             <h2>Descrição</h2>
