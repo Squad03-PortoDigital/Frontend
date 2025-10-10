@@ -30,6 +30,49 @@ export default function TelaDetalhamento() {
     );
   };
 
+  // Dados mokados para os comentários 
+  const [comentarios, setComentarios] = useState([
+    {
+      id: 1,
+      usuario: "MG",
+      cor: "#d6d6ff",
+      texto: "Adicionar um novo critério de aceitação ✅",
+      data: "07/10 às 12:45",
+    },
+    {
+      id: 2,
+      usuario: "TP",
+      cor: "#c9f7e7",
+      texto: "Novo critério adicionado ✅",
+      data: "08/10 às 09:20",
+    },
+    {
+      id: 3,
+      usuario: "NZ",
+      cor: "#ffe8e8",
+      texto: "Arte já disponível no Drive 🎨",
+      data: "09/10 às 11:34",
+    },
+  ]);
+
+  const [novoComentario, setNovoComentario] = useState("");
+
+  const adicionarComentario = () => {
+    if (novoComentario.trim() === "") return;
+    const novo = {
+      id: comentarios.length + 1,
+      usuario: "AR", // mockado
+      cor: "#e0f0ff",
+      texto: novoComentario,
+      data: new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    setComentarios([novo, ...comentarios]);
+    setNovoComentario("");
+  };
+
   return (
     <div className="detalhamento-container">
       <div className="detalhamento-content">
@@ -161,21 +204,43 @@ e anúncios pagos (Google Ads / Facebook Ads).</p>
         </div>
       </div>
       <div className="detalhamento-sections">
-          <div className="detalhamento-historico">
-            <h2 className="detalhamento-historico-title">Histórico</h2>
-            <p>Tarefa criada: 17/08 às 12:45</p>
-            <p>Movida para In Progress: 19/08 às 11:40</p>
-            <p>Movida para Review: 22/08 às 12:33</p>
+        <div className="detalhamento-historico">
+          <h2 className="detalhamento-historico-title">Histórico</h2>
+          <p>Tarefa criada: 17/08 às 12:45</p>
+          <p>Movida para In Progress: 19/08 às 11:40</p>
+          <p>Movida para Review: 22/08 às 12:33</p>
+        </div>
+        <div className="detalhamento-comentarios">
+          <h2 className="detalhamento-comentarios-title">Comentários</h2>
+
+          <div className="detalhamento-comentarios-list">
+            {comentarios.map((c) => (
+              <div key={c.id} className="detalhamento-comentarios-item">
+                <div
+                  className="comentario-avatar"
+                  style={{ backgroundColor: c.cor }}
+                >
+                  {c.usuario}
+                </div>
+                <div className="comentario-conteudo">
+                  <p className="comentario-texto">{c.texto}</p>
+                  <span className="comentario-data">{c.data}</span>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="detalhamento-comentarios">
-            <h2 className="detalhamento-comentarios-title">Comentários</h2>
-            <div className="detalhamento-comentarios-list">
-              <div className="detalhamento-comentarios-item"></div>
-              <div className="detalhamento-comentarios-item"></div>
-              <div className="detalhamento-comentarios-item"></div>
-              <div className="detalhamento-comentarios-item"></div>
-            </div>
+
+          <div className="detalhamento-comentarios-input">
+            <input
+              type="text"
+              placeholder="Adicione um comentário..."
+              value={novoComentario}
+              onChange={(e) => setNovoComentario(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && adicionarComentario()}
+            />
+            <button onClick={adicionarComentario}>Enviar</button>
           </div>
+        </div>
       </div>
     </div>
   );
