@@ -5,7 +5,7 @@ import netizLogo from "../images/netiz-logo.png";
 import { useState } from "react";
 
 export default function TelaDetalhamento() {
-  
+
   // Dropdowns da seção de informações no titulo
   const [statusOpen, setStatusOpen] = useState(false);
   const [tempoOpen, setTempoOpen] = useState(false);
@@ -21,6 +21,9 @@ export default function TelaDetalhamento() {
     { id: 4, name: "Posters", done: true },
   ]);
 
+  // Estado para nova task
+  const [novoTaskName, setNovoTaskName] = useState("");
+
   // Função que alterna o estado "done"
   const toggleTask = (id: number) => {
     setTasks((prevTasks) =>
@@ -28,6 +31,25 @@ export default function TelaDetalhamento() {
         task.id === id ? { ...task, done: !task.done } : task
       )
     );
+  };
+
+  // Função para adicionar nova task
+  const adicionarTask = () => {
+    if (!novoTaskName.trim()) return;
+
+    const novaTask = {
+      id: tasks.length + 1,
+      name: novoTaskName,
+      done: false,
+    };
+
+    setTasks([novaTask, ...tasks]);
+    setNovoTaskName(""); // limpa o input
+  };
+
+  // ✅ Função para remover task
+  const removerTask = (id: number) => {
+    setTasks(prev => prev.filter(task => task.id !== id));
   };
 
   // Dados mokados para os comentários 
@@ -86,75 +108,76 @@ export default function TelaDetalhamento() {
             <span>Ir para o ChatGPT</span>
           </div>
         </div>
-<div className="detalhamento-title">
-      <div className="detalhamento-title-text">
-        <h1>Criar campanha “Internet Fibra 500 Mega”</h1>
-      </div>
+        <div className="detalhamento-title">
+          <div className="detalhamento-title-text">
+            <h1>Criar campanha “Internet Fibra 500 Mega”</h1>
+          </div>
 
-      <div className="detalhamento-title-progress">
-        <div className="progress-bar">
-          <div
-            className="progress-fill"
-            style={{ width: `${progresso}%` }}
-          ></div>
-        </div>
-        <span className="progress-label">{progresso}%</span>
-      </div>
+          <div className="detalhamento-title-progress">
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${progresso}%` }}
+              ></div>
+            </div>
+            <span className="progress-label">{progresso}%</span>
+          </div>
 
-      <div className="detalhamento-title-infos">
-        {/* Usuários */}
-        <div className="detalhamento-title-info-usuarios">
-          <img src="https://i.pravatar.cc/24?img=1" alt="GA" />
-          <img src="https://i.pravatar.cc/24?img=2" alt="CM" />
-          <img src="https://i.pravatar.cc/24?img=3" alt="MG" />
+          <div className="detalhamento-title-infos">
+            {/* Usuários */}
+            <div className="detalhamento-title-info-usuarios">
+              <img src="https://i.pravatar.cc/24?img=1" alt="GA" />
+              <img src="https://i.pravatar.cc/24?img=2" alt="CM" />
+              <img src="https://i.pravatar.cc/24?img=3" alt="MG" />
+            </div>
+
+            {/* Status */}
+            <div
+              className="detalhamento-title-info"
+              onClick={() => setStatusOpen(!statusOpen)}
+            >
+              <span>Status: TO DO ▼</span>
+              {statusOpen && (
+                <ul className="dropdown">
+                  <li>TO DO</li>
+                  <li>In Progress</li>
+                  <li>Done</li>
+                </ul>
+              )}
+            </div>
+
+            {/* Tempo */}
+            <div
+              className="detalhamento-title-info"
+              onClick={() => setTempoOpen(!tempoOpen)}
+            >
+              <span>Tempo: xxxxxxx ▼</span>
+              {tempoOpen && (
+                <ul className="dropdown">
+                  <li>1 semana</li>
+                  <li>2 semanas</li>
+                  <li>1 mês</li>
+                </ul>
+              )}
+            </div>
+
+            {/* Área */}
+            <div
+              className="detalhamento-title-info"
+              onClick={() => setAreaOpen(!areaOpen)}
+            >
+              <span>Área: xxxxxxx ▼</span>
+              {areaOpen && (
+                <ul className="dropdown">
+                  <li>Marketing</li>
+                  <li>Comercial</li>
+                  <li>Design</li>
+                </ul>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Status */}
-        <div
-          className="detalhamento-title-info"
-          onClick={() => setStatusOpen(!statusOpen)}
-        >
-          <span>Status: TO DO ▼</span>
-          {statusOpen && (
-            <ul className="dropdown">
-              <li>TO DO</li>
-              <li>In Progress</li>
-              <li>Done</li>
-            </ul>
-          )}
-        </div>
-
-        {/* Tempo */}
-        <div
-          className="detalhamento-title-info"
-          onClick={() => setTempoOpen(!tempoOpen)}
-        >
-          <span>Tempo: xxxxxxx ▼</span>
-          {tempoOpen && (
-            <ul className="dropdown">
-              <li>1 semana</li>
-              <li>2 semanas</li>
-              <li>1 mês</li>
-            </ul>
-          )}
-        </div>
-
-        {/* Área */}
-        <div
-          className="detalhamento-title-info"
-          onClick={() => setAreaOpen(!areaOpen)}
-        >
-          <span>Área: xxxxxxx ▼</span>
-          {areaOpen && (
-            <ul className="dropdown">
-              <li>Marketing</li>
-              <li>Comercial</li>
-              <li>Design</li>
-            </ul>
-          )}
-        </div>
-      </div>
-    </div>
         <div className="detalhamento-body">
           <div className="detalhamento-body-item">
             <h2>Descrição</h2>
@@ -178,31 +201,66 @@ e anúncios pagos (Google Ads / Facebook Ads).</p>
               <li><a href="#">🔗 https://drive.google.com/netiz-campanha-fibra500</a></li>
             </ul>
           </div>
+
+          {/* Task List com input para nova tarefa */}
           <div className="detalhamento-body-item">
             <h2>Task List</h2>
+
+            {/* Input para nova task */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+              <input
+                type="text"
+                placeholder="Novo item"
+                value={novoTaskName}
+                onChange={(e) => setNovoTaskName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && adicionarTask()}
+                style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+              />
+              <button onClick={adicionarTask}>Adicionar</button>
+            </div>
+
             <ul className="task-list">
               {tasks.map((task) => (
                 <li
                   key={task.id}
                   className={`task-item ${task.done ? "done" : ""}`}
-                  onClick={() => toggleTask(task.id)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={task.done}
-                    onChange={() => toggleTask(task.id)}
-                  />
-                  <span>{task.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }} onClick={() => toggleTask(task.id)}>
+                    <input
+                      type="checkbox"
+                      checked={task.done}
+                      onChange={() => toggleTask(task.id)}
+                    />
+                    <span>{task.name}</span>
+                  </div>
+                  {/* Botão para remover task */}
+                  <button
+                    onClick={() => removerTask(task.id)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#ff4d4f",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                    }}
+                    title="Remover task"
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
         </div>
+
         <div className="detalhamento-footer">
           <Button variant="outlined">Cancelar</Button>
           <Button variant="contained" style={{ backgroundColor: "#264fa2"}}>Salvar alterações</Button>
         </div>
       </div>
+
       <div className="detalhamento-sections">
         <div className="detalhamento-historico">
           <h2 className="detalhamento-historico-title">Histórico</h2>

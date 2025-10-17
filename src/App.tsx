@@ -1,10 +1,12 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
-import Menu from "./components/Menu";
-import Header from "./components/Header";
+import Menu from "./components/Menu"; 
+import Header from "./components/Header"; 
 import TelaPerfil, { initialUser } from "./pages/TelaPerfil";
 import Ajuda from "./pages/TelaAjuda"; 
 import TelaAjustes from "./pages/TelaAjustes";
+import EmpresaDetalhes from "./pages/TelaEmpresaDetalhes";
+import KanbanBoard from "./pages/TelaKanbanBoard"; 
 import "./App.css";
 import TelaDetalhamento from "./pages/TelaDetalhamento";
 
@@ -19,12 +21,28 @@ export default function App() {
           <div className="app-grid">
             <Header />
             <Menu user={initialUser} />
-            <main className="app-content"></main>
+            <main className="app-content kanban-area">
+                <KanbanBoard />
+            </main>
           </div>
         }
       />
 
       <Route
+        path="/detalhamento"
+        element={
+        <div className="app-grid">
+          <Header />
+          <Menu user={initialUser} />
+          <main className="app-content">
+             <TelaDetalhamento />
+            </main>
+          </div>
+        }
+          
+      />
+
+     {/* <Route
         path="/arquivados"
         element={
           <div className="app-grid">
@@ -35,7 +53,7 @@ export default function App() {
             </main>
           </div>
         }
-      />
+      /> */}
 
       <Route
         path="/perfil"
@@ -71,6 +89,19 @@ export default function App() {
             <Menu user={initialUser} />
             <main className="app-content">
               <TelaAjustes /> 
+            </main>
+          </div>
+        }
+      />
+
+      <Route
+        path="/empresa/:id"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={initialUser} />
+            <main className="app-content">
+              <EmpresaDetalhes />
             </main>
           </div>
         }

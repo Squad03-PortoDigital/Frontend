@@ -1,0 +1,145 @@
+.kanban-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  background: #f8f9fb;
+}
+
+/* ==== TOPO ==== */
+.kanban-top {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kanban-card-top {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+}
+
+.kanban-card-top h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.kanban-number {
+  font-size: 80px;
+  font-weight: bold;
+  color: #444;
+}
+
+.kanban-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.filter-btn {
+  border: 1px solid #ccc;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.new-board-btn {
+  background: #3c5ccf;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+/* ==== COLUNAS ==== */
+.kanban-columns {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kanban-column {
+  flex: 1;
+  background: #fdfdfd;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.column-icons {
+  display: flex;
+  gap: 8px;
+  color: #777;
+  cursor: pointer;
+}
+
+/* ==== CARDS ==== */
+.kanban-card {
+  background: white;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.green { background: #36B37E; }
+.yellow { background: #FFAB00; }
+.red { background: #FF5630; }
+
+.kanban-text {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.kanban-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.tag {
+  background: #f1f3f5;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #444;
+}
+
+.kanban-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #777;
+}

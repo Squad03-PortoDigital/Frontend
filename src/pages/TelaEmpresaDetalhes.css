@@ -1,0 +1,197 @@
+/* CONTAINER PRINCIPAL */
+.empresa-detalhe-container {
+    padding: 40px;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f5f6f8;
+  }
+  
+  /* CARD */
+  .empresa-detalhe-card {
+    background-color: #ffffff;
+    padding: 40px 50px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    width: 900px;
+  }
+  
+  /* TÍTULO */
+  .empresa-detalhe-card h2 {
+    font-size: 22px;
+    color: #2b2b2b;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  /* LINHAS DE DETALHE */
+  .empresa-detalhe-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  
+  /* CAMPOS */
+  .empresa-detalhe-field {
+    flex: 1 1 45%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .empresa-detalhe-field.observacoes {
+    flex: 1 1 100%;
+  }
+  
+  /* LABELS */
+  .empresa-detalhe-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 6px;
+  }
+  
+  /* VALORES */
+  .empresa-detalhe-value {
+    font-size: 15px;
+    color: #444;
+    padding: 12px 14px;
+    border: 1px solid #e0e0e0;
+    background-color: #fafafa;
+    border-radius: 6px;
+    width: 300px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* IMAGEM DA EMPRESA */
+  .company-image {
+    max-width: 300px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+  
+  /* BOTÃO VOLTAR */
+  .voltar-btn {
+    background-color: transparent;
+    color: #2b2b2b;
+    border: none;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .voltar-btn:hover {
+    text-decoration: underline;
+  }
+  
+  /* RODAPÉ DO CARD */
+  .card-footer {
+    display: flex;
+    justify-content: flex-start; /* ou flex-end para direita */
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 12px;       /* espaçamento entre os botões */
+    flex-wrap: nowrap; /* garante que fiquem na mesma linha */
+  }
+  
+  /* BOTÕES */
+  .edit-button,
+  .delete-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    min-height: 44px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    line-height: 1;
+  }
+  
+  /* BOTÃO EDITAR */
+  .edit-button {
+    background-color: #1E52A5;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 18px rgba(30, 82, 165, 0.12);
+    transition: transform 0.08s ease, box-shadow 0.12s ease, background-color 0.12s;
+  }
+  .edit-button:hover {
+    transform: translateY(-2px);
+    background-color: #17448f;
+    box-shadow: 0 10px 24px rgba(30, 82, 165, 0.14);
+  }
+  .edit-button:active {
+    transform: translateY(0);
+  }
+  .edit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  /* BOTÃO APAGAR */
+  .delete-button {
+    background-color: #AD0003;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(173, 0, 3, 0.12);
+    transition: transform 0.08s ease, box-shadow 0.12s ease, background-color 0.12s;
+  }
+  .delete-button:hover {
+    background-color: #9b1b1b;
+  }
+  .delete-button:active {
+    transform: translateY(0);
+  }
+  .delete-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  /* RESPONSIVO */
+  @media (max-width: 720px) {
+    .empresa-detalhe-card {
+      width: 100%;
+      padding: 20px;
+    }
+    .empresa-detalhe-row {
+      flex-direction: column;
+      gap: 15px;
+    }
+    .empresa-detalhe-value {
+      width: 100%;
+    }
+    .card-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .action-buttons {
+      flex-direction: column;
+      width: 100%;
+      gap: 10px;
+    }
+    .action-buttons button {
+      width: 100%;
+    }
+  }
+  
+  /* Ícones dentro dos botões */
+  .btn-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  

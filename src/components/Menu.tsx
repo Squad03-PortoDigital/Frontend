@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom"; 
 import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users } from "lucide-react";
 import "../styles/menu.css";
 
@@ -12,20 +12,26 @@ interface MenuProps {
 }
 
 export default function Menu({ user }: MenuProps) {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const isActive = (path: string) => currentPath === path ? 'active' : '';
+
   return (
     <aside className="menu-container">
       <div className="menu">
         
         <Link to="/perfil" className="menu-perfil-item">
           <div className="menu-perfil-imagem">
-            <img src={user.avatarUrl} alt={user.nome} />
-          </div>
-          <div className="menu-perfil-nome">{user.nome}</div>
+             <img src={user.avatarUrl} alt={user.nome} />
+             </div>
+             <div className="menu-perfil-nome">{user.nome}</div>
         </Link>
 
         <div className="menu-section">
           <h2 className="menu-item-titulo">Kanban:</h2>
-          <Link to="/home" className="menu-item">
+          
+          <Link to="/home" className={`menu-item ${isActive('/home')}`}>
             <House size={22} />
             <div className="menu-item-nome">Tela inicial</div>
           </Link>
@@ -67,11 +73,11 @@ export default function Menu({ user }: MenuProps) {
 
         <div className="menu-section">
           <h2 className="menu-item-titulo">Mais:</h2>
-          <Link to="/ajustes" className="menu-item">
+          <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
             <Settings size={22} />
             <div className="menu-item-nome">Ajustes</div>
           </Link>
-          <Link to="/ajuda" className="menu-item">
+          <Link to="/ajuda" className={`menu-item ${isActive('/ajuda')}`}>
             <Info size={22} />
             <div className="menu-item-nome">Ajuda</div>
             </Link>
