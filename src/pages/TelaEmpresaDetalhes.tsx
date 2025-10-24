@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import "../pages/TelaEmpresaDetalhes.css"; 
+import api from "../services/api";
+import "./TelaEmpresaDetalhes.css";
 
 interface Empresa {
   id: number;
@@ -25,28 +25,47 @@ export default function EmpresaDetalhes() {
 
   // Carregar empresa
   useEffect(() => {
-    setLoading(true);
-    axios
-      .get(`http://localhost:8080/empresas/${id}`)
-      .then((res) => setEmpresa(res.data))
-      .catch(() => alert("Erro ao carregar empresa"))
-      .finally(() => setLoading(false));
+    const carregarEmpresa = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/empresas/${id}`);
+        setEmpresa(res.data);
+      } catch (error) {
+        console.error("Erro ao carregar empresa:", error);
+        alert("Erro ao carregar empresa");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      carregarEmpresa();
+    }
   }, [id]);
 
   // Deletar empresa
   const handleDelete = async () => {
     if (!empresa) return;
-    const confirm = window.confirm("Deseja realmente apagar esta empresa?");
-    if (!confirm) return;
+
+    const confirmar = window.confirm(
+      `Tem certeza que deseja deletar a empresa "${empresa.nome}"?`
+    );
+
+    if (!confirmar) return;
 
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:8080/empresas/${empresa.id}`);
+      await api.delete(`/empresas/${empresa.id}`);
       alert("Empresa deletada com sucesso!");
       navigate("/ajustes");
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao deletar a empresa");
+    } catch (error: any) {
+      console.error("Erro ao deletar:", error);
+
+      if (error.response?.status === 405) {
+        alert("Operação não permitida. O endpoint de exclusão não está disponível no backend.");
+      } else {
+        alert("Erro ao deletar a empresa. Tente novamente.");
+      }
     } finally {
       setDeleting(false);
     }
@@ -57,12 +76,12 @@ export default function EmpresaDetalhes() {
     if (!empresa) return;
     setSaving(true);
     try {
-      await axios.put(`http://localhost:8080/empresas/${empresa.id}`, empresa);
+      await api.put(`/empresas/${empresa.id}`, empresa);
       alert("Empresa atualizada com sucesso!");
       setIsEditing(false);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao atualizar a empresa");
+    } catch (error) {
+      console.error("Erro ao atualizar:", error);
+      alert("Erro ao atualizar a empresa. Verifique os dados e tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -76,7 +95,14 @@ export default function EmpresaDetalhes() {
     );
   }
 
-  if (!empresa) return <p>Empresa não encontrada.</p>;
+  if (!empresa) {
+    return (
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <p>Empresa não encontrada.</p>
+        <button onClick={() => navigate("/ajustes")}>Voltar</button>
+      </div>
+    );
+  }
 
   return (
     <div className="empresa-detalhe-container">
@@ -120,6 +146,7 @@ export default function EmpresaDetalhes() {
             {isEditing ? (
               <input
                 className="empresa-detalhe-value"
+                type="email"
                 value={empresa.email}
                 onChange={(e) => setEmpresa({ ...empresa, email: e.target.value })}
               />
@@ -142,52 +169,72 @@ export default function EmpresaDetalhes() {
         </div>
 
         <div className="empresa-detalhe-row">
-          <div>
+          <div style={{ flex: 1 }}>
             <label className="empresa-detalhe-label">Observações</label>
             {isEditing ? (
               <textarea
                 className="empresa-detalhe-value"
                 value={empresa.observacao}
                 onChange={(e) => setEmpresa({ ...empresa, observacao: e.target.value })}
+                rows={4}
+                style={{ resize: "vertical", width: "100%" }}
               />
             ) : (
-              <div className="empresa-detalhe-value">{empresa.observacao}</div>
+              <div className="empresa-detalhe-value">{empresa.observacao || "Sem observações"}</div>
             )}
           </div>
-          <div>
-            {empresa.foto && (
+          {empresa.foto && (
+            <div>
               <img
                 src={empresa.foto}
-                alt="Foto empresa"
+                alt={`Logo ${empresa.nome}`}
                 className="company-image"
+                style={{ maxWidth: "150px", borderRadius: "8px" }}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* BOTÕES LADO A LADO */}
         <div className="card-footer">
           <div className="action-buttons">
-            <button
-              className="edit-button"
-              onClick={isEditing ? handleSave : () => setIsEditing(true)}
-              disabled={saving}
-            >
-              {isEditing ? (saving ? "Salvando..." : "Salvar") : "Editar"}
-            </button>
-
-            <button
-              className="delete-button"
-              onClick={handleDelete}
-              disabled={deleting || isEditing}
-            >
-              {deleting ? "Deletando..." : "Apagar empresa"}
-            </button>
+            {isEditing ? (
+              <>
+                <button
+                  className="edit-button"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Salvando..." : "Salvar"}
+                </button>
+                <button
+                  className="cancel-button"
+                  onClick={() => setIsEditing(false)}
+                  disabled={saving}
+                >
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="edit-button"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Editar
+                </button>
+                <button
+                  className="delete-button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? "Deletando..." : "Apagar empresa"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Spinner para loading */}
       <style>
         {`
           .spinner-overlay {
@@ -196,7 +243,7 @@ export default function EmpresaDetalhes() {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -204,15 +251,33 @@ export default function EmpresaDetalhes() {
           }
           .spinner {
             border: 6px solid #f3f3f3;
-            border-top: 6px solid #007bff;
+            border-top: 6px solid #1E52A5;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
           }
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          .cancel-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+          }
+          .cancel-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+          }
+          .cancel-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
           }
         `}
       </style>

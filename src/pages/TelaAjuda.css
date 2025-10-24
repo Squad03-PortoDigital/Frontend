@@ -1,63 +1,62 @@
 .ajuda-container {
-    position: relative;
-    height: 80vh; 
-    padding: 40px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow: hidden; 
-  }
-  
-  
-  .ajuda-title {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 900px; 
-  }
-  
-  .ajuda-card {
-    width: 100%;
-    max-width: 900px; 
-    min-height: 300px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
-    padding: 30px;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .ajuda-card h2 {
-    font-size: 22px;
-    font-weight: bold;
-    margin-bottom: 15px;
-  }
-  
-  .ajuda-card p {
-    margin: 10px 0;
-    line-height: 1.6;
-  }
-  
-  .ajuda-card hr {
-    margin: 20px 0;
-    border: 0.5px solid #ddd;
-  }
-  
+  position: relative;
+  height: 80vh; 
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden; 
+}
+
+
+.ajuda-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 900px; 
+}
+
+.ajuda-card {
+  width: 100%;
+  max-width: 900px; 
+  min-height: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.ajuda-card h2 {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.ajuda-card p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.ajuda-card hr {
+  margin: 20px 0;
+  border: 0.5px solid #ddd;
+}
+
 .ajuda-logo-container {
-    position: absolute;
-    bottom: 190px; 
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 0;
-  }
-  
-  .ajuda-logo-bg {
-    width: 400px;
-    opacity: 0.08; 
-    pointer-events: none;
-    user-select: none;
-  }
-  
-  
+  position: absolute;
+  bottom: 190px; 
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.ajuda-logo-bg {
+  width: 400px;
+  opacity: 0.08; 
+  pointer-events: none;
+  user-select: none;
+}
+

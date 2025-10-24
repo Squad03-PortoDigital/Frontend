@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from "react";
 import "./TelaKanbanBoard.css";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import api from "../services/api";
+import logoFlap from "../images/Logo-azul-FLAP 1.png";
 
-type StatusTarefa = "A_FAZER" | "EM_PROGRESSO" | "EM_REVISAO" | "CONCLUIDA";
+// ✅ EXPORTAR O TIPO
+export type StatusTarefa = "A_FAZER" | "EM_PROGRESSO" | "EM_REVISAO" | "CONCLUIDA" | string;
+
+// ✅ EXPORTAR A CONSTANTE
+export const COLUMNS = [
+  { id: 1, status: "A_FAZER" as StatusTarefa, title: "To Do" },
+  { id: 2, status: "EM_PROGRESSO" as StatusTarefa, title: "In Progress" },
+  { id: 3, status: "EM_REVISAO" as StatusTarefa, title: "Review" },
+  { id: 4, status: "CONCLUIDA" as StatusTarefa, title: "Closed" },
+];
 
 interface TarefaDTO {
   id: number;
@@ -17,138 +28,6 @@ interface TarefaDTO {
   empresa: string;
 }
 
-const API_URL = "http://localhost:8080/api/tarefas";
-
-const mockTarefas: TarefaDTO[] = [
-  {
-    id: 1,
-    titulo: "Criar campanha “Internet Fibra 500 Mega”",
-    status: "A_FAZER",
-    prioridade: "MEDIA",
-    posicao: 0,
-    tags: ["RA", "HG", "LM", "NL"],
-    dtEntrega: "2025-10-16",
-    empresa: "Netiz",
-  },
-  {
-    id: 2,
-    titulo: "Redigir texto para anúncio no Google Ads",
-    status: "EM_PROGRESSO",
-    prioridade: "CRITICA",
-    posicao: 0,
-    tags: ["HG", "LM", "NL"],
-    dtEntrega: "2025-10-08",
-    empresa: "Celi",
-  },
-  {
-    id: 3,
-    titulo: "Aprovar layout de banner institucional",
-    status: "EM_REVISAO",
-    prioridade: "ALTA",
-    posicao: 0,
-    tags: ["KT", "LM"],
-    dtEntrega: "2025-10-10",
-    empresa: "Casa Alemã",
-  },
-  {
-    id: 4,
-    titulo: "Campanha “Aniversário da Cidade” finalizada",
-    status: "CONCLUIDA",
-    prioridade: "BAIXA",
-    posicao: 0,
-    tags: ["RA", "HG"],
-    dtEntrega: "2025-10-01",
-    empresa: "Celi",
-  },
-  {
-    id: 5,
-    titulo: "Planejar campanha de Black Friday",
-    status: "A_FAZER",
-    prioridade: "ALTA",
-    posicao: 1,
-    tags: ["RA", "KT"],
-    dtEntrega: "2025-10-25",
-    empresa: "Netiz",
-  },
-  {
-    id: 6,
-    titulo: "Escrever roteiro para vídeo institucional",
-    status: "EM_PROGRESSO",
-    prioridade: "MEDIA",
-    posicao: 1,
-    tags: ["LM", "IP"],
-    dtEntrega: "2025-10-15",
-    empresa: "Celi",
-  },
-  {
-    id: 7,
-    titulo: "Revisar conteúdo do blog sobre segurança digital",
-    status: "EM_REVISAO",
-    prioridade: "BAIXA",
-    posicao: 1,
-    tags: ["HG", "NL"],
-    dtEntrega: "2025-10-12",
-    empresa: "Casa Alemã",
-  },
-  {
-    id: 8,
-    titulo: "Finalizar artes para campanha de outubro",
-    status: "CONCLUIDA",
-    prioridade: "MEDIA",
-    posicao: 1,
-    tags: ["RA", "KT"],
-    dtEntrega: "2025-10-05",
-    empresa: "Netiz",
-  },
-  {
-    id: 9,
-    titulo: "Definir estratégia de mídia paga para novembro",
-    status: "A_FAZER",
-    prioridade: "CRITICA",
-    posicao: 2,
-    tags: ["IP", "LM"],
-    dtEntrega: "2025-10-20",
-    empresa: "Celi",
-  },
-  {
-    id: 10,
-    titulo: "Ajustar layout da página de planos",
-    status: "EM_PROGRESSO",
-    prioridade: "ALTA",
-    posicao: 2,
-    tags: ["KT", "HG"],
-    dtEntrega: "2025-10-18",
-    empresa: "Casa Alemã",
-  },
-  {
-    id: 11,
-    titulo: "Revisar texto de campanha de fidelidade",
-    status: "EM_REVISAO",
-    prioridade: "MEDIA",
-    posicao: 2,
-    tags: ["RA", "NL"],
-    dtEntrega: "2025-10-11",
-    empresa: "Netiz",
-  },
-  {
-    id: 12,
-    titulo: "Publicar post sobre cobertura em Alagoas",
-    status: "CONCLUIDA",
-    prioridade: "BAIXA",
-    posicao: 2,
-    tags: ["LM", "IP"],
-    dtEntrega: "2025-10-06",
-    empresa: "Celi",
-  },
-];
-
-const statusLabels: { [key in StatusTarefa]: string } = {
-  A_FAZER: "To Do",
-  EM_PROGRESSO: "In Progress",
-  EM_REVISAO: "Review",
-  CONCLUIDA: "Closed",
-};
-
 const prioridadeCores: { [key: string]: string } = {
   BAIXA: "green",
   MEDIA: "yellow",
@@ -156,19 +35,36 @@ const prioridadeCores: { [key: string]: string } = {
   CRITICA: "red",
 };
 
-const TelaKanbanBoard: React.FC = () => {
+export default function TelaKanbanBoard() {
   const [tarefas, setTarefas] = useState<TarefaDTO[]>([]);
   const [novoTitulo, setNovoTitulo] = useState("");
   const [statusSelecionado, setStatusSelecionado] = useState<StatusTarefa | null>(null);
+  const [boards, setBoards] = useState([
+    { id: 1, status: "A_FAZER" as StatusTarefa, label: "To Do", isDeletable: false },
+    { id: 2, status: "EM_PROGRESSO" as StatusTarefa, label: "In Progress", isDeletable: false },
+    { id: 3, status: "EM_REVISAO" as StatusTarefa, label: "Review", isDeletable: false },
+    { id: 4, status: "CONCLUIDA" as StatusTarefa, label: "Closed", isDeletable: false },
+  ]);
+  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
   const navigate = useNavigate();
+
+  const getSaudacao = () => {
+    const agora = new Date();
+    const horaBrasilia = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "numeric", hour12: false });
+    const hora = parseInt(horaBrasilia);
+
+    if (hora >= 5 && hora < 12) return "Bom dia";
+    if (hora >= 12 && hora < 18) return "Boa tarde";
+    return "Boa noite";
+  };
 
   useEffect(() => {
     const carregarTarefas = async () => {
       try {
-        const res = await fetch(API_URL);
-        const tarefasApi: TarefaDTO[] = await res.json();
-        setTarefas([...mockTarefas, ...tarefasApi]);
+        const res = await api.get<TarefaDTO[]>("/tarefas");
+        setTarefas(res.data);
       } catch {
+        console.warn("Falha ao buscar tarefas. Usando mock local.");
         setTarefas(mockTarefas);
       }
     };
@@ -182,43 +78,80 @@ const TelaKanbanBoard: React.FC = () => {
       titulo: novoTitulo,
       status: statusSelecionado,
       prioridade: "MEDIA",
-      posicao: tarefas.filter(t => t.status === statusSelecionado).length,
+      posicao: tarefas.filter((t) => t.status === statusSelecionado).length,
       tags: [],
       empresa: "Nova Empresa",
     };
 
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(novaTarefa),
-      });
-      const tarefaCriada: TarefaDTO = await res.json();
-      setTarefas(prev => [...prev, tarefaCriada]);
+      const res = await api.post<TarefaDTO>("/tarefas", novaTarefa);
+      setTarefas((prev) => [...prev, res.data]);
+      navigate(`/detalhamento/${res.data.id}`);
+    } catch (error) {
+      console.error("Erro ao adicionar tarefa:", error);
+      alert("Erro ao adicionar tarefa.");
+    } finally {
       setNovoTitulo("");
       setStatusSelecionado(null);
-    } catch {
-      alert("Erro ao adicionar tarefa.");
     }
   };
 
-  // 🚀 Drag-and-drop seguro
-  const onDragEnd = (result: any) => {
-    const destination = result.destination;
-    const draggableId = result.draggableId;
+  const adicionarBoard = () => {
+    const novoBoard = {
+      id: Date.now(),
+      status: `CUSTOM_${boards.length + 1}`,
+      label: "Novo board",
+      isDeletable: true,
+    };
+    setBoards((prev) => [...prev, novoBoard]);
+  };
 
-    if (!destination) return;
+  const deletarBoard = (boardId: number, boardLabel: string) => {
+    const tarefasNoBoard = tarefas.filter(t => {
+      const board = boards.find(b => b.id === boardId);
+      return board && t.status === board.status;
+    });
 
-    const tarefaArrastada = tarefas.find(t => t.id === Number(draggableId));
-    if (!tarefaArrastada) return;
+    if (tarefasNoBoard.length > 0) {
+      alert(`Não é possível deletar o board "${boardLabel}" pois ele contém ${tarefasNoBoard.length} tarefa(s).`);
+      return;
+    }
 
-    const novasTarefas = tarefas.map(t =>
-      t.id === tarefaArrastada.id
-        ? { ...t, status: destination.droppableId as StatusTarefa }
-        : t
+    const confirmar = window.confirm(
+      `Tem certeza que deseja deletar o board "${boardLabel}"?`
     );
 
-    setTarefas(novasTarefas);
+    if (confirmar) {
+      setBoards((prev) => prev.filter((b) => b.id !== boardId));
+    }
+  };
+
+  const onDragEnd = async (result: any) => {
+    const { destination, draggableId } = result;
+    if (!destination) return;
+
+    const tarefaId = Number(draggableId);
+    const tarefa = tarefas.find((t) => t.id === tarefaId);
+    if (!tarefa) return;
+
+    const novoStatus = destination.droppableId as StatusTarefa;
+    const tarefasAtualizadas = tarefas.map((t) =>
+      t.id === tarefaId ? { ...t, status: novoStatus } : t
+    );
+    setTarefas(tarefasAtualizadas);
+
+    try {
+      await api.patch(`/tarefas/${tarefaId}/mover`, {
+        status: novoStatus,
+        posicao: destination.index
+      });
+    } catch {
+      console.error("Erro ao atualizar status da tarefa");
+    }
+  };
+
+  const abrirDetalhamento = (tarefa: TarefaDTO) => {
+    navigate(`/detalhamento/${tarefa.id}`);
   };
 
   return (
@@ -226,73 +159,107 @@ const TelaKanbanBoard: React.FC = () => {
       <div className="kanban-top">
         <div className="kanban-card-top">
           <h3>Tarefas perto do vencimento:</h3>
-          <div className="kanban-number">8</div>
+          <div className="kanban-number">
+            {tarefas.filter((t) => t.dtEntrega && new Date(t.dtEntrega) < new Date()).length}
+          </div>
         </div>
         <div className="kanban-card-top">
-          <h3>Comentários Recentes:</h3>
-          <div className="kanban-number">16</div>
+          <h3>Tarefas totais:</h3>
+          <div className="kanban-number">{tarefas.length}</div>
         </div>
-        <div className="kanban-card-top">
-          <h3>Eventos Próximos:</h3>
-          <div className="kanban-number">1</div>
-        </div>
-        <div className="kanban-card-top">
-          <h3>Boa Noite, Hugo!</h3>
-          <p>Você tem 2 tarefas para concluir e 1 próxima do prazo de entrega.</p>
+        <div className="kanban-card-top kanban-card-welcome">
+          <div className="welcome-content">
+            <div className="welcome-text">
+              <h3>{getSaudacao()}, User!</h3>
+              <p>
+                Você tem {tarefas.filter((t) => t.status !== "CONCLUIDA").length} tarefas pendentes.
+              </p>
+            </div>
+            <img src={logoFlap} alt="FLAP Logo" className="flap-logo" />
+          </div>
           <div className="kanban-actions">
-            <button className="filter-btn">Filtrar</button>
-            <button className="new-board-btn">+ Novo board</button>
+            <button className="filter-btn">
+              <span>☰</span> Filtrar
+            </button>
+            <button className="new-board-btn" onClick={adicionarBoard}>
+              <Plus size={18} /> Novo board
+            </button>
           </div>
         </div>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-columns">
-          {Object.entries(statusLabels).map(([status, label]) => (
-            <Droppable droppableId={status} key={status}>
+          {boards.map((board) => (
+            <Droppable droppableId={board.status} key={board.id}>
               {(provided) => (
-                <div
-                  className="kanban-column"
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                >
+                <div className="kanban-column" ref={provided.innerRef} {...provided.droppableProps}>
                   <div className="kanban-column-header">
-                    <h4>{label}</h4>
-                    <div
-                      className="column-icons"
-                      onClick={() =>
-                        setStatusSelecionado(status as StatusTarefa)
-                      }
-                    >
-                      <Plus size={16} />
+                    {editingBoardId === board.id ? (
+                      <input
+                        type="text"
+                        value={board.label}
+                        onChange={(e) => {
+                          const novoLabel = e.target.value;
+                          setBoards((prev) =>
+                            prev.map((b) =>
+                              b.id === board.id ? { ...b, label: novoLabel } : b
+                            )
+                          );
+                        }}
+                        onBlur={() => setEditingBoardId(null)}
+                        autoFocus
+                      />
+                    ) : (
+                      <h4 onDoubleClick={() => setEditingBoardId(board.id)}>{board.label}</h4>
+                    )}
+
+                    <div className="column-header-actions">
+                      <div
+                        className="column-icons"
+                        onClick={() => setStatusSelecionado(board.status as StatusTarefa)}
+                      >
+                        <Plus size={16} />
+                      </div>
+
+                      {board.isDeletable && (
+                        <div
+                          className="column-icons delete-icon"
+                          onClick={() => deletarBoard(board.id, board.label)}
+                        >
+                          <Trash2 size={16} />
+                        </div>
+                      )}
                     </div>
                   </div>
 
+                  {statusSelecionado === board.status && (
+                    <div className="nova-tarefa">
+                      <input
+                        type="text"
+                        value={novoTitulo}
+                        placeholder="Nova tarefa..."
+                        onChange={(e) => setNovoTitulo(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && adicionarTarefa()}
+                      />
+                      <button className="new-board-btn" onClick={adicionarTarefa}>
+                        Adicionar
+                      </button>
+                    </div>
+                  )}
+
                   {tarefas
-                    .filter((t) => t.status === status)
+                    .filter((t) => t.status === board.status)
+                    .sort((a, b) => a.posicao - b.posicao)
                     .map((tarefa, index) => (
-                      <Draggable
-                        draggableId={tarefa.id.toString()}
-                        index={index}
-                        key={tarefa.id}
-                      >
+                      <Draggable draggableId={tarefa.id.toString()} index={index} key={tarefa.id}>
                         {(provided) => (
                           <div
                             className="kanban-card"
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            style={{
-                              ...provided.draggableProps.style,
-                              cursor: "pointer",
-                            }}
-                            onClick={() => {
-                              if (tarefa.id === 1) {
-                                navigate("/detalhamento", {
-                                  state: { tarefa },
-                                });
-                              }
-                            }}
+                            onClick={() => abrirDetalhamento(tarefa)}
                           >
                             <div className="kanban-dots">
                               {[...Array(3)].map((_, i) => (
@@ -314,9 +281,7 @@ const TelaKanbanBoard: React.FC = () => {
                               <span>{tarefa.empresa}</span>
                               <span>
                                 {tarefa.dtEntrega
-                                  ? new Date(
-                                      tarefa.dtEntrega
-                                    ).toLocaleDateString("pt-BR")
+                                  ? new Date(tarefa.dtEntrega).toLocaleDateString("pt-BR")
                                   : "Sem prazo"}
                               </span>
                             </div>
@@ -325,27 +290,6 @@ const TelaKanbanBoard: React.FC = () => {
                       </Draggable>
                     ))}
                   {provided.placeholder}
-
-                  {statusSelecionado === status && (
-                    <div style={{ marginTop: "12px" }}>
-                      <input
-                        type="text"
-                        placeholder="Nova tarefa..."
-                        value={novoTitulo}
-                        onChange={(e) => setNovoTitulo(e.target.value)}
-                        style={{
-                          padding: "6px",
-                          width: "100%",
-                          marginBottom: "8px",
-                          borderRadius: "6px",
-                          border: "1px solid #ccc",
-                        }}
-                      />
-                      <button className="new-board-btn" onClick={adicionarTarefa}>
-                        Adicionar
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </Droppable>
@@ -354,130 +298,27 @@ const TelaKanbanBoard: React.FC = () => {
       </DragDropContext>
     </div>
   );
-};
+}
 
-export default TelaKanbanBoard;
-
-
-
-
-/*{
-  id: 1,
-  titulo: "Criar campanha “Internet Fibra 500 Mega”",
-  status: "A_FAZER",
-  prioridade: "MEDIA",
-  posicao: 0,
-  tags: ["RA", "HG", "LM", "NL"],
-  dtEntrega: "2025-10-16",
-  empresa: "Netiz",
-},
-{
-  id: 2,
-  titulo: "Redigir texto para anúncio no Google Ads",
-  status: "EM_PROGRESSO",
-  prioridade: "CRITICA",
-  posicao: 0,
-  tags: ["HG", "LM", "NL"],
-  dtEntrega: "2025-10-08",
-  empresa: "Celi",
-},
-{
-  id: 3,
-  titulo: "Aprovar layout de banner institucional",
-  status: "EM_REVISAO",
-  prioridade: "ALTA",
-  posicao: 0,
-  tags: ["KT", "LM"],
-  dtEntrega: "2025-10-10",
-  empresa: "Casa Alemã",
-},
-{
-  id: 4,
-  titulo: "Campanha “Aniversário da Cidade” finalizada",
-  status: "CONCLUIDA",
-  prioridade: "BAIXA",
-  posicao: 0,
-  tags: ["RA", "HG"],
-  dtEntrega: "2025-10-01",
-  empresa: "Celi",
-},
-{
-  id: 5,
-  titulo: "Planejar campanha de Black Friday",
-  status: "A_FAZER",
-  prioridade: "ALTA",
-  posicao: 1,
-  tags: ["RA", "KT"],
-  dtEntrega: "2025-10-25",
-  empresa: "Netiz",
-},
-{
-  id: 6,
-  titulo: "Escrever roteiro para vídeo institucional",
-  status: "EM_PROGRESSO",
-  prioridade: "MEDIA",
-  posicao: 1,
-  tags: ["LM", "IP"],
-  dtEntrega: "2025-10-15",
-  empresa: "Celi",
-},
-{
-  id: 7,
-  titulo: "Revisar conteúdo do blog sobre segurança digital",
-  status: "EM_REVISAO",
-  prioridade: "BAIXA",
-  posicao: 1,
-  tags: ["HG", "NL"],
-  dtEntrega: "2025-10-12",
-  empresa: "Casa Alemã",
-},
-{
-  id: 8,
-  titulo: "Finalizar artes para campanha de outubro",
-  status: "CONCLUIDA",
-  prioridade: "MEDIA",
-  posicao: 1,
-  tags: ["RA", "KT"],
-  dtEntrega: "2025-10-05",
-  empresa: "Netiz",
-},
-{
-  id: 9,
-  titulo: "Definir estratégia de mídia paga para novembro",
-  status: "A_FAZER",
-  prioridade: "CRITICA",
-  posicao: 2,
-  tags: ["IP", "LM"],
-  dtEntrega: "2025-10-20",
-  empresa: "Celi",
-},
-{
-  id: 10,
-  titulo: "Ajustar layout da página de planos",
-  status: "EM_PROGRESSO",
-  prioridade: "ALTA",
-  posicao: 2,
-  tags: ["KT", "HG"],
-  dtEntrega: "2025-10-18",
-  empresa: "Casa Alemã",
-},
-{
-  id: 11,
-  titulo: "Revisar texto de campanha de fidelidade",
-  status: "EM_REVISAO",
-  prioridade: "MEDIA",
-  posicao: 2,
-  tags: ["RA", "NL"],
-  dtEntrega: "2025-10-11",
-  empresa: "Netiz",
-},
-{
-  id: 12,
-  titulo: "Publicar post sobre cobertura em Alagoas",
-  status: "CONCLUIDA",
-  prioridade: "BAIXA",
-  posicao: 2,
-  tags: ["LM", "IP"],
-  dtEntrega: "2025-10-06",
-  empresa: "Celi",
-}, */
+const mockTarefas: TarefaDTO[] = [
+  {
+    id: 1,
+    titulo: "Campanha Internet Fibra 500 Mega",
+    status: "A_FAZER",
+    prioridade: "MEDIA",
+    posicao: 0,
+    tags: ["RA", "HG"],
+    dtEntrega: "2025-10-18",
+    empresa: "Netiz",
+  },
+  {
+    id: 2,
+    titulo: "Anúncio Google Ads",
+    status: "EM_PROGRESSO",
+    prioridade: "ALTA",
+    posicao: 1,
+    tags: ["KT", "HG"],
+    dtEntrega: "2025-10-20",
+    empresa: "Celi",
+  },
+];

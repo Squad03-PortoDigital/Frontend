@@ -75,7 +75,7 @@ export default function Menu({ user }: MenuProps) {
           <h2 className="menu-item-titulo">Mais:</h2>
           <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
             <Settings size={22} />
-            <div className="menu-item-nome">Ajustes</div>
+            <div className="menu-item-nome">Empresas</div>
           </Link>
           <Link to="/ajuda" className={`menu-item ${isActive('/ajuda')}`}>
             <Info size={22} />

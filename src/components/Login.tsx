@@ -6,41 +6,45 @@ import FundoLogin from "../images/imagem-fundo-azul-login.png";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-
-  // estados para armazenar email e senha
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+    setLoading(true);
 
     try {
+      const authHeader = "Basic " + btoa(email + ":" + senha);
+
       const response = await fetch("http://localhost:8080/usuarios/me", {
         method: "GET",
         headers: {
-          Authorization: "Basic " + btoa(email + ":" + senha),
+          "Content-Type": "application/json",
+          Authorization: authHeader,
         },
       });
 
       if (response.ok) {
         const usuario = await response.json();
 
-        // salva o usuário no localStorage
+        // Armazena dados do usuárioe credenciais
         localStorage.setItem("usuario", JSON.stringify(usuario));
-        localStorage.setItem("auth", btoa(email + ":" + senha)); // salva credenciais codificadas (opcional)
+        localStorage.setItem("auth", btoa(email + ":" + senha));
 
-        // redireciona pra home
-        navigate("/home");
+        navigate("/home", { replace: true });
       } else if (response.status === 401) {
-        setErro("Email ou senha incorretos");
+        setErro("E-mail ou senha incorretos. Verifique e tente novamente.");
       } else {
-        setErro("Erro ao tentar fazer login");
+        setErro("Erro inesperado no login. Tente novamente mais tarde.");
       }
-    } catch (err) {
-      console.error(err);
-      setErro("Falha de conexão com o servidor");
+    } catch (error) {
+      console.error("Falha na requisição:", error);
+      setErro("Não foi possível conectar ao servidor.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,11 +69,11 @@ const Login: React.FC = () => {
 
         <form className="login-form" onSubmit={handleLogin}>
           <div className="input-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">E-mail</label>
             <input
               type="email"
               id="email"
-              placeholder="Digite o seu email"
+              placeholder="Digite o seu e-mail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -99,9 +103,23 @@ const Login: React.FC = () => {
             </a>
           </div>
 
-          <button type="submit" className="login-button">
-            Entrar
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? "Entrando..." : "Entrar"}
           </button>
+
+          {/* Botão para cadastro */}
+          <div className="register-section">
+            <p style={{ marginTop: "20px", textAlign: "center" }}>
+              Ainda não tem uma conta?
+            </p>
+            <button
+              type="button"
+              className="register-button"
+              onClick={() => navigate("/cadastro")}
+            >
+              Cadastrar-se
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -4,142 +4,451 @@
   gap: 24px;
   padding: 24px;
   background: #f8f9fb;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
 /* ==== TOPO ==== */
 .kanban-top {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  flex-shrink: 0;
 }
 
 .kanban-card-top {
   background: white;
   border-radius: 12px;
-  padding: 16px 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.kanban-card-top:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 .kanban-card-top h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.kanban-card-top p {
+  font-size: 14px;
+  color: #333;
+  margin: 10px 0;
 }
 
 .kanban-number {
-  font-size: 80px;
+  font-size: 48px;
   font-weight: bold;
-  color: #444;
+  color: #1E52A5;
+  margin: 8px 0;
 }
 
-.kanban-actions {
+/* Card de boas-vindas especial */
+.kanban-card-welcome {
   display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-}
-
-.filter-btn {
-  border: 1px solid #ccc;
-  background: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.new-board-btn {
-  background: #3c5ccf;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-/* ==== COLUNAS ==== */
-.kanban-columns {
-  display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 16px;
 }
 
-.kanban-column {
+.welcome-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.welcome-text h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+.welcome-text p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.flap-logo {
+  width: 80px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* BOTÕES - MELHORADOS */
+.kanban-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.filter-btn,
+.new-board-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   flex: 1;
+}
+
+.filter-btn {
+  background: white;
+  color: #333;
+  border: 2px solid #e0e0e0;
+}
+
+.filter-btn:hover {
+  border-color: #1E52A5;
+  color: #1E52A5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.2);
+}
+
+.new-board-btn {
+  background: linear-gradient(135deg, #1E52A5 0%, #134189 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.4);
+}
+
+.new-board-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(30, 82, 165, 0.6);
+}
+
+.new-board-btn:active,
+.filter-btn:active {
+  transform: translateY(0);
+}
+
+/* ==== COLUNAS - COM SCROLL HORIZONTAL ==== */
+.kanban-columns {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 20px;
+  flex-wrap: nowrap;
+  flex: 1;
+}
+
+/* Scrollbar horizontal customizada */
+.kanban-columns::-webkit-scrollbar {
+  height: 10px;
+}
+
+.kanban-columns::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.kanban-columns::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #1E52A5 0%, #134189 100%);
+  border-radius: 10px;
+}
+
+.kanban-columns::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #134189 0%, #1E52A5 100%);
+}
+
+.kanban-column {
+  min-width: 320px;
+  max-width: 320px;
+  flex-shrink: 0;
   background: #fdfdfd;
   border-radius: 12px;
-  padding: 12px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+/* Scrollbar vertical da coluna */
+.kanban-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kanban-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-column::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.kanban-column::-webkit-scrollbar-thumb:hover {
+  background: #1E52A5;
 }
 
 .kanban-column-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 6px 8px;
-  border-bottom: 1px solid #eee;
+  padding: 4px 6px 12px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 8px;
+}
+
+.kanban-column-header h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.kanban-column-header h4:hover {
+  color: #1E52A5;
+}
+
+.kanban-column-header input {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  border: 2px solid #1E52A5;
+  border-radius: 6px;
+  padding: 6px 10px;
+  outline: none;
+  background: white;
 }
 
 .column-icons {
+  width: 32px;
+  height: 32px;
   display: flex;
-  gap: 8px;
-  color: #777;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1E52A5 0%, #134189 100%);
+  color: white;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.column-icons:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.5);
+}
+
+/* ==== FORMULÁRIO NOVA TAREFA ==== */
+.nova-tarefa {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #1E52A5;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nova-tarefa input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.nova-tarefa input:focus {
+  border-color: #1E52A5;
+  box-shadow: 0 0 0 3px rgba(30, 82, 165, 0.1);
+}
+
+.nova-tarefa input::placeholder {
+  color: #999;
+}
+
+.nova-tarefa button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #1E52A5 0%, #134189 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nova-tarefa button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(30, 82, 165, 0.4);
+}
+
+.nova-tarefa button:active {
+  transform: translateY(0);
 }
 
 /* ==== CARDS ==== */
 .kanban-card {
   background: white;
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 10px;
+  padding: 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.kanban-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  border-color: #1E52A5;
 }
 
 .kanban-dots {
   display: flex;
-  gap: 4px;
+  gap: 5px;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
+  transition: transform 0.2s;
 }
 
-.green { background: #36B37E; }
-.yellow { background: #FFAB00; }
-.red { background: #FF5630; }
+.kanban-card:hover .dot {
+  transform: scale(1.2);
+}
+
+.green {
+  background: #36B37E;
+}
+
+.yellow {
+  background: #FFAB00;
+}
+
+.orange {
+  background: #fd7e14;
+}
+
+.red {
+  background: #FF5630;
+}
 
 .kanban-text {
   font-size: 14px;
   color: #333;
   font-weight: 500;
+  line-height: 1.5;
 }
 
 .kanban-tags {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .tag {
-  background: #f1f3f5;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #444;
+  background: linear-gradient(135deg, #E8F0FC 0%, #D1E3F8 100%);
+  color: #1E52A5;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(30, 82, 165, 0.3);
 }
 
 .kanban-footer {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #777;
+  color: #666;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
 }
+
+.kanban-footer span:first-child {
+  font-weight: 600;
+  color: #333;
+}
+
+.kanban-footer span:last-child {
+  color: #1E52A5;
+  font-weight: 500;
+}
+
+/* ==== RESPONSIVIDADE ==== */
+@media (max-width: 1024px) {
+  .kanban-top {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kanban-top {
+    grid-template-columns: 1fr;
+  }
+
+  .kanban-column {
+    min-width: 280px;
+    max-width: 280px;
+  }
+
+  .flap-logo {
+    width: 60px;
+  }
+}
+
+.column-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.delete-icon {
+  background: linear-gradient(135deg, #ff4d4f 0%, #d32f2f 100%) !important;
+}
+
+.delete-icon:hover {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%) !important;
+  transform: scale(1.1) rotate(0deg) !important; /* Sem rotação no delete */
+}
+

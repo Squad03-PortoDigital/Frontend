@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { 
-    StatusTarefa, 
-    COLUMNS 
-} from '../pages/TelaKanbanBoard'; 
+
+type StatusTarefa = "A_FAZER" | "EM_PROGRESSO" | "EM_REVISAO" | "CONCLUIDA" | string;
+
+const COLUMNS = [
+  { id: 1, status: "A_FAZER" as StatusTarefa, title: "To Do" },
+  { id: 2, status: "EM_PROGRESSO" as StatusTarefa, title: "In Progress" },
+  { id: 3, status: "EM_REVISAO" as StatusTarefa, title: "Review" },
+  { id: 4, status: "CONCLUIDA" as StatusTarefa, title: "Closed" },
+];
 
 interface NewTaskModalProps {
     status: StatusTarefa;

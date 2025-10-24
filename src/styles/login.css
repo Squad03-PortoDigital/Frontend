@@ -101,3 +101,28 @@ body, html {
     transform: translateY(0);
   }
 }
+
+/* Botão de cadastro */
+.register-button {
+  background: transparent;
+  color: #2a5bd7;
+  border: 2px solid #2a5bd7;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.3s ease-in-out;
+}
+
+.register-button:hover {
+  background: #2a5bd7;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 74, 255, 0.25);
+}
+
+.register-section p {
+  color: #444;
+  font-size: 14px;
+}
