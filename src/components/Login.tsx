@@ -17,32 +17,55 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const authHeader = "Basic " + btoa(email + ":" + senha);
+      // Cria FormData para enviar como application/x-www-form-urlencoded
+      const formData = new URLSearchParams();
+      formData.append("email", email);
+      formData.append("senha", senha);
 
-      const response = await fetch("http://localhost:8080/usuarios/me", {
-        method: "GET",
+      // Faz login usando o endpoint configurado no Spring Security
+      const loginResponse = await fetch("http://localhost:8080/usuarios/login", {
+        method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
+          "Content-Type": "application/x-www-form-urlencoded",
         },
+        body: formData,
+        credentials: "include", // Importante para manter a sessão
       });
 
-      if (response.ok) {
-        const usuario = await response.json();
+      if (loginResponse.ok) {
+        // Login bem-sucedido, agora busca os dados do usuário
+        const usuarioResponse = await fetch("http://localhost:8080/usuarios/me", {
+          method: "GET",
+          credentials: "include", // Mantém a sessão autenticada
+        });
 
-        // Armazena dados do usuárioe credenciais
-        localStorage.setItem("usuario", JSON.stringify(usuario));
-        localStorage.setItem("auth", btoa(email + ":" + senha));
+        if (usuarioResponse.ok) {
+          const usuario = await usuarioResponse.json();
 
-        navigate("/home", { replace: true });
-      } else if (response.status === 401) {
+          // Armazena dados do usuário
+          localStorage.setItem("usuario", JSON.stringify(usuario));
+          localStorage.setItem("authenticated", "true");
+
+          navigate("/perfil", { replace: true });
+        } else {
+          setErro("Erro ao carregar dados do usuário.");
+        }
+      } else if (loginResponse.status === 401) {
         setErro("E-mail ou senha incorretos. Verifique e tente novamente.");
       } else {
         setErro("Erro inesperado no login. Tente novamente mais tarde.");
       }
     } catch (error) {
       console.error("Falha na requisição:", error);
-      setErro("Não foi possível conectar ao servidor.");
+
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setErro(
+          "Não foi possível conectar ao servidor. " +
+          "Verifique se ele está rodando em http://localhost:8080"
+        );
+      } else {
+        setErro("Erro ao processar a requisição. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -107,7 +130,6 @@ const Login: React.FC = () => {
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          {/* Botão para cadastro */}
           <div className="register-section">
             <p style={{ marginTop: "20px", textAlign: "center" }}>
               Ainda não tem uma conta?

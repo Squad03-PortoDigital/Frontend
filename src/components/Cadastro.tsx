@@ -20,15 +20,27 @@ const Cadastro: React.FC = () => {
     setErro(null);
     setSucesso(null);
 
+    // Validações no frontend
     if (senha !== confirmarSenha) {
       setErro("As senhas não coincidem.");
+      return;
+    }
+
+    if (senha.length < 6) {
+      setErro("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    if (nome.length < 3) {
+      setErro("O nome deve ter pelo menos 3 caracteres.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await fetch("http://localhost:8080/usuarios", {
+      // Envia dados para cadastro
+      const response = await fetch("http://localhost:8080/usuarios/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -40,32 +52,71 @@ const Cadastro: React.FC = () => {
         }),
       });
 
+      const contentType = response.headers.get("content-type");
+
+      // Verifica se a resposta é JSON
+      if (!contentType || !contentType.includes("application/json")) {
+        const textoResposta = await response.text();
+        console.error("Resposta não é JSON:", textoResposta.substring(0, 500));
+        setErro("Erro de comunicação com o servidor. Verifique o console.");
+        return;
+      }
+
+      const data = await response.json();
+
       if (response.ok) {
         setSucesso("Usuário cadastrado com sucesso!");
 
+        // Aguarda 1 segundo para mostrar mensagem de sucesso
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         // Faz login automático após cadastro
-        const authHeader = "Basic " + btoa(email + ":" + senha);
-        const me = await fetch("http://localhost:8080/usuarios/me", {
-          headers: { Authorization: authHeader },
-          credentials: "include",
+        const loginResponse = await fetch("http://localhost:8080/usuarios/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, senha }),
         });
 
-        if (me.ok) {
-          const usuario = await me.json();
-          localStorage.setItem("usuario", JSON.stringify(usuario));
-          localStorage.setItem("auth", btoa(email + ":" + senha));
-          navigate("/ajustes", { replace: true });
+        if (loginResponse.ok) {
+          const loginData = await loginResponse.json();
+
+          // Armazena dados do usuário
+          localStorage.setItem("usuario", JSON.stringify(loginData));
+          localStorage.setItem("authenticated", "true");
+          localStorage.setItem("userEmail", email);
+
+          navigate("/home", { replace: true });
         } else {
-          navigate("/");
+          // Se login falhar, redireciona para tela de login
+          setErro("Cadastro realizado! Redirecionando para login...");
+          setTimeout(() => navigate("/"), 2000);
         }
       } else if (response.status === 400) {
-        setErro("Dados inválidos. Verifique as informações e tente novamente.");
+        // Erro de validação
+        setErro(data.message || "Dados inválidos. Verifique as informações.");
+      } else if (response.status === 409) {
+        // Conflito (email já existe)
+        setErro("Este e-mail já está cadastrado. Tente fazer login.");
       } else {
-        setErro("Erro ao realizar cadastro. Tente novamente mais tarde.");
+        // Outros erros
+        setErro(data.message || "Erro ao realizar cadastro. Tente novamente.");
       }
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);
-      setErro("Falha na conexão com o servidor.");
+
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setErro(
+          "Não foi possível conectar ao servidor. " +
+          "Verifique se ele está rodando em http://localhost:8080"
+        );
+      } else if (error instanceof SyntaxError) {
+        setErro(
+          "O servidor retornou uma resposta inválida. " +
+          "Verifique se o endpoint /usuarios/cadastro está configurado corretamente."
+        );
+      } else {
+        setErro("Falha na conexão com o servidor. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -103,6 +154,7 @@ const Cadastro: React.FC = () => {
               placeholder="Digite seu nome completo"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
+              minLength={3}
               required
             />
           </div>
@@ -124,9 +176,10 @@ const Cadastro: React.FC = () => {
             <input
               type="password"
               id="senha"
-              placeholder="Digite uma senha"
+              placeholder="Digite uma senha (mínimo 6 caracteres)"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
+              minLength={6}
               required
             />
           </div>
@@ -139,6 +192,7 @@ const Cadastro: React.FC = () => {
               placeholder="Confirme sua senha"
               value={confirmarSenha}
               onChange={(e) => setConfirmarSenha(e.target.value)}
+              minLength={6}
               required
             />
           </div>
