@@ -1,92 +1,296 @@
 import { Button } from "@mui/material";
 import "./TelaDetalhamento.css";
 import agentegpt from "../images/agentegpt-logo.png";
-import netizLogo from "../images/netiz-logo.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../services/api";
+import { Toast } from "./Toast";
+
+interface Task {
+  id: number;
+  name: string;
+  done: boolean;
+}
+
+interface Comentario {
+  id: number;
+  usuario: string;
+  cor: string;
+  texto: string;
+  data: string;
+}
+
+interface Tarefa {
+  id: number;
+  titulo: string;
+  descricao?: string;
+  status: string;
+  prioridade: string;
+  dtEntrega?: string;
+  dtCriacao?: string;
+  empresa?: {
+    id: number;
+    nome: string;
+    logoUrl?: string;
+    agenteLink?: string;
+  };
+  empresaId?: number;
+  empresaNome?: string;
+  links?: string[];
+  criteriosAceite?: string[];
+  progresso?: number;
+  tags?: string[];
+  tasks?: Task[];
+  comentarios?: Comentario[];
+}
+
+interface ToastState {
+  message: string;
+  type: 'success' | 'error' | 'warning';
+  show: boolean;
+}
 
 export default function TelaDetalhamento() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
-  // Dropdowns da seção de informações no titulo
+  const [tarefa, setTarefa] = useState<Tarefa | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [status, setStatus] = useState("A_FAZER");
+  const [prioridade, setPrioridade] = useState("MEDIA");
+  const [dtEntrega, setDtEntrega] = useState("");
+  const [links, setLinks] = useState<string[]>([]);
+  const [criteriosAceite, setCriteriosAceite] = useState<string[]>([]);
+  const [novoLink, setNovoLink] = useState("");
+  const [novoCriterio, setNovoCriterio] = useState("");
+
   const [statusOpen, setStatusOpen] = useState(false);
-  const [tempoOpen, setTempoOpen] = useState(false);
-  const [areaOpen, setAreaOpen] = useState(false);
+  const [prioridadeOpen, setPrioridadeOpen] = useState(false);
 
-  const progresso = 80;
+  const progresso = tarefa?.progresso || 0;
 
-  // Lista inicial de tarefas
-  const [tasks, setTasks] = useState([
-    { id: 1, name: "Folder", done: false },
-    { id: 2, name: "Totens", done: false },
-    { id: 3, name: "Outdoors", done: false },
-    { id: 4, name: "Posters", done: true },
-  ]);
-
-  // Estado para nova task
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [novoTaskName, setNovoTaskName] = useState("");
 
-  // Função que alterna o estado "done"
-  const toggleTask = (id: number) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, done: !task.done } : task
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [novoComentario, setNovoComentario] = useState("");
+
+  const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+    setToast({ message, type, show: true });
+  };
+
+  useEffect(() => {
+    const carregarTarefa = async () => {
+      try {
+        setLoading(true);
+        const auth = localStorage.getItem("auth");
+
+        if (!auth) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const res = await api.get(`/tarefas/${id}`, {
+          headers: { Authorization: `Basic ${auth}` },
+          withCredentials: true,
+        });
+
+        console.log("📋 Tarefa carregada:", res.data);
+        let tarefaData = res.data;
+
+        // ✅ Buscar sempre os dados completos da empresa
+        if (tarefaData.empresaId || tarefaData.empresa?.id) {
+          try {
+            const empresaId = tarefaData.empresaId || tarefaData.empresa?.id;
+            const empresaRes = await api.get(`/empresas/${empresaId}`, {
+              headers: { Authorization: `Basic ${auth}` },
+              withCredentials: true,
+            });
+            
+            console.log("🏢 Dados da empresa carregados:", empresaRes.data);
+            
+            // Substituir completamente os dados da empresa
+            tarefaData.empresa = {
+              id: empresaRes.data.id,
+              nome: empresaRes.data.nome,
+              logoUrl: empresaRes.data.foto || null,
+              agenteLink: empresaRes.data.agenteLink || null,
+            };
+          } catch (err) {
+            console.warn("⚠️ Não foi possível carregar dados da empresa:", err);
+            
+            // Fallback para usar os dados da tarefa
+            if (!tarefaData.empresa) {
+              tarefaData.empresa = {
+                id: tarefaData.empresaId || 0,
+                nome: tarefaData.empresaNome || "Empresa não definida",
+                logoUrl: null,
+                agenteLink: null,
+              };
+            }
+          }
+        } else {
+          // Se não tem empresaId nem empresa, criar objeto padrão
+          tarefaData.empresa = {
+            id: 0,
+            nome: "Empresa não definida",
+            logoUrl: null,
+            agenteLink: null,
+          };
+        }
+
+        console.log("✅ Dados finais da tarefa:", tarefaData);
+
+        setTarefa(tarefaData);
+        setTitulo(tarefaData.titulo || "");
+        setDescricao(tarefaData.descricao || "");
+        setStatus(tarefaData.status || "A_FAZER");
+        setPrioridade(tarefaData.prioridade || "MEDIA");
+        
+        if (tarefaData.dtEntrega) {
+          const dataEntrega = tarefaData.dtEntrega.split('T')[0];
+          setDtEntrega(dataEntrega);
+        } else {
+          setDtEntrega("");
+        }
+        
+        setLinks(tarefaData.links || []);
+        setCriteriosAceite(tarefaData.criteriosAceite || []);
+        setTasks(tarefaData.tasks || []);
+        setComentarios(tarefaData.comentarios || []);
+
+      } catch (error: any) {
+        console.error("❌ Erro ao carregar tarefa:", error);
+        if (error.response?.status === 401) {
+          showToast("Sessão expirada. Faça login novamente.", "error");
+          localStorage.removeItem("auth");
+          localStorage.removeItem("usuario");
+          setTimeout(() => navigate("/login", { replace: true }), 1500);
+        } else if (error.response?.status === 404) {
+          showToast("Tarefa não encontrada.", "error");
+          setTimeout(() => navigate("/home"), 1500);
+        } else {
+          showToast("Erro ao carregar tarefa.", "error");
+          setTimeout(() => navigate("/home"), 1500);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      carregarTarefa();
+    }
+  }, [id, navigate]);
+
+  const salvarAlteracoes = async () => {
+    if (!titulo.trim()) {
+      showToast("O título da tarefa é obrigatório!", "warning");
+      return;
+    }
+
+    try {
+      const auth = localStorage.getItem("auth");
+
+      let dtEntregaFormatada = null;
+      if (dtEntrega) {
+        dtEntregaFormatada = `${dtEntrega}T00:00:00`;
+      }
+
+      const payload = {
+        titulo,
+        descricao,
+        status,
+        prioridade,
+        dtEntrega: dtEntregaFormatada,
+        links,
+        criteriosAceite,
+        tasks,
+      };
+
+      console.log("💾 Salvando alterações:", payload);
+
+      await api.put(`/tarefas/${id}`, payload, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      showToast("Tarefa atualizada com sucesso!", "success");
+      setTimeout(() => navigate("/home"), 1000);
+    } catch (error: any) {
+      console.error("❌ Erro ao salvar:", error);
+      if (error.response?.status === 401) {
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        localStorage.removeItem("auth");
+        localStorage.removeItem("usuario");
+        setTimeout(() => navigate("/login", { replace: true }), 1500);
+      } else {
+        showToast("Erro ao salvar alterações.", "error");
+      }
+    }
+  };
+
+  const toggleTask = (taskId: number) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, done: !task.done } : task
       )
     );
   };
 
-  // Função para adicionar nova task
   const adicionarTask = () => {
     if (!novoTaskName.trim()) return;
-
     const novaTask = {
-      id: tasks.length + 1,
+      id: Date.now(),
       name: novoTaskName,
       done: false,
     };
-
     setTasks([novaTask, ...tasks]);
-    setNovoTaskName(""); // limpa o input
+    setNovoTaskName("");
   };
 
-  // ✅ Função para remover task
-  const removerTask = (id: number) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
+  const removerTask = (taskId: number) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
   };
 
-  // Dados mokados para os comentários 
-  const [comentarios, setComentarios] = useState([
-    {
-      id: 1,
-      usuario: "MG",
-      cor: "#d6d6ff",
-      texto: "Adicionar um novo critério de aceitação ✅",
-      data: "07/10 às 12:45",
-    },
-    {
-      id: 2,
-      usuario: "TP",
-      cor: "#c9f7e7",
-      texto: "Novo critério adicionado ✅",
-      data: "08/10 às 09:20",
-    },
-    {
-      id: 3,
-      usuario: "NZ",
-      cor: "#ffe8e8",
-      texto: "Arte já disponível no Drive 🎨",
-      data: "09/10 às 11:34",
-    },
-  ]);
+  const adicionarLink = () => {
+    if (!novoLink.trim()) return;
+    setLinks([...links, novoLink]);
+    setNovoLink("");
+  };
 
-  const [novoComentario, setNovoComentario] = useState("");
+  const removerLink = (index: number) => {
+    setLinks(links.filter((_, i) => i !== index));
+  };
+
+  const adicionarCriterio = () => {
+    if (!novoCriterio.trim()) return;
+    setCriteriosAceite([...criteriosAceite, novoCriterio]);
+    setNovoCriterio("");
+  };
+
+  const removerCriterio = (index: number) => {
+    setCriteriosAceite(criteriosAceite.filter((_, i) => i !== index));
+  };
 
   const adicionarComentario = () => {
-    if (novoComentario.trim() === "") return;
+    if (!novoComentario.trim()) return;
     const novo = {
-      id: comentarios.length + 1,
-      usuario: "AR", // mockado
+      id: Date.now(),
+      usuario: "EU",
       cor: "#e0f0ff",
       texto: novoComentario,
-      data: new Date().toLocaleTimeString("pt-BR", {
+      data: new Date().toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -95,211 +299,298 @@ export default function TelaDetalhamento() {
     setNovoComentario("");
   };
 
+  const irParaAgente = () => {
+    const link = tarefa?.empresa?.agenteLink;
+    if (link && link.trim() !== "") {
+      window.open(link, "_blank", "noopener,noreferrer");
+    } else {
+      window.open("https://chat.openai.com", "_blank", "noopener,noreferrer");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Carregando tarefa...</p>
+      </div>
+    );
+  }
+
+  if (!tarefa) {
+    return (
+      <div style={{ padding: "40px", textAlign: "center" }}>
+        <p>Tarefa não encontrada.</p>
+        <Button onClick={() => navigate("/home")}>Voltar</Button>
+      </div>
+    );
+  }
+
+  const statusLabels: { [key: string]: string } = {
+    A_FAZER: "To Do",
+    EM_PROGRESSO: "In Progress",
+    EM_REVISAO: "Review",
+    CONCLUIDA: "Closed",
+  };
+
+  const prioridadeLabels: { [key: string]: string } = {
+    BAIXA: "Baixa",
+    MEDIA: "Média",
+    ALTA: "Alta",
+    CRITICA: "Crítica",
+  };
+
   return (
-    <div className="detalhamento-container">
-      <div className="detalhamento-content">
-        <div className="detalhamento-header">
-          <div className="detalhamento-header-empresa">
-            <div className="detalhamento-header-empresa-logo"><img src={netizLogo} alt="Logo da Empresa" /></div>
-            <span>Netiz</span>
-          </div>
-          <div className="detalhamento-header-agente">
-            <div className="detalhamento-header-agente-logo"><img src={agentegpt} alt="Logo do Agente" /></div>
-            <span>Ir para o ChatGPT</span>
-          </div>
-        </div>
-        <div className="detalhamento-title">
-          <div className="detalhamento-title-text">
-            <h1>Criar campanha “Internet Fibra 500 Mega”</h1>
-          </div>
+    <>
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
 
-          <div className="detalhamento-title-progress">
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: `${progresso}%` }}
-              ></div>
+      <div className="detalhamento-container">
+        <div className="detalhamento-content">
+          <div className="detalhamento-header">
+            <div className="detalhamento-header-empresa">
+              <div className="detalhamento-header-empresa-logo">
+                {tarefa?.empresa?.logoUrl ? (
+                  <img src={tarefa.empresa.logoUrl} alt={tarefa.empresa.nome} />
+                ) : (
+                  <div className="empresa-avatar-placeholder">
+                    {tarefa?.empresa?.nome?.substring(0, 2).toUpperCase() || "??"}
+                  </div>
+                )}
+              </div>
+              <span className="empresa-nome">{tarefa?.empresa?.nome || "Empresa"}</span>
             </div>
-            <span className="progress-label">{progresso}%</span>
-          </div>
-
-          <div className="detalhamento-title-infos">
-            {/* Usuários */}
-            <div className="detalhamento-title-info-usuarios">
-              <img src="https://i.pravatar.cc/24?img=1" alt="GA" />
-              <img src="https://i.pravatar.cc/24?img=2" alt="CM" />
-              <img src="https://i.pravatar.cc/24?img=3" alt="MG" />
-            </div>
-
-            {/* Status */}
-            <div
-              className="detalhamento-title-info"
-              onClick={() => setStatusOpen(!statusOpen)}
-            >
-              <span>Status: TO DO ▼</span>
-              {statusOpen && (
-                <ul className="dropdown">
-                  <li>TO DO</li>
-                  <li>In Progress</li>
-                  <li>Done</li>
-                </ul>
-              )}
-            </div>
-
-            {/* Tempo */}
-            <div
-              className="detalhamento-title-info"
-              onClick={() => setTempoOpen(!tempoOpen)}
-            >
-              <span>Tempo: xxxxxxx ▼</span>
-              {tempoOpen && (
-                <ul className="dropdown">
-                  <li>1 semana</li>
-                  <li>2 semanas</li>
-                  <li>1 mês</li>
-                </ul>
-              )}
-            </div>
-
-            {/* Área */}
-            <div
-              className="detalhamento-title-info"
-              onClick={() => setAreaOpen(!areaOpen)}
-            >
-              <span>Área: xxxxxxx ▼</span>
-              {areaOpen && (
-                <ul className="dropdown">
-                  <li>Marketing</li>
-                  <li>Comercial</li>
-                  <li>Design</li>
-                </ul>
-              )}
+            <div className="detalhamento-header-agente" onClick={irParaAgente}>
+              <div className="detalhamento-header-agente-logo">
+                <img src={agentegpt} alt="Logo do Agente" />
+              </div>
+              <span>Ir para o ChatGPT</span>
             </div>
           </div>
-        </div>
 
-        <div className="detalhamento-body">
-          <div className="detalhamento-body-item">
-            <h2>Descrição</h2>
-            <p>Desenvolver uma campanha digital para promover o plano Internet Fibra 500 Mega da Netiz. A campanha deve destacar velocidade, estabilidade da conexão e benefícios 
-exclusivos para clientes novos. Incluir materiais para redes sociais, e-mail marketing 
-e anúncios pagos (Google Ads / Facebook Ads).</p>
-          </div>
-          <div className="detalhamento-body-item">
-            <h2>Critérios de Aceite</h2>
-            <ul>
-              <li>Peças visuais (arte + texto) criadas em formato para Instagram, Facebook e WhatsApp.</li>
-              <li>E-mail marketing com destaque para call-to-action “Assine agora” revisado.</li>
-              <li>Landing page “Assine 500 Mega” com formulário de contato pronta para publicação.</li>
-              <li>Configuração inicial de campanhas no Google Ads com palavras-chave relacionadas a “internet fibra Sergipe”.</li>
-              <li>Revisão final aprovada pela equipe de marketing.</li>
-            </ul>
-          </div>
-          <div className="detalhamento-body-item">
-            <h2>Links</h2>
-            <ul>
-              <li><a href="#">🔗 https://drive.google.com/netiz-campanha-fibra500</a></li>
-            </ul>
-          </div>
-
-          {/* Task List com input para nova tarefa */}
-          <div className="detalhamento-body-item">
-            <h2>Task List</h2>
-
-            {/* Input para nova task */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+          <div className="detalhamento-title">
+            <div className="detalhamento-title-text">
               <input
                 type="text"
-                placeholder="Novo item"
-                value={novoTaskName}
-                onChange={(e) => setNovoTaskName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && adicionarTask()}
-                style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "1px solid #ccc" }}
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Título da tarefa"
+                className="titulo-input"
               />
-              <button onClick={adicionarTask}>Adicionar</button>
             </div>
 
-            <ul className="task-list">
-              {tasks.map((task) => (
-                <li
-                  key={task.id}
-                  className={`task-item ${task.done ? "done" : ""}`}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }} onClick={() => toggleTask(task.id)}>
-                    <input
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={() => toggleTask(task.id)}
-                    />
-                    <span>{task.name}</span>
-                  </div>
-                  {/* Botão para remover task */}
-                  <button
-                    onClick={() => removerTask(task.id)}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "#ff4d4f",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      fontSize: "16px",
-                    }}
-                    title="Remover task"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div className="detalhamento-footer">
-          <Button variant="outlined">Cancelar</Button>
-          <Button variant="contained" style={{ backgroundColor: "#264fa2"}}>Salvar alterações</Button>
-        </div>
-      </div>
-
-      <div className="detalhamento-sections">
-        <div className="detalhamento-historico">
-          <h2 className="detalhamento-historico-title">Histórico</h2>
-          <p>Tarefa criada: 17/08 às 12:45</p>
-          <p>Movida para In Progress: 19/08 às 11:40</p>
-          <p>Movida para Review: 22/08 às 12:33</p>
-        </div>
-        <div className="detalhamento-comentarios">
-          <h2 className="detalhamento-comentarios-title">Comentários</h2>
-
-          <div className="detalhamento-comentarios-list">
-            {comentarios.map((c) => (
-              <div key={c.id} className="detalhamento-comentarios-item">
-                <div
-                  className="comentario-avatar"
-                  style={{ backgroundColor: c.cor }}
-                >
-                  {c.usuario}
-                </div>
-                <div className="comentario-conteudo">
-                  <p className="comentario-texto">{c.texto}</p>
-                  <span className="comentario-data">{c.data}</span>
-                </div>
+            <div className="detalhamento-title-progress">
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${progresso}%` }}></div>
               </div>
-            ))}
+              <span className="progress-label">{progresso}%</span>
+            </div>
+
+            <div className="detalhamento-title-infos">
+              <div className="detalhamento-title-info-usuarios">
+                <img src="https://i.pravatar.cc/24?img=1" alt="User" />
+                <img src="https://i.pravatar.cc/24?img=2" alt="User" />
+              </div>
+
+              <div className="detalhamento-title-info dropdown-container" onClick={() => setStatusOpen(!statusOpen)}>
+                <span>Status: {statusLabels[status] || status} ▼</span>
+                {statusOpen && (
+                  <ul className="dropdown">
+                    {Object.entries(statusLabels).map(([key, label]) => (
+                      <li key={key} onClick={(e) => { e.stopPropagation(); setStatus(key); setStatusOpen(false); }}>
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="detalhamento-title-info dropdown-container" onClick={() => setPrioridadeOpen(!prioridadeOpen)}>
+                <span>Prioridade: {prioridadeLabels[prioridade] || prioridade} ▼</span>
+                {prioridadeOpen && (
+                  <ul className="dropdown">
+                    {Object.entries(prioridadeLabels).map(([key, label]) => (
+                      <li key={key} onClick={(e) => { e.stopPropagation(); setPrioridade(key); setPrioridadeOpen(false); }}>
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="detalhamento-title-info">
+                <label className="date-label">
+                  Entrega: 
+                  <input
+                    type="date"
+                    value={dtEntrega}
+                    onChange={(e) => setDtEntrega(e.target.value)}
+                    className="date-input"
+                  />
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className="detalhamento-comentarios-input">
-            <input
-              type="text"
-              placeholder="Adicione um comentário..."
-              value={novoComentario}
-              onChange={(e) => setNovoComentario(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && adicionarComentario()}
-            />
-            <button onClick={adicionarComentario}>Enviar</button>
+          <div className="detalhamento-body">
+            <div className="detalhamento-body-item">
+              <h2>Descrição</h2>
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Adicione uma descrição detalhada da tarefa..."
+                className="textarea-input"
+              />
+            </div>
+
+            <div className="detalhamento-body-item">
+              <h2>Critérios de Aceite</h2>
+              <div className="add-item-container">
+                <input
+                  type="text"
+                  placeholder="Novo critério de aceite"
+                  value={novoCriterio}
+                  onChange={(e) => setNovoCriterio(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && adicionarCriterio()}
+                  className="add-item-input"
+                />
+                <button onClick={adicionarCriterio} className="add-item-button">
+                  Adicionar
+                </button>
+              </div>
+              {criteriosAceite.length > 0 ? (
+                <ul className="item-list">
+                  {criteriosAceite.map((criterio, index) => (
+                    <li key={index} className="item-list-entry">
+                      <span>{criterio}</span>
+                      <button onClick={() => removerCriterio(index)} className="remove-button">
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="empty-message">Nenhum critério adicionado ainda.</p>
+              )}
+            </div>
+
+            <div className="detalhamento-body-item">
+              <h2>Links</h2>
+              <div className="add-item-container">
+                <input
+                  type="url"
+                  placeholder="Cole o link aqui (https://...)"
+                  value={novoLink}
+                  onChange={(e) => setNovoLink(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && adicionarLink()}
+                  className="add-item-input"
+                />
+                <button onClick={adicionarLink} className="add-item-button">
+                  Adicionar
+                </button>
+              </div>
+              {links.length > 0 ? (
+                <ul className="item-list">
+                  {links.map((link, index) => (
+                    <li key={index} className="item-list-entry">
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="link-item">
+                        🔗 {link}
+                      </a>
+                      <button onClick={() => removerLink(index)} className="remove-button">
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="empty-message">Nenhum link adicionado ainda.</p>
+              )}
+            </div>
+
+            <div className="detalhamento-body-item">
+              <h2>Task List</h2>
+              <div className="add-item-container">
+                <input
+                  type="text"
+                  placeholder="Novo item da task list"
+                  value={novoTaskName}
+                  onChange={(e) => setNovoTaskName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && adicionarTask()}
+                  className="add-item-input"
+                />
+                <button onClick={adicionarTask} className="add-item-button">
+                  Adicionar
+                </button>
+              </div>
+              {tasks.length > 0 ? (
+                <ul className="task-list">
+                  {tasks.map((task) => (
+                    <li key={task.id} className={`task-item ${task.done ? "done" : ""}`}>
+                      <div className="task-content" onClick={() => toggleTask(task.id)}>
+                        <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} />
+                        <span>{task.name}</span>
+                      </div>
+                      <button onClick={() => removerTask(task.id)} className="remove-button">
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="empty-message">Nenhuma task adicionada ainda.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="detalhamento-footer">
+            <Button variant="outlined" onClick={() => navigate("/home")}>Cancelar</Button>
+            <Button variant="contained" style={{ backgroundColor: "#264fa2" }} onClick={salvarAlteracoes}>
+              Salvar alterações
+            </Button>
+          </div>
+        </div>
+
+        <div className="detalhamento-sections">
+          <div className="detalhamento-historico">
+            <h2 className="detalhamento-historico-title">Histórico</h2>
+            <p>Tarefa criada: {tarefa.dtCriacao ? new Date(tarefa.dtCriacao).toLocaleString("pt-BR") : "Data não disponível"}</p>
+          </div>
+          <div className="detalhamento-comentarios">
+            <h2 className="detalhamento-comentarios-title">Comentários</h2>
+            <div className="detalhamento-comentarios-list">
+              {comentarios.length > 0 ? (
+                comentarios.map((c) => (
+                  <div key={c.id} className="detalhamento-comentarios-item">
+                    <div className="comentario-avatar" style={{ backgroundColor: c.cor }}>
+                      {c.usuario}
+                    </div>
+                    <div className="comentario-conteudo">
+                      <p className="comentario-texto">{c.texto}</p>
+                      <span className="comentario-data">{c.data}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="empty-message-comentarios">Nenhum comentário ainda.</p>
+              )}
+            </div>
+            <div className="detalhamento-comentarios-input">
+              <input
+                type="text"
+                placeholder="Adicione um comentário..."
+                value={novoComentario}
+                onChange={(e) => setNovoComentario(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && adicionarComentario()}
+              />
+              <button onClick={adicionarComentario}>Enviar</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

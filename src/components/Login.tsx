@@ -46,7 +46,7 @@ const Login: React.FC = () => {
           localStorage.setItem("usuario", JSON.stringify(usuario));
           localStorage.setItem("authenticated", "true");
 
-          navigate("/perfil", { replace: true });
+          navigate("/home", { replace: true });
         } else {
           setErro("Erro ao carregar dados do usuário.");
         }
