@@ -2,14 +2,22 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:8080',
+  withCredentials: true, // ✅ IMPORTANTE: Envia cookies de sessão
 });
 
-api.interceptors.request.use((config) => {
-  const basicAuth = localStorage.getItem('auth');
-  if (basicAuth && config.headers) {
-    config.headers.Authorization = `Basic ${basicAuth}`;
-  }
-  return config;
-});
+// ✅ Funções da API de usuário
+export const usuarioApi = {
+  // Buscar usuário autenticado
+  getMe: async () => {
+    const response = await api.get('/usuarios/me');
+    return response.data;
+  },
+
+  // Atualizar meu perfil
+  updateMyProfile: async (data: any) => {
+    const response = await api.put('/usuarios/me', data);
+    return response.data;
+  },
+};
 
 export default api;

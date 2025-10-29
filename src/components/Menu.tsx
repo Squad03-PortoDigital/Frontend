@@ -1,36 +1,71 @@
 import { Link, useLocation } from "react-router-dom"; 
-import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users } from "lucide-react";
+import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users, User } from "lucide-react";
+import { useState, useEffect } from "react";
 import "../styles/menu.css";
 
-interface User {
+interface UserProfile {
+  id?: number;
   nome: string;
-  avatarUrl: string;
+  email: string;
+  foto?: string;
+  role?: string;
+  cargo?: {
+    nome: string;
+  };
 }
 
 interface MenuProps {
-  user: User;
+  user?: UserProfile; // Opcional, caso queira passar de fora
 }
 
-export default function Menu({ user }: MenuProps) {
+export default function Menu({ user: userProp }: MenuProps) {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [user, setUser] = useState<UserProfile | null>(userProp || null);
+
+  // ✅ Carregar usuário do localStorage se não vier por props
+  useEffect(() => {
+    if (!userProp) {
+      const usuarioSalvo = localStorage.getItem("usuario");
+      if (usuarioSalvo) {
+        const dados: UserProfile = JSON.parse(usuarioSalvo);
+        setUser(dados);
+      }
+    }
+  }, [userProp]);
 
   const isActive = (path: string) => currentPath === path ? 'active' : '';
 
   return (
     <aside className="menu-container">
       <div className="menu">
-        
+
         <Link to="/perfil" className="menu-perfil-item">
           <div className="menu-perfil-imagem">
-             <img src={user.avatarUrl} alt={user.nome} />
-             </div>
-             <div className="menu-perfil-nome">{user.nome}</div>
+            {/* ✅ Se tiver foto, mostra a foto. Se não, mostra ícone User */}
+            {user?.foto ? (
+              <img src={user.foto} alt={user.nome} />
+            ) : (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#e0e0e0',
+                borderRadius: '50%',
+              }}>
+                <User size={32} color="#717680" />
+              </div>
+            )}
+          </div>
+          {/* ✅ Nome do usuário */}
+          <div className="menu-perfil-nome">{user?.nome || "Usuário"}</div>
         </Link>
 
         <div className="menu-section">
           <h2 className="menu-item-titulo">Kanban:</h2>
-          
+
           <Link to="/home" className={`menu-item ${isActive('/home')}`}>
             <House size={22} />
             <div className="menu-item-nome">Tela inicial</div>
@@ -80,7 +115,7 @@ export default function Menu({ user }: MenuProps) {
           <Link to="/ajuda" className={`menu-item ${isActive('/ajuda')}`}>
             <Info size={22} />
             <div className="menu-item-nome">Ajuda</div>
-            </Link>
+          </Link>
         </div>
 
         <div className="menu-final">

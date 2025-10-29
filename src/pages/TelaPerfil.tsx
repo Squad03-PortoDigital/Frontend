@@ -1,6 +1,5 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import "./TelaPerfil.css";
-import userAvatar from "../images/fotoperfil.png";
 import {
   User,
   UserMinus,
@@ -13,7 +12,8 @@ import {
   Upload,
   Save,
 } from "lucide-react";
-import { Toast } from "./Toast"; // ✅ IMPORTAR
+import { Toast } from "./Toast";
+import { usuarioApi } from "../services/api";
 
 export interface UserProfile {
   id?: number;
@@ -22,15 +22,15 @@ export interface UserProfile {
   telefone?: string;
   areaAtuacao?: string;
   bio?: string;
-  avatarUrl?: string;
+  foto?: string;
   projetos?: string[];
   role?: string;
   cargo?: {
+    id?: number;
     nome: string;
   };
 }
 
-// ✅ ESTADO DO TOAST
 interface ToastState {
   message: string;
   type: 'success' | 'error' | 'warning';
@@ -39,41 +39,111 @@ interface ToastState {
 
 const TelaPerfil: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [avatar, setAvatar] = useState<string>(userAvatar);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [editable, setEditable] = useState(false);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isEmpresaDropdownOpen, setEmpresaDropdownOpen] = useState(false);
-
-  // ✅ ESTADO DO TOAST
-  const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
-
-  // ✅ FUNÇÃO PARA MOSTRAR TOAST
-  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
-    setToast({ message, type, show: true });
-  };
+  const [isUploading, setIsUploading] = useState(false);
+  const [toast, setToast] = useState<ToastState>({
+    message: '',
+    type: 'success',
+    show: false
+  });
 
   const options = ["Membro", "Admin", "Visitante"];
   const empresaOptions = ["Netiz", "Celi", "Apple"];
 
+  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+    setToast({ message, type, show: true });
+  };
+
+  // ✅ Carregar dados do BACKEND
   useEffect(() => {
-    const usuarioSalvo = localStorage.getItem("usuario");
-    if (usuarioSalvo) {
-      const dados: UserProfile = JSON.parse(usuarioSalvo);
-      setUser(dados);
-      if (dados.foto) {
-        setAvatar(dados.foto);
+    const loadUserData = async () => {
+      try {
+        console.log('Carregando dados do usuário...');
+        const userData = await usuarioApi.getMe();
+        console.log('Dados recebidos:', userData);
+
+        setUser(userData);
+
+        // Carregar foto se existir
+        if (userData.foto) {
+          setAvatar(userData.foto);
+        }
+
+        // Salvar também no localStorage como backup
+        localStorage.setItem("usuario", JSON.stringify(userData));
+      } catch (error: any) {
+        console.error('Erro ao carregar usuário do backend:', error);
+        showToast('Erro ao carregar dados do servidor', 'error');
+
+        // Fallback: tentar localStorage
+        const usuarioSalvo = localStorage.getItem("usuario");
+        if (usuarioSalvo) {
+          const dados: UserProfile = JSON.parse(usuarioSalvo);
+          setUser(dados);
+          if (dados.foto) {
+            setAvatar(dados.foto);
+          }
+        }
       }
-    }
+    };
+
+    loadUserData();
   }, []);
 
-  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
+  // ✅ Manipular mudança de avatar COM ENVIO PARA O BACKEND
+  const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const avatarURL = URL.createObjectURL(file);
-    setAvatar(avatarURL);
-    if (user) {
-      setUser({ ...user, avatarUrl: avatarURL });
-    }
+
+    setIsUploading(true);
+
+    // Ler arquivo como base64
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+
+      try {
+        console.log('Enviando foto para o backend...');
+
+        // ✅ ENVIAR PARA O BACKEND
+        const updatedUser = await usuarioApi.updateMyProfile({
+          nome: user?.nome,
+          foto: base64,
+        });
+
+        console.log('Resposta do backend:', updatedUser);
+
+        // ✅ Atualizar estado local
+        setAvatar(base64);
+        setUser(updatedUser);
+        localStorage.setItem("usuario", JSON.stringify(updatedUser));
+
+        setIsUploading(false);
+        showToast("Foto atualizada com sucesso!", "success");
+      } catch (error: any) {
+        console.error('Erro ao enviar foto:', error);
+        setIsUploading(false);
+        showToast("Erro ao atualizar foto no servidor", "error");
+
+        // Reverter
+        if (user?.foto) {
+          setAvatar(user.foto);
+        } else {
+          setAvatar(null);
+        }
+      }
+    };
+
+    reader.onerror = () => {
+      setIsUploading(false);
+      showToast("Erro ao ler arquivo", "error");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleChange = (field: keyof UserProfile, value: string) => {
@@ -82,11 +152,30 @@ const TelaPerfil: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
+  // ✅ Salvar alterações COM ENVIO PARA O BACKEND
+  const handleSave = async () => {
     if (!user) return;
-    localStorage.setItem("usuario", JSON.stringify(user));
-    setEditable(false);
-    showToast("Perfil atualizado com sucesso!", "success");
+
+    try {
+      console.log('Salvando perfil no backend...');
+
+      // ✅ ENVIAR PARA O BACKEND
+      const updatedUser = await usuarioApi.updateMyProfile({
+        nome: user.nome,
+        foto: user.foto,
+      });
+
+      console.log('Perfil atualizado:', updatedUser);
+
+      setUser(updatedUser);
+      localStorage.setItem("usuario", JSON.stringify(updatedUser));
+      setEditable(false);
+
+      showToast("Perfil atualizado com sucesso!", "success");
+    } catch (error: any) {
+      console.error('Erro ao salvar perfil:', error);
+      showToast("Erro ao salvar perfil no servidor", "error");
+    }
   };
 
   if (!user) {
@@ -95,7 +184,6 @@ const TelaPerfil: React.FC = () => {
 
   return (
     <>
-      {/* ✅ TOAST */}
       {toast.show && (
         <Toast
           message={toast.message}
@@ -130,14 +218,63 @@ const TelaPerfil: React.FC = () => {
 
               <div className="profile-main-content">
                 <div className="profile-header">
-                  <div className="profile-avatar">
-                    <img src={avatar || userAvatar} alt="avatar" />
+                  <div className="profile-avatar" style={{ position: 'relative' }}>
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt="avatar"
+                        style={{
+                          opacity: isUploading ? 0.5 : 1,
+                          transition: 'opacity 0.3s'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#e0e0e0',
+                        borderRadius: '50%',
+                      }}>
+                        <User size={48} color="#717680" />
+                      </div>
+                    )}
                     <span className="status-dot"></span>
+
+                    {isUploading && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 4px rgba(0,0,0,0.8)',
+                      }}>
+                        Enviando...
+                      </div>
+                    )}
                   </div>
+
                   {editable && (
-                    <label className="avatar-upload">
+                    <label
+                      className="avatar-upload"
+                      style={{
+                        cursor: isUploading ? 'not-allowed' : 'pointer',
+                        opacity: isUploading ? 0.5 : 1
+                      }}
+                    >
                       <Upload size={18} />
-                      <input type="file" accept="image/*" onChange={handleAvatarChange} hidden />
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleAvatarChange}
+                        disabled={isUploading}
+                        hidden
+                      />
                     </label>
                   )}
                 </div>
@@ -146,7 +283,7 @@ const TelaPerfil: React.FC = () => {
                   <label>Nome</label>
                   <input
                     type="text"
-                    value={user.nome}
+                    value={user.nome || ""}
                     onChange={(e) => handleChange("nome", e.target.value)}
                     readOnly={!editable}
                   />
@@ -156,17 +293,24 @@ const TelaPerfil: React.FC = () => {
                     <Mail size={20} color="#717680" />
                     <input
                       type="email"
-                      value={user.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
-                      readOnly={!editable}
+                      value={user.email || ""}
+                      readOnly
                     />
                   </div>
 
                   <label>Cargo</label>
-                  <input type="text" value={user.cargo?.nome || "—"} readOnly />
+                  <input
+                    type="text"
+                    value={user.cargo?.nome || "—"}
+                    readOnly
+                  />
 
                   <label>Role</label>
-                  <input type="text" value={user.role || "—"} readOnly />
+                  <input
+                    type="text"
+                    value={user.role || "—"}
+                    readOnly
+                  />
 
                   <label>Bio</label>
                   <textarea
@@ -182,11 +326,15 @@ const TelaPerfil: React.FC = () => {
               <div className="card">
                 <h3>Projetos Relacionados</h3>
                 <ul>
-                  {user.projetos?.map((proj) => (
-                    <li key={proj}>
-                      <Dot size={20} color="#717680" fill="#717680" /> {proj}
-                    </li>
-                  )) || <p>Nenhum projeto associado</p>}
+                  {user.projetos && user.projetos.length > 0 ? (
+                    user.projetos.map((proj, index) => (
+                      <li key={index}>
+                        <Dot size={20} color="#717680" fill="#717680" /> {proj}
+                      </li>
+                    ))
+                  ) : (
+                    <p>Nenhum projeto associado</p>
+                  )}
                 </ul>
                 <button
                   className="btn-link"
@@ -241,10 +389,16 @@ const TelaPerfil: React.FC = () => {
                 </div>
 
                 <div className="user-actions">
-                  <button className="btn-remove" onClick={() => showToast("Usuário removido!", "success")}>
+                  <button
+                    className="btn-remove"
+                    onClick={() => showToast("Usuário removido!", "success")}
+                  >
                     <UserMinus size={22} /> Retirar
                   </button>
-                  <button className="btn-invite" onClick={() => showToast("Convite enviado!", "success")}>
+                  <button
+                    className="btn-invite"
+                    onClick={() => showToast("Convite enviado!", "success")}
+                  >
                     <UserPlus size={22} /> Convidar
                   </button>
                 </div>
