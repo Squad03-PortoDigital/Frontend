@@ -6,7 +6,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import api from "../services/api";
 import logoFlap from "../images/Logo-azul-FLAP 1.png";
 import FiltroModal, { type FiltrosAtivos } from "./FiltroModal";
-import { Toast } from "./Toast"; 
+import { Toast } from "./Toast";
 
 export type StatusTarefa = string;
 
@@ -39,6 +39,7 @@ interface Lista {
   id: number;
   nome: string;
   posicao: number;
+  cor?: string;
 }
 
 interface ToastState {
@@ -91,7 +92,6 @@ export default function TelaKanbanBoard() {
     return "Boa noite";
   };
 
-  // Carregamento inicial: todas tarefas (para estatística), todas listas
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -117,12 +117,10 @@ export default function TelaKanbanBoard() {
 
         setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
 
-        // Carrega tarefas de cada board para exibição separada (por lista)
         if (Array.isArray(listasRes.data)) {
           const tarefasBoard: { [listaId: number]: TarefaDTO[] } = {};
           await Promise.all(listasRes.data.map(async (lista: Lista) => {
             try {
-              // Rota de busca correta para tarefas por lista
               const res = await api.get(`/tarefas/lista/${lista.id}`, headers);
               tarefasBoard[lista.id] = res.data;
             } catch (e) {
@@ -163,11 +161,9 @@ export default function TelaKanbanBoard() {
     isDeletable: true,
   }));
 
-  // Sempre recarrega tarefas da lista específica após alteração em board/tarefa
   const recarregarTarefasLista = async (listaId: number) => {
     try {
       const auth = localStorage.getItem("auth");
-      // Usa a rota correta para listar por lista
       const res = await api.get(`/tarefas/lista/${listaId}`, {
         headers: { Authorization: `Basic ${auth}` }, withCredentials: true,
       });
@@ -175,7 +171,6 @@ export default function TelaKanbanBoard() {
         ...prev,
         [listaId]: res.data,
       }));
-      
       const todasTarefasRes = await api.get("/tarefas", {
         headers: { Authorization: `Basic ${auth}` }, withCredentials: true,
       });
@@ -188,7 +183,7 @@ export default function TelaKanbanBoard() {
       const auth = localStorage.getItem("auth");
       const novoNome = "Novo board";
       const novaPosicao = listas.length + 1;
-      const res = await api.post("/listas", { nome: novoNome, posicao: novaPosicao, cor: "#ccc" }, { // Adicionando cor padrão para evitar null
+      const res = await api.post("/listas", { nome: novoNome, posicao: novaPosicao, cor: "#ccc" }, {
         headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         withCredentials: true,
       });
@@ -204,10 +199,8 @@ export default function TelaKanbanBoard() {
   const editarBoard = async (listaId: number, novoNome: string) => {
     try {
       const auth = localStorage.getItem("auth");
-      // Necessário enviar todos os campos obrigatórios do DTO de atualização
       const listaAtual = listas.find(l => l.id === listaId);
       if (!listaAtual) return;
-
       await api.put(`/listas/${listaId}`, { nome: novoNome, posicao: listaAtual.posicao, cor: listaAtual.cor }, {
         headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         withCredentials: true,
@@ -263,17 +256,16 @@ export default function TelaKanbanBoard() {
       return;
     }
 
-    // Enviamos apenas o essencial. Backend calcula status/posicao.
     const novaTarefa = {
       titulo: novoTitulo,
       empresaId: empresaSelecionada,
       listaId: listaSelecionada,
-      prioridade: "MEDIA", // Valor default para a prioridade
+      prioridade: "MEDIA",
     };
 
     try {
       const auth = localStorage.getItem("auth");
-      const res = await api.post<TarefaDTO>("/tarefas", novaTarefa, {
+      const res = await api.post("/tarefas", novaTarefa, {
         headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         withCredentials: true,
       });
@@ -287,58 +279,73 @@ export default function TelaKanbanBoard() {
     }
   };
 
-  // DnD: Após mover, recarrega só as duas listas envolvidas (origem e destino)
   const onDragEnd = async (result: any) => {
-    const { destination, source, draggableId } = result;
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-      
-    const tarefaId = Number(draggableId);
-    const novoListaId = Number(destination.droppableId.replace("CUSTOM_", ""));
+  const { destination, source, draggableId } = result;
+  if (!destination) return;
+  if (
+    destination.droppableId === source.droppableId &&
+    destination.index === source.index
+  )
+    return;
 
-    const tarefasDestino = (tarefasPorLista[novoListaId] || []).filter((tarefa) => {
-    // Filtra igual à renderização
-    const passaFiltroEmpresa =
-      filtrosAtivos.empresas.length === 0 ||
-      (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
-    const passaFiltroMembro =
-      filtrosAtivos.membros.length === 0 ||
-      (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
-    return passaFiltroEmpresa && passaFiltroMembro;
-    }).sort((a, b) => a.posicao - b.posicao);
+  const tarefaId = Number(draggableId);
+  const origId = Number(source.droppableId.replace("CUSTOM_", ""));
+  const destId = Number(destination.droppableId.replace("CUSTOM_", ""));
 
-    const anterior = tarefasDestino[destination.index - 1] || null;
-    const posterior = tarefasDestino[destination.index + 1] || null;
-    const posicaoVizinhoAnterior = anterior ? anterior.posicao : null;
-    const posicaoVizinhoPosterior = posterior ? posterior.posicao : null;
+  setTarefasPorLista((prev) => {
+    // Clone tarefas da lista origem e destino
+    const novaOrig = (prev[origId] || []).filter((t) => t.id !== tarefaId);
+    let novaDest = [...(prev[destId] || [])];
 
-    try {
-      const auth = localStorage.getItem("auth");
-      
-      await api.patch( 
-        `/tarefas/${tarefaId}/mover`, 
-        { 
-          posicaoVizinhoAnterior,
-          posicaoVizinhoPosterior,
-          novoListaId },
-        {
-          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
-      
-      showToast("Tarefa movida com sucesso!", "success");
-      await recarregarTarefasLista(novoListaId);
-      
-      // Recarrega a lista de origem
-      if (source.droppableId !== destination.droppableId) {
-        const origemId = Number(source.droppableId.replace("CUSTOM_", ""));
-        await recarregarTarefasLista(origemId);
-      }
-    } catch (error: any) {
-      showToast("Erro ao mover tarefa. Tente novamente.", "error");
+    // Procure a tarefa
+    const task = (prev[origId] || prev[destId] || []).find((t) => t.id === tarefaId);
+    if (!task) return prev;
+
+    // Clone da tarefa atualizando a listaId e posicao para dest.index
+    const taskClone = { ...task, listaId: destId, posicao: destination.index };
+
+    if (origId === destId) {
+      // Reordenação dentro da mesma lista
+      novaDest.splice(source.index, 1); // remove da posicao antiga
+      novaDest.splice(destination.index, 0, taskClone); // adiciona na nova posicao
+    } else {
+      // Mudança entre listas
+      novaDest.splice(destination.index, 0, taskClone);
     }
-  };
+
+    // Atualiza posicao de todas tarefas na lista destino para garantir ordem
+    novaDest = novaDest.map((t, i) => ({ ...t, posicao: i }));
+
+    // Atualiza posicao das tarefas da lista origem para garantir ordem
+    const novaOrigAtualizada = novaOrig.map((t, i) => ({ ...t, posicao: i }));
+
+    return { ...prev, [origId]: novaOrigAtualizada, [destId]: novaDest };
+  });
+
+  try {
+    const auth = localStorage.getItem("auth");
+    await api.patch(
+      `/tarefas/${tarefaId}/mover`,
+      {
+        novoListaId: destId,
+        novaPosicao: destination.index,
+      },
+      {
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        withCredentials: true,
+      }
+    );
+    showToast("Tarefa movida com sucesso!", "success");
+    await recarregarTarefasLista(destId);
+    if (origId !== destId) {
+      await recarregarTarefasLista(origId);
+    }
+  } catch (error: any) {
+    showToast("Erro ao mover tarefa. Tente novamente.", "error");
+  }
+};
+
+
 
   const abrirDetalhamento = (tarefa: TarefaDTO) => {
     navigate(`/detalhamento/${tarefa.id}`);
@@ -346,13 +353,20 @@ export default function TelaKanbanBoard() {
 
   if (loading) {
     return (
-      <div className="kanban-wrapper" style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+      <div
+        className="kanban-wrapper"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <p>Carregando tarefas...</p>
       </div>
     );
   }
 
-  // Estatísticas globais (com base no array global de tarefas, para manter tudo funcionando)
   const tarefasFiltradas = tarefas.filter((tarefa) => {
     if (filtrosAtivos.membros.length === 0 && filtrosAtivos.empresas.length === 0) {
       return true;
@@ -370,7 +384,7 @@ export default function TelaKanbanBoard() {
     (t) => t.dtEntrega && new Date(t.dtEntrega) < new Date()
   ).length;
   const tarefasPendentes = tarefasFiltradas.filter(
-    (t) => t.status !== `CUSTOM_CONCLUIDA` // Assume que a lista concluída tem este status/label
+    (t) => t.status !== `CUSTOM_CONCLUIDA`
   ).length;
 
   return (
@@ -382,6 +396,7 @@ export default function TelaKanbanBoard() {
           onClose={() => setToast({ ...toast, show: false })}
         />
       )}
+
       <div className="kanban-wrapper">
         <div className="kanban-top">
           <div className="kanban-card-top">
@@ -396,10 +411,7 @@ export default function TelaKanbanBoard() {
             <div className="welcome-content">
               <div className="welcome-text">
                 <h3>{getSaudacao()}, User!</h3>
-                <p>
-                  Você tem{" "}
-                  {tarefasPendentes} tarefas pendentes.
-                </p>
+                <p>Você tem {tarefasPendentes} tarefas pendentes.</p>
               </div>
               <img src={logoFlap} alt="FLAP Logo" className="flap-logo" />
             </div>
@@ -418,16 +430,13 @@ export default function TelaKanbanBoard() {
             </div>
           </div>
         </div>
+
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="kanban-columns">
             {boards.map((board) => (
               <Droppable droppableId={board.status} key={board.id}>
                 {(provided) => (
-                  <div
-                    className="kanban-column"
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                  >
+                  <div className="kanban-column" ref={provided.innerRef} {...provided.droppableProps}>
                     <div className="kanban-column-header">
                       {editingBoardId === board.id ? (
                         <input
@@ -436,9 +445,7 @@ export default function TelaKanbanBoard() {
                           onChange={(e) => {
                             const novoLabel = e.target.value;
                             setListas((prev) =>
-                              prev.map((l) =>
-                                l.id === board.id ? { ...l, nome: novoLabel } : l
-                              )
+                              prev.map((l) => (l.id === board.id ? { ...l, nome: novoLabel } : l))
                             );
                           }}
                           onBlur={() => {
@@ -450,9 +457,7 @@ export default function TelaKanbanBoard() {
                           autoFocus
                         />
                       ) : (
-                        <h4 onDoubleClick={() => setEditingBoardId(board.id)}>
-                          {board.label}
-                        </h4>
+                        <h4 onDoubleClick={() => setEditingBoardId(board.id)}>{board.label}</h4>
                       )}
                       <div className="column-header-actions">
                         <div
@@ -464,23 +469,16 @@ export default function TelaKanbanBoard() {
                         >
                           <Plus size={16} />
                         </div>
-                        <div
-                          className="column-icons delete-icon"
-                          onClick={() => deletarBoard(board.id, board.label)}
-                        >
+                        <div className="column-icons delete-icon" onClick={() => deletarBoard(board.id, board.label)}>
                           <Trash2 size={16} />
                         </div>
                       </div>
                     </div>
+
                     {statusSelecionado === board.status && (
                       <div
                         className="nova-tarefa"
-                        style={{
-                          padding: "12px",
-                          backgroundColor: "#f9f9f9",
-                          borderRadius: "8px",
-                          marginBottom: "10px",
-                        }}
+                        style={{ padding: "12px", backgroundColor: "#f9f9f9", borderRadius: "8px", marginBottom: "10px" }}
                       >
                         <input
                           type="text"
@@ -492,29 +490,14 @@ export default function TelaKanbanBoard() {
                               adicionarTarefa();
                             }
                           }}
-                          style={{
-                            width: "100%",
-                            padding: "10px",
-                            marginBottom: "8px",
-                            borderRadius: "6px",
-                            border: "1px solid #ddd",
-                            fontSize: "0.95rem",
-                          }}
+                          style={{ width: "100%", padding: "10px", marginBottom: "8px", borderRadius: "6px", border: "1px solid #ddd", fontSize: "0.95rem" }}
                         />
+
                         {empresas.length > 0 ? (
                           <select
                             value={empresaSelecionada || ""}
                             onChange={(e) => setEmpresaSelecionada(Number(e.target.value))}
-                            style={{
-                              width: "100%",
-                              padding: "10px",
-                              marginBottom: "8px",
-                              borderRadius: "6px",
-                              border: "1px solid #ddd",
-                              fontSize: "0.95rem",
-                              backgroundColor: "white",
-                              cursor: "pointer",
-                            }}
+                            style={{ width: "100%", padding: "10px", marginBottom: "8px", borderRadius: "6px", border: "1px solid #ddd", fontSize: "0.95rem", backgroundColor: "white", cursor: "pointer" }}
                           >
                             <option value="" disabled>
                               Selecione uma empresa *
@@ -540,6 +523,7 @@ export default function TelaKanbanBoard() {
                             ⚠️ Nenhuma empresa cadastrada.
                           </div>
                         )}
+
                         <div style={{ display: "flex", gap: "8px" }}>
                           <button
                             className="new-board-btn"
@@ -573,28 +557,16 @@ export default function TelaKanbanBoard() {
                         </div>
                       </div>
                     )}
-                    {/* FILTRAGEM E RENDERIZAÇÃO AQUI */}
+
                     {(tarefasPorLista[board.id] || [])
                       .filter((tarefa) => {
-                            // 1. Filtra por Membros
-                            const passaFiltroMembro =
-                                filtrosAtivos.membros.length === 0 ||
-                                (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
-                            
-                            // 2. Filtra por Empresas
-                            const passaFiltroEmpresa =
-                                filtrosAtivos.empresas.length === 0 ||
-                                (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
-                            
-                            return passaFiltroMembro && passaFiltroEmpresa;
-                        })
+                        const passaFiltroMembro = filtrosAtivos.membros.length === 0 || (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
+                        const passaFiltroEmpresa = filtrosAtivos.empresas.length === 0 || (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
+                        return passaFiltroMembro && passaFiltroEmpresa;
+                      })
                       .sort((a, b) => a.posicao - b.posicao)
                       .map((tarefa, index) => (
-                        <Draggable
-                          draggableId={tarefa.id.toString()}
-                          index={index}
-                          key={tarefa.id}
-                        >
+                        <Draggable draggableId={tarefa.id.toString()} index={index} key={tarefa.id}>
                           {(provided) => (
                             <div
                               className="kanban-card"
@@ -605,28 +577,16 @@ export default function TelaKanbanBoard() {
                             >
                               <div className="kanban-dots">
                                 {[...Array(3)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`dot ${prioridadeCores[tarefa.prioridade]}`}
-                                  ></div>
+                                  <div key={i} className={`dot ${prioridadeCores[tarefa.prioridade]}`}></div>
                                 ))}
                               </div>
                               <div className="kanban-text">{tarefa.titulo}</div>
                               <div className="kanban-tags">
-                                {tarefa.tags &&
-                                  tarefa.tags.map((tag) => (
-                                    <span className="tag" key={tag}>
-                                      {tag}
-                                    </span>
-                                  ))}
+                                {tarefa.tags && tarefa.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
                               </div>
                               <div className="kanban-footer">
                                 <span>{tarefa.empresa}</span>
-                                <span>
-                                  {tarefa.dtEntrega
-                                    ? new Date(tarefa.dtEntrega).toLocaleDateString("pt-BR")
-                                    : "Sem prazo"}
-                                </span>
+                                <span>{tarefa.dtEntrega ? new Date(tarefa.dtEntrega).toLocaleDateString("pt-BR") : "Sem prazo"}</span>
                               </div>
                             </div>
                           )}
@@ -639,14 +599,7 @@ export default function TelaKanbanBoard() {
             ))}
           </div>
         </DragDropContext>
-        <FiltroModal
-          isOpen={filtroAberto}
-          onClose={() => setFiltroAberto(false)}
-          membros={membros}
-          empresas={empresas}
-          onAplicar={aplicarFiltros}
-          filtrosAtuais={filtrosAtivos}
-        />
+        <FiltroModal isOpen={filtroAberto} onClose={() => setFiltroAberto(false)} membros={membros} empresas={empresas} onAplicar={aplicarFiltros} filtrosAtuais={filtrosAtivos} />
       </div>
     </>
   );
