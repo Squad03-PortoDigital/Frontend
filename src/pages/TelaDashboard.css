@@ -1,0 +1,513 @@
+.dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  background: #f8f9fb;
+  min-height: 100vh;
+  position: relative; /* ✅ PARA O HAMBURGER FUNCIONAR */
+}
+
+.hamburger-btn {
+  position: fixed;
+  top: 24px;
+  left: 234px;
+  width: 48px;
+  height: 48px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 1001; /* ✅ MAIOR QUE O MENU (z-index: 999) */
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+
+.hamburger-btn:hover {
+  border-color: #1E52A5;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.3);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+/* ==== TOPO ==== */
+.dashboard-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dashboard-card-top {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.dashboard-card-top:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.card-top-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-top-header h3 {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  margin: 0;
+}
+
+.dashboard-number {
+  font-size: 48px;
+  font-weight: bold;
+  color: #1E52A5;
+  margin: 8px 0;
+}
+
+.dashboard-card-top p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Card de boas-vindas */
+.dashboard-card-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.welcome-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.welcome-text h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+  margin: 0 0 8px 0;
+}
+
+.welcome-text p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.flap-logo {
+  width: 80px;
+  height: auto;
+  object-fit: contain;
+}
+
+.dashboard-stats {
+  display: flex;
+  gap: 20px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* ==== GRID DE MÉTRICAS ==== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.dashboard-card-wide {
+  grid-column: 1 / -1;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* ==== LISTA DE PRIORIDADES ==== */
+.priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.priority-item {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+}
+
+.priority-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.priority-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.priority-bar {
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.priority-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+  border-radius: 10px;
+}
+
+.priority-fill.green { background: #36B37E; }
+.priority-fill.yellow { background: #FFAB00; }
+.priority-fill.orange { background: #fd7e14; }
+.priority-fill.red { background: #FF5630; }
+
+.priority-count {
+  font-size: 16px;
+  font-weight: bold;
+  color: #1E52A5;
+  text-align: right;
+}
+
+/* ==== LISTA DE EMPRESAS ==== */
+.empresa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empresa-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fb;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.empresa-item:hover {
+  background: linear-gradient(135deg, #E8F0FC 0%, #D1E3F8 100%);
+  transform: translateX(4px);
+}
+
+.empresa-rank {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1E52A5 0%, #134189 100%);
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.empresa-info {
+  flex: 1;
+}
+
+.empresa-nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.empresa-stats {
+  font-size: 12px;
+  color: #666;
+}
+
+.empresa-badge {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 2px solid #1E52A5;
+  color: #1E52A5;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* ==== LISTA DE MEMBROS ==== */
+.membro-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.membro-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.membro-avatar {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1E52A5 0%, #134189 100%);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.membro-info {
+  flex: 1;
+}
+
+.membro-nome {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.membro-progress {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.membro-progress-bar {
+  height: 100%;
+  background: linear-gradient(135deg, #36B37E 0%, #2a9766 100%);
+  transition: width 0.5s ease;
+}
+
+.membro-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ==== GRID DE LISTAS ==== */
+.lista-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.lista-item {
+  padding: 16px;
+  background: linear-gradient(135deg, #E8F0FC 0%, #D1E3F8 100%);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.lista-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.3);
+}
+
+.lista-nome {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.lista-count {
+  font-size: 28px;
+  font-weight: bold;
+  color: #1E52A5;
+}
+
+/* ==== TAREFAS PRÓXIMAS ==== */
+.proximas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.proxima-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.proxima-item:hover {
+  border-color: #1E52A5;
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.2);
+  transform: translateY(-2px);
+}
+
+.proxima-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot.green { background: #36B37E; }
+.dot.yellow { background: #FFAB00; }
+.dot.orange { background: #fd7e14; }
+.dot.red { background: #FF5630; }
+
+.proxima-info {
+  flex: 1;
+}
+
+.proxima-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.proxima-empresa {
+  font-size: 12px;
+  color: #666;
+}
+
+.proxima-data {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E52A5;
+  padding: 6px 12px;
+  background: #E8F0FC;
+  border-radius: 6px;
+}
+
+/* ==== ESTADO VAZIO ==== */
+.empty-state {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  padding: 40px 20px;
+}
+
+/* ==== RESPONSIVIDADE ==== */
+@media (max-width: 1024px) {
+  .dashboard-top {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  /* ✅ AJUSTES PARA MOBILE */
+  .dashboard-wrapper {
+    padding-left: 24px; /* Remove espaço do menu */
+  }
+
+  .hamburger-btn {
+    display: flex; /* Mostra o hamburger */
+    left: 24px; /* Reposiciona no canto */
+  }
+
+  .dashboard-top {
+    grid-template-columns: 1fr;
+    margin-top: 60px; /* Espaço para o hamburger */
+  }
+
+  .lista-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flap-logo {
+    width: 60px;
+  }
+
+  .priority-item {
+    grid-template-columns: 100px 1fr 40px;
+    gap: 8px;
+  }
+
+  .proxima-item {
+    flex-wrap: wrap;
+  }
+
+  .proxima-data {
+    width: 100%;
+    text-align: center;
+  }
+}

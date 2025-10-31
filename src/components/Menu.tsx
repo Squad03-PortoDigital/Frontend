@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"; 
-import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users, User } from "lucide-react";
+import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users, User, X } from "lucide-react"; // ✅ ADICIONAR X
 import { useState, useEffect } from "react";
 import "../styles/menu.css";
 
@@ -22,6 +22,7 @@ export default function Menu({ user: userProp }: MenuProps) {
   const location = useLocation();
   const currentPath = location.pathname;
   const [user, setUser] = useState<UserProfile | null>(userProp || null);
+  const [isOpen, setIsOpen] = useState(true); // ✅ ADICIONAR ESTADO
 
   // ✅ Função para carregar usuário do localStorage
   const loadUser = () => {
@@ -43,17 +44,33 @@ export default function Menu({ user: userProp }: MenuProps) {
   useEffect(() => {
     window.addEventListener('user-updated', loadUser);
 
-    // Cleanup: remove o listener quando o componente desmontar
     return () => {
       window.removeEventListener('user-updated', loadUser);
     };
-  }, []); // Array vazio = só adiciona/remove uma vez
+  }, []);
+
+  // ✅ ADICIONAR LISTENER PARA O TOGGLE DO HAMBURGER
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsOpen(prev => !prev);
+    };
+
+    window.addEventListener('toggle-menu', handleToggle);
+
+    return () => {
+      window.removeEventListener('toggle-menu', handleToggle);
+    };
+  }, []);
 
   const isActive = (path: string) => currentPath === path ? 'active' : '';
 
   return (
-    <aside className="menu-container">
+    <aside className={`menu-container ${isOpen ? 'menu-open' : 'menu-closed'}`}> {/* ✅ ADICIONAR CLASSE DINÂMICA */}
       <div className="menu">
+        {/* ✅ ADICIONAR BOTÃO DE FECHAR NO MOBILE */}
+        <button className="menu-close-btn" onClick={() => setIsOpen(false)}>
+          <X size={24} color="#717680" />
+        </button>
 
         <Link to="/perfil" className="menu-perfil-item">
           <div className="menu-perfil-imagem">
@@ -97,22 +114,23 @@ export default function Menu({ user: userProp }: MenuProps) {
 
         <div className="menu-section">
           <h2 className="menu-item-titulo">Informações:</h2>
-          <div className="menu-item">
+          <Link to="/calendario" className={`menu-item ${isActive('/calendario')}`}>
             <Calendar size={22} />
             <div className="menu-item-nome">Calendário</div>
-          </div>
+          </Link>
           <div className="menu-item">
             <Bell size={22} />
             <div className="menu-item-nome">Notificações</div>
           </div>
         </div>
 
+
         <div className="menu-section">
           <h2 className="menu-item-titulo">Gestor:</h2>
-          <div className="menu-item">
+          <Link to="/dashboard" className={`menu-item ${isActive('/dashboard')}`}>
             <ChartPie size={22} />
             <div className="menu-item-nome">Dashboard</div>
-          </div>
+          </Link>
           <div className="menu-item">
             <Users size={22} />
             <div className="menu-item-nome">Equipe</div>

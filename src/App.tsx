@@ -10,6 +10,8 @@ import TelaAjustes from "./pages/TelaAjustes";
 import EmpresaDetalhes from "./pages/TelaEmpresaDetalhes";
 import KanbanBoard from "./pages/TelaKanbanBoard";
 import TelaDetalhamento from "./pages/TelaDetalhamento";
+import TelaDashboard from "./pages/TelaDashboard";
+import TelaCalendario from "./pages/TelaCalendario";
 import "./App.css";
 
 // Tipo para o usuário
@@ -80,6 +82,34 @@ export default function App() {
             <Menu user={usuario} />
             <main className="app-content">
               <TelaPerfil />
+            </main>
+          </div>
+        }
+      />
+
+      {/* ✅ Tela de dashboard - CORRIGIDA COM MENU E HEADER */}
+      <Route
+        path="/dashboard"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={usuario} />
+            <main className="app-content">
+              <TelaDashboard />
+            </main>
+          </div>
+        }
+      />
+
+      {/* Tela de calendário */}
+      <Route
+        path="/calendario"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={usuario} />
+            <main className="app-content">
+              <TelaCalendario />
             </main>
           </div>
         }

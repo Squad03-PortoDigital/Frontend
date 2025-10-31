@@ -48,6 +48,18 @@ interface ToastState {
   show: boolean;
 }
 
+// ✅ ADICIONAR INTERFACE DO USUÁRIO
+interface Usuario {
+  id?: number;
+  nome: string;
+  email: string;
+  foto?: string;
+  role?: string;
+  cargo?: {
+    nome: string;
+  };
+}
+
 const prioridadeCores: { [key: string]: string } = {
   BAIXA: "green",
   MEDIA: "yellow",
@@ -73,6 +85,7 @@ export default function TelaKanbanBoard() {
     empresas: [],
   });
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
+  const [usuario, setUsuario] = useState<Usuario | null>(null); // ✅ ESTADO DO USUÁRIO
   const navigate = useNavigate();
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
@@ -92,12 +105,23 @@ export default function TelaKanbanBoard() {
     return "Boa noite";
   };
 
+  // ✅ FUNÇÃO PARA PEGAR PRIMEIRO NOME
+  const getPrimeiroNome = (nomeCompleto: string) => {
+    return nomeCompleto.split(' ')[0];
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       try {
         setLoading(true);
         const auth = localStorage.getItem("auth");
         const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
+
+        // ✅ CARREGAR DADOS DO USUÁRIO DO LOCALSTORAGE
+        const usuarioSalvo = localStorage.getItem("usuario");
+        if (usuarioSalvo) {
+          setUsuario(JSON.parse(usuarioSalvo));
+        }
 
         const [tarefasRes, empresasRes, listasRes, membrosRes] = await Promise.all([
           api.get("/tarefas", headers),
@@ -279,11 +303,9 @@ export default function TelaKanbanBoard() {
     }
   };
 
-  // ✅ FUNÇÃO DE DRAG AND DROP CORRIGIDA
   const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
 
-    // Se não há destino ou não houve mudança, ignore
     if (!destination) return;
     if (
       destination.droppableId === source.droppableId &&
@@ -294,28 +316,22 @@ export default function TelaKanbanBoard() {
     const sourceListId = Number(source.droppableId.replace("CUSTOM_", ""));
     const destListId = Number(destination.droppableId.replace("CUSTOM_", ""));
 
-    // ✅ BACKUP do estado anterior para rollback em caso de erro
     const backupTarefasPorLista = { ...tarefasPorLista };
 
-    // ✅ ATUALIZAÇÃO OTIMISTA IMEDIATA (sem recarregar)
     setTarefasPorLista((prev) => {
       const sourceTasks = Array.from(prev[sourceListId] || []);
       const destTasks = sourceListId === destListId
         ? sourceTasks
         : Array.from(prev[destListId] || []);
 
-      // Encontrar a tarefa que está sendo movida
       const [movedTask] = sourceTasks.splice(source.index, 1);
 
       if (!movedTask) return prev;
 
-      // Atualizar a listaId da tarefa movida
       movedTask.listaId = destListId;
 
-      // Inserir na posição de destino
       destTasks.splice(destination.index, 0, movedTask);
 
-      // Recalcular as posições baseado no índice do array
       const updatedSourceTasks = sourceTasks.map((task, idx) => ({
         ...task,
         posicao: idx
@@ -326,7 +342,6 @@ export default function TelaKanbanBoard() {
         posicao: idx
       }));
 
-      // Se for a mesma lista, só atualize uma vez
       if (sourceListId === destListId) {
         return {
           ...prev,
@@ -334,7 +349,6 @@ export default function TelaKanbanBoard() {
         };
       }
 
-      // Se forem listas diferentes, atualize ambas
       return {
         ...prev,
         [sourceListId]: updatedSourceTasks,
@@ -342,7 +356,6 @@ export default function TelaKanbanBoard() {
       };
     });
 
-    // ✅ ENVIAR PARA O BACKEND (assíncrono, sem bloquear UI)
     try {
       const auth = localStorage.getItem("auth");
       await api.patch(
@@ -360,7 +373,6 @@ export default function TelaKanbanBoard() {
         }
       );
     } catch (error: any) {
-      // ✅ EM CASO DE ERRO: Rollback para o estado anterior
       console.error("Erro ao mover tarefa:", error);
       setTarefasPorLista(backupTarefasPorLista);
       showToast("Erro ao mover tarefa. Tente novamente.", "error");
@@ -430,7 +442,8 @@ export default function TelaKanbanBoard() {
           <div className="kanban-card-top kanban-card-welcome">
             <div className="welcome-content">
               <div className="welcome-text">
-                <h3>{getSaudacao()}, User!</h3>
+                {/* ✅ MOSTRAR NOME DO USUÁRIO */}
+                <h3>{getSaudacao()}, {usuario ? getPrimeiroNome(usuario.nome) : 'User'}!</h3>
                 <p>Você tem {tarefasPendentes} tarefas pendentes.</p>
               </div>
               <img src={logoFlap} alt="FLAP Logo" className="flap-logo" />
@@ -600,7 +613,6 @@ export default function TelaKanbanBoard() {
                               onClick={() => abrirDetalhamento(tarefa)}
                               style={{
                                 ...provided.draggableProps.style,
-                                // ✅ Previne animação de flickering
                                 opacity: snapshot.isDragging ? 0.8 : 1,
                               }}
                             >

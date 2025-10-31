@@ -2,22 +2,29 @@
     width: 210px; 
     background-color: #fff;
     border-right: 2px solid rgba(222, 226, 230, 0.5);
-    height: 100vh;
+    height: calc(100vh - 60px); /* ✅ ALTURA MENOS A ALTURA DO HEADER */
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     position: fixed;
-    top: 0;
+    top: 60px; /* ✅ COMEÇA ABAIXO DO HEADER (ajuste conforme altura do seu header) */
     left: 0;
     overflow-y: auto;
-    scrollbar-width: none; 
+    scrollbar-width: none;
+    transition: transform 0.3s ease;
+    z-index: 50;
+    transform: translateX(0);
 }
 
 .menu {
-    width: 170px; 
-    height: 88vh;
-    margin-top: 6vh;
+    width: 170px;
+    height: 100%; /* ✅ USAR 100% AO INVÉS DE 88vh */
+    padding: 24px 0; /* ✅ PADDING INTERNO */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
 }
 
 .menu-perfil {
@@ -25,7 +32,7 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 15px; 
+    gap: 15px;
     border-top: 2px solid rgba(222, 226, 230, 0.5);
     border-bottom: 2px solid rgba(222, 226, 230, 0.5);
 }
@@ -34,14 +41,15 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 12px; 
+    gap: 12px;
     width: 100%;
     border-radius: 8px;
     padding: 6px;
     color: #929191;
-    font-size: 14px; 
+    font-size: 14px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
+    text-decoration: none;
 }
 
 .menu-perfil-item:hover {
@@ -50,10 +58,10 @@
 }
 
 .menu-perfil-imagem {
-    width: 40px;             /* tamanho do círculo */
+    width: 40px;
     height: 40px;
-    border-radius: 50%;      /* deixa redondo */
-    overflow: hidden;         /* corta excesso da imagem */
+    border-radius: 50%;
+    overflow: hidden;
     background-color: #ced4da;
     display: flex;
     align-items: center;
@@ -63,9 +71,16 @@
 .menu-perfil-imagem img {
     width: 100%;
     height: 100%;
-    object-fit: cover;       /* preenche o círculo sem deformar */
+    object-fit: cover;
     display: block;
 }
+
+.menu-perfil-nome {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
 .menu-section {
     padding: 12px 0px;
     display: flex;
@@ -75,25 +90,27 @@
 }
 
 .menu-final {
-    height: 4vh;
+    padding: 16px 0;
     display: flex;
-    align-items: end;
+    align-items: center;
     justify-content: center;
     font-size: 11px;
     color: #49505779;
+    text-align: center;
 }
 
 .menu-item {
     font-size: 14px;
     width: 100%;
     border-radius: 8px;
-    padding: 8px; 
+    padding: 8px;
     color: #929191;
     display: flex;
     align-items: center;
-    gap: 12px; 
+    gap: 12px;
     cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
+    text-decoration: none;
 }
 
 .menu-item:hover {
@@ -101,10 +118,95 @@
     color: rgb(0, 49, 122);
 }
 
+.menu-item.active {
+    background-color: rgba(1, 60, 196, 0.15);
+    color: rgb(0, 49, 122);
+    font-weight: 600;
+}
+
 .menu-item-titulo {
-    font-size: 14px; 
+    font-size: 14px;
     font-weight: 600;
     margin-bottom: 6px;
     color: #676767;
-    text-transform: uppercase; 
+    text-transform: uppercase;
+}
+
+.menu-item-nome {
+    flex: 1;
+}
+
+/* ==== BOTÃO DE FECHAR NO MENU (X) ==== */
+.menu-close-btn {
+    display: none;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.menu-close-btn:hover {
+    background: #f0f0f0;
+    border-radius: 8px;
+}
+
+/* ==== ESTADOS DO MENU (DESKTOP - SEMPRE VISÍVEL) ==== */
+.menu-container.menu-open {
+    transform: translateX(0);
+    visibility: visible;
+    opacity: 1;
+}
+
+.menu-container.menu-closed {
+    transform: translateX(0);
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ==== RESPONSIVIDADE DO MENU ==== */
+@media (max-width: 768px) {
+    .menu-container {
+        height: 100vh; /* ✅ NO MOBILE, OCUPA TELA TODA */
+        top: 0; /* ✅ NO MOBILE, COMEÇA DO TOPO */
+        z-index: 999;
+        transform: translateX(-100%);
+    }
+
+    .menu-container.menu-open {
+        transform: translateX(0);
+        box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+    }
+
+    .menu-container.menu-closed {
+        transform: translateX(-100%);
+    }
+
+    .menu-close-btn {
+        display: flex;
+    }
+
+    /* Overlay escuro quando menu aberto */
+    .menu-container.menu-open::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 210px;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+}
+
+/* ==== ESCONDER SCROLLBAR ==== */
+.menu-container::-webkit-scrollbar {
+    display: none;
 }
