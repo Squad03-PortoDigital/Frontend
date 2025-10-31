@@ -279,73 +279,93 @@ export default function TelaKanbanBoard() {
     }
   };
 
+  // ✅ FUNÇÃO DE DRAG AND DROP CORRIGIDA
   const onDragEnd = async (result: any) => {
-  const { destination, source, draggableId } = result;
-  if (!destination) return;
-  if (
-    destination.droppableId === source.droppableId &&
-    destination.index === source.index
-  )
-    return;
+    const { destination, source, draggableId } = result;
 
-  const tarefaId = Number(draggableId);
-  const origId = Number(source.droppableId.replace("CUSTOM_", ""));
-  const destId = Number(destination.droppableId.replace("CUSTOM_", ""));
+    // Se não há destino ou não houve mudança, ignore
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) return;
 
-  setTarefasPorLista((prev) => {
-    // Clone tarefas da lista origem e destino
-    const novaOrig = (prev[origId] || []).filter((t) => t.id !== tarefaId);
-    let novaDest = [...(prev[destId] || [])];
+    const tarefaId = Number(draggableId);
+    const sourceListId = Number(source.droppableId.replace("CUSTOM_", ""));
+    const destListId = Number(destination.droppableId.replace("CUSTOM_", ""));
 
-    // Procure a tarefa
-    const task = (prev[origId] || prev[destId] || []).find((t) => t.id === tarefaId);
-    if (!task) return prev;
+    // ✅ BACKUP do estado anterior para rollback em caso de erro
+    const backupTarefasPorLista = { ...tarefasPorLista };
 
-    // Clone da tarefa atualizando a listaId e posicao para dest.index
-    const taskClone = { ...task, listaId: destId, posicao: destination.index };
+    // ✅ ATUALIZAÇÃO OTIMISTA IMEDIATA (sem recarregar)
+    setTarefasPorLista((prev) => {
+      const sourceTasks = Array.from(prev[sourceListId] || []);
+      const destTasks = sourceListId === destListId
+        ? sourceTasks
+        : Array.from(prev[destListId] || []);
 
-    if (origId === destId) {
-      // Reordenação dentro da mesma lista
-      novaDest.splice(source.index, 1); // remove da posicao antiga
-      novaDest.splice(destination.index, 0, taskClone); // adiciona na nova posicao
-    } else {
-      // Mudança entre listas
-      novaDest.splice(destination.index, 0, taskClone);
-    }
+      // Encontrar a tarefa que está sendo movida
+      const [movedTask] = sourceTasks.splice(source.index, 1);
 
-    // Atualiza posicao de todas tarefas na lista destino para garantir ordem
-    novaDest = novaDest.map((t, i) => ({ ...t, posicao: i }));
+      if (!movedTask) return prev;
 
-    // Atualiza posicao das tarefas da lista origem para garantir ordem
-    const novaOrigAtualizada = novaOrig.map((t, i) => ({ ...t, posicao: i }));
+      // Atualizar a listaId da tarefa movida
+      movedTask.listaId = destListId;
 
-    return { ...prev, [origId]: novaOrigAtualizada, [destId]: novaDest };
-  });
+      // Inserir na posição de destino
+      destTasks.splice(destination.index, 0, movedTask);
 
-  try {
-    const auth = localStorage.getItem("auth");
-    await api.patch(
-      `/tarefas/${tarefaId}/mover`,
-      {
-        novoListaId: destId,
-        novaPosicao: destination.index,
-      },
-      {
-        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-        withCredentials: true,
+      // Recalcular as posições baseado no índice do array
+      const updatedSourceTasks = sourceTasks.map((task, idx) => ({
+        ...task,
+        posicao: idx
+      }));
+
+      const updatedDestTasks = destTasks.map((task, idx) => ({
+        ...task,
+        posicao: idx
+      }));
+
+      // Se for a mesma lista, só atualize uma vez
+      if (sourceListId === destListId) {
+        return {
+          ...prev,
+          [destListId]: updatedDestTasks
+        };
       }
-    );
-    showToast("Tarefa movida com sucesso!", "success");
-    await recarregarTarefasLista(destId);
-    if (origId !== destId) {
-      await recarregarTarefasLista(origId);
+
+      // Se forem listas diferentes, atualize ambas
+      return {
+        ...prev,
+        [sourceListId]: updatedSourceTasks,
+        [destListId]: updatedDestTasks
+      };
+    });
+
+    // ✅ ENVIAR PARA O BACKEND (assíncrono, sem bloquear UI)
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.patch(
+        `/tarefas/${tarefaId}/mover`,
+        {
+          novoListaId: destListId,
+          novaPosicao: destination.index,
+        },
+        {
+          headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/json"
+          },
+          withCredentials: true,
+        }
+      );
+    } catch (error: any) {
+      // ✅ EM CASO DE ERRO: Rollback para o estado anterior
+      console.error("Erro ao mover tarefa:", error);
+      setTarefasPorLista(backupTarefasPorLista);
+      showToast("Erro ao mover tarefa. Tente novamente.", "error");
     }
-  } catch (error: any) {
-    showToast("Erro ao mover tarefa. Tente novamente.", "error");
-  }
-};
-
-
+  };
 
   const abrirDetalhamento = (tarefa: TarefaDTO) => {
     navigate(`/detalhamento/${tarefa.id}`);
@@ -566,14 +586,23 @@ export default function TelaKanbanBoard() {
                       })
                       .sort((a, b) => a.posicao - b.posicao)
                       .map((tarefa, index) => (
-                        <Draggable draggableId={tarefa.id.toString()} index={index} key={tarefa.id}>
-                          {(provided) => (
+                        <Draggable
+                          draggableId={tarefa.id.toString()}
+                          index={index}
+                          key={tarefa.id}
+                        >
+                          {(provided, snapshot) => (
                             <div
                               className="kanban-card"
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               onClick={() => abrirDetalhamento(tarefa)}
+                              style={{
+                                ...provided.draggableProps.style,
+                                // ✅ Previne animação de flickering
+                                opacity: snapshot.isDragging ? 0.8 : 1,
+                              }}
                             >
                               <div className="kanban-dots">
                                 {[...Array(3)].map((_, i) => (

@@ -11,9 +11,11 @@ import {
   Dot,
   Upload,
   Save,
+  Loader2, // ✅ Importar ícone de loading
 } from "lucide-react";
 import { Toast } from "./Toast";
 import { usuarioApi } from "../services/api";
+import { dispatchUserUpdate } from "../utils/userEvents";
 
 export interface UserProfile {
   id?: number;
@@ -44,6 +46,7 @@ const TelaPerfil: React.FC = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isEmpresaDropdownOpen, setEmpresaDropdownOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // ✅ Estado para loading do botão salvar
   const [toast, setToast] = useState<ToastState>({
     message: '',
     type: 'success',
@@ -122,6 +125,9 @@ const TelaPerfil: React.FC = () => {
         setUser(updatedUser);
         localStorage.setItem("usuario", JSON.stringify(updatedUser));
 
+        // ✅ DISPARAR EVENTO PARA ATUALIZAR MENU
+        dispatchUserUpdate();
+
         setIsUploading(false);
         showToast("Foto atualizada com sucesso!", "success");
       } catch (error: any) {
@@ -152,9 +158,11 @@ const TelaPerfil: React.FC = () => {
     }
   };
 
-  // ✅ Salvar alterações COM ENVIO PARA O BACKEND
+  // ✅ Salvar alterações COM ENVIO PARA O BACKEND E LOADING
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || isSaving) return; // ✅ Previne múltiplos cliques
+
+    setIsSaving(true); // ✅ Ativa o loading
 
     try {
       console.log('Salvando perfil no backend...');
@@ -169,12 +177,18 @@ const TelaPerfil: React.FC = () => {
 
       setUser(updatedUser);
       localStorage.setItem("usuario", JSON.stringify(updatedUser));
+
+      // ✅ DISPARAR EVENTO PARA ATUALIZAR MENU
+      dispatchUserUpdate();
+
       setEditable(false);
 
       showToast("Perfil atualizado com sucesso!", "success");
     } catch (error: any) {
       console.error('Erro ao salvar perfil:', error);
       showToast("Erro ao salvar perfil no servidor", "error");
+    } finally {
+      setIsSaving(false); // ✅ Desativa o loading sempre
     }
   };
 
@@ -200,12 +214,28 @@ const TelaPerfil: React.FC = () => {
               <h2 className="edit-title">
                 Informações{" "}
                 {editable ? (
-                  <Save
-                    size={24}
-                    color="#1E1E1E"
-                    style={{ opacity: 0.5, cursor: "pointer" }}
-                    onClick={handleSave}
-                  />
+                  // ✅ Botão Save com loading
+                  isSaving ? (
+                    <Loader2
+                      size={24}
+                      color="#1E1E1E"
+                      style={{
+                        opacity: 0.5,
+                        cursor: 'not-allowed',
+                        animation: 'spin 1s linear infinite'
+                      }}
+                    />
+                  ) : (
+                    <Save
+                      size={24}
+                      color="#1E1E1E"
+                      style={{
+                        opacity: 0.5,
+                        cursor: 'pointer'
+                      }}
+                      onClick={handleSave}
+                    />
+                  )
                 ) : (
                   <PenLine
                     size={24}
@@ -285,7 +315,7 @@ const TelaPerfil: React.FC = () => {
                     type="text"
                     value={user.nome || ""}
                     onChange={(e) => handleChange("nome", e.target.value)}
-                    readOnly={!editable}
+                    readOnly={!editable || isSaving} // ✅ Desabilita durante salvamento
                   />
 
                   <label>Email</label>
@@ -316,7 +346,7 @@ const TelaPerfil: React.FC = () => {
                   <textarea
                     value={user.bio || ""}
                     onChange={(e) => handleChange("bio", e.target.value)}
-                    readOnly={!editable}
+                    readOnly={!editable || isSaving} // ✅ Desabilita durante salvamento
                   />
                 </form>
               </div>

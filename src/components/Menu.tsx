@@ -15,7 +15,7 @@ interface UserProfile {
 }
 
 interface MenuProps {
-  user?: UserProfile; // Opcional, caso queira passar de fora
+  user?: UserProfile;
 }
 
 export default function Menu({ user: userProp }: MenuProps) {
@@ -23,16 +23,31 @@ export default function Menu({ user: userProp }: MenuProps) {
   const currentPath = location.pathname;
   const [user, setUser] = useState<UserProfile | null>(userProp || null);
 
-  // ✅ Carregar usuário do localStorage se não vier por props
+  // ✅ Função para carregar usuário do localStorage
+  const loadUser = () => {
+    const usuarioSalvo = localStorage.getItem("usuario");
+    if (usuarioSalvo) {
+      const dados: UserProfile = JSON.parse(usuarioSalvo);
+      setUser(dados);
+    }
+  };
+
+  // ✅ Carrega usuário inicial
   useEffect(() => {
     if (!userProp) {
-      const usuarioSalvo = localStorage.getItem("usuario");
-      if (usuarioSalvo) {
-        const dados: UserProfile = JSON.parse(usuarioSalvo);
-        setUser(dados);
-      }
+      loadUser();
     }
   }, [userProp]);
+
+  // ✅ Escuta o evento customizado de atualização
+  useEffect(() => {
+    window.addEventListener('user-updated', loadUser);
+
+    // Cleanup: remove o listener quando o componente desmontar
+    return () => {
+      window.removeEventListener('user-updated', loadUser);
+    };
+  }, []); // Array vazio = só adiciona/remove uma vez
 
   const isActive = (path: string) => currentPath === path ? 'active' : '';
 
@@ -42,7 +57,6 @@ export default function Menu({ user: userProp }: MenuProps) {
 
         <Link to="/perfil" className="menu-perfil-item">
           <div className="menu-perfil-imagem">
-            {/* ✅ Se tiver foto, mostra a foto. Se não, mostra ícone User */}
             {user?.foto ? (
               <img src={user.foto} alt={user.nome} />
             ) : (
@@ -59,7 +73,6 @@ export default function Menu({ user: userProp }: MenuProps) {
               </div>
             )}
           </div>
-          {/* ✅ Nome do usuário */}
           <div className="menu-perfil-nome">{user?.nome || "Usuário"}</div>
         </Link>
 
