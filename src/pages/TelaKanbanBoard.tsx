@@ -8,14 +8,7 @@ import logoFlap from "../images/Logo-azul-FLAP 1.png";
 import FiltroModal, { type FiltrosAtivos } from "./FiltroModal";
 import { Toast } from "./Toast"; 
 
-export type StatusTarefa = "A_FAZER" | "EM_PROGRESSO" | "EM_REVISAO" | "CONCLUIDA" | string;
-
-export const COLUMNS = [
-  { id: 1, status: "A_FAZER" as StatusTarefa, title: "To Do" },
-  { id: 2, status: "EM_PROGRESSO" as StatusTarefa, title: "In Progress" },
-  { id: 3, status: "EM_REVISAO" as StatusTarefa, title: "Review" },
-  { id: 4, status: "CONCLUIDA" as StatusTarefa, title: "Closed" },
-];
+export type StatusTarefa = string;
 
 interface Membro {
   id: number;
@@ -34,6 +27,7 @@ interface TarefaDTO {
   empresa: string;
   empresaId?: number;
   membroIds?: number[];
+  listaId?: number;
 }
 
 interface Empresa {
@@ -44,9 +38,9 @@ interface Empresa {
 interface Lista {
   id: number;
   nome: string;
+  posicao: number;
 }
 
-// ✅ INTERFACE DO TOAST
 interface ToastState {
   message: string;
   type: 'success' | 'error' | 'warning';
@@ -60,31 +54,9 @@ const prioridadeCores: { [key: string]: string } = {
   CRITICA: "red",
 };
 
-const mockTarefas: TarefaDTO[] = [
-  {
-    id: 1,
-    titulo: "Campanha Internet Fibra 500 Mega",
-    status: "A_FAZER",
-    prioridade: "MEDIA",
-    posicao: 0,
-    tags: ["RA", "HG"],
-    dtEntrega: "2025-10-18",
-    empresa: "Netiz",
-  },
-  {
-    id: 2,
-    titulo: "Anúncio Google Ads",
-    status: "EM_PROGRESSO",
-    prioridade: "ALTA",
-    posicao: 1,
-    tags: ["KT", "HG"],
-    dtEntrega: "2025-10-20",
-    empresa: "Celi",
-  },
-];
-
 export default function TelaKanbanBoard() {
   const [tarefas, setTarefas] = useState<TarefaDTO[]>([]);
+  const [tarefasPorLista, setTarefasPorLista] = useState<{ [listaId: number]: TarefaDTO[] }>({});
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [listas, setListas] = useState<Lista[]>([]);
   const [membros, setMembros] = useState<Membro[]>([]);
@@ -92,26 +64,16 @@ export default function TelaKanbanBoard() {
   const [empresaSelecionada, setEmpresaSelecionada] = useState<number | null>(null);
   const [listaSelecionada, setListaSelecionada] = useState<number | null>(null);
   const [statusSelecionado, setStatusSelecionado] = useState<StatusTarefa | null>(null);
+  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [filtrosAtivos, setFiltrosAtivos] = useState<FiltrosAtivos>({
     membros: [],
     empresas: [],
   });
-  const [boards, setBoards] = useState([
-    { id: 1, status: "A_FAZER" as StatusTarefa, label: "To Do", isDeletable: false },
-    { id: 2, status: "EM_PROGRESSO" as StatusTarefa, label: "In Progress", isDeletable: false },
-    { id: 3, status: "EM_REVISAO" as StatusTarefa, label: "Review", isDeletable: false },
-    { id: 4, status: "CONCLUIDA" as StatusTarefa, label: "Closed", isDeletable: false },
-  ]);
-  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // ✅ ESTADO DO TOAST
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
-  
   const navigate = useNavigate();
 
-  // ✅ FUNÇÃO PARA MOSTRAR TOAST
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
   };
@@ -124,104 +86,69 @@ export default function TelaKanbanBoard() {
       hour12: false
     });
     const hora = parseInt(horaBrasilia);
-
     if (hora >= 5 && hora < 12) return "Bom dia";
     if (hora >= 12 && hora < 18) return "Boa tarde";
     return "Boa noite";
   };
 
+  // Carregamento inicial: todas tarefas (para estatística), todas listas
   useEffect(() => {
     const carregarDados = async () => {
       try {
         setLoading(true);
         const auth = localStorage.getItem("auth");
-
-        console.log("🔍 Iniciando carregamento de dados...");
+        const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
         const [tarefasRes, empresasRes, listasRes, membrosRes] = await Promise.all([
-          api.get("/tarefas", {
-            headers: { Authorization: `Basic ${auth}` },
-            withCredentials: true,
-          }),
-          api.get("/empresas", {
-            headers: { Authorization: `Basic ${auth}` },
-            withCredentials: true,
-          }),
-          api.get("/listas", {
-            headers: { Authorization: `Basic ${auth}` },
-            withCredentials: true,
-          }),
-          api.get("/usuarios", {
-            headers: { Authorization: `Basic ${auth}` },
-            withCredentials: true,
-          }),
+          api.get("/tarefas", headers),
+          api.get("/empresas", headers),
+          api.get("/listas", headers),
+          api.get("/usuarios", headers),
         ]);
 
-        console.log("📊 Tarefas recebidas:", tarefasRes.data);
-        console.log("🏢 Empresas recebidas:", empresasRes.data);
-        console.log("📋 Listas recebidas:", listasRes.data);
-        console.log("👥 Membros recebidos:", membrosRes.data);
+        setTarefas(Array.isArray(tarefasRes.data) ? tarefasRes.data : []);
+        setEmpresas(Array.isArray(empresasRes.data) ? empresasRes.data : []);
+        if (Array.isArray(empresasRes.data) && empresasRes.data.length > 0)
+          setEmpresaSelecionada(empresasRes.data[0].id);
 
-        if (Array.isArray(tarefasRes.data)) {
-          setTarefas(tarefasRes.data);
-        } else if (tarefasRes.data.tarefas && Array.isArray(tarefasRes.data.tarefas)) {
-          setTarefas(tarefasRes.data.tarefas);
-        } else {
-          console.error("❌ Formato inesperado de tarefas:", tarefasRes.data);
-          setTarefas(mockTarefas);
-        }
+        setListas(Array.isArray(listasRes.data) ? listasRes.data : []);
+        if (Array.isArray(listasRes.data) && listasRes.data.length > 0)
+          setListaSelecionada(listasRes.data[0].id);
 
-        if (Array.isArray(empresasRes.data)) {
-          console.log("✅ Empresas carregadas:", empresasRes.data);
-          setEmpresas(empresasRes.data);
-          if (empresasRes.data.length > 0) {
-            setEmpresaSelecionada(empresasRes.data[0].id);
-          }
-        } else {
-          console.error("❌ Formato inesperado de empresas:", empresasRes.data);
-          setEmpresas([]);
-        }
+        setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
 
+        // Carrega tarefas de cada board para exibição separada (por lista)
         if (Array.isArray(listasRes.data)) {
-          console.log("✅ Listas carregadas:", listasRes.data);
-          setListas(listasRes.data);
-          if (listasRes.data.length > 0) {
-            setListaSelecionada(listasRes.data[0].id);
-          }
-        } else {
-          console.error("❌ Formato inesperado de listas:", listasRes.data);
-          setListas([]);
+          const tarefasBoard: { [listaId: number]: TarefaDTO[] } = {};
+          await Promise.all(listasRes.data.map(async (lista: Lista) => {
+            try {
+              // Rota de busca correta para tarefas por lista
+              const res = await api.get(`/tarefas/lista/${lista.id}`, headers);
+              tarefasBoard[lista.id] = res.data;
+            } catch (e) {
+              tarefasBoard[lista.id] = [];
+            }
+          }));
+          setTarefasPorLista(tarefasBoard);
         }
-
-        if (Array.isArray(membrosRes.data)) {
-          console.log("✅ Membros carregados:", membrosRes.data);
-          setMembros(membrosRes.data);
-        } else {
-          console.error("❌ Formato inesperado de membros:", membrosRes.data);
-          setMembros([]);
-        }
-
       } catch (error: any) {
-        console.error("❌❌❌ ERRO CAPTURADO NO CATCH ❌❌❌");
-        console.error("❌ Erro completo:", error);
-
+        setTarefas([]);
+        setListas([]);
+        setEmpresas([]);
+        setMembros([]);
+        setTarefasPorLista({});
         if (error.response?.status === 401) {
           showToast("Sessão expirada. Faça login novamente.", "error");
           localStorage.removeItem("auth");
           localStorage.removeItem("usuario");
           setTimeout(() => navigate("/login", { replace: true }), 1500);
         } else {
-          console.warn("⚠️ Usando dados mock como fallback.");
-          setTarefas(mockTarefas);
-          setEmpresas([]);
-          setListas([]);
-          setMembros([]);
+          showToast("Erro ao carregar dados.", "error");
         }
       } finally {
         setLoading(false);
       }
     };
-
     carregarDados();
   }, [navigate]);
 
@@ -229,179 +156,187 @@ export default function TelaKanbanBoard() {
     setFiltrosAtivos(filtros);
   };
 
-  const adicionarTarefa = async () => {
-    console.log("🆕 Tentando adicionar tarefa...");
-    console.log("🆕 Empresa selecionada:", empresaSelecionada);
-    console.log("🆕 Lista selecionada:", listaSelecionada);
+  const boards = listas.map((lista) => ({
+    id: lista.id,
+    status: `CUSTOM_${lista.id}`,
+    label: lista.nome,
+    isDeletable: true,
+  }));
 
-    if (!statusSelecionado || !novoTitulo.trim()) {
+  // Sempre recarrega tarefas da lista específica após alteração em board/tarefa
+  const recarregarTarefasLista = async (listaId: number) => {
+    try {
+      const auth = localStorage.getItem("auth");
+      // Usa a rota correta para listar por lista
+      const res = await api.get(`/tarefas/lista/${listaId}`, {
+        headers: { Authorization: `Basic ${auth}` }, withCredentials: true,
+      });
+      setTarefasPorLista(prev => ({
+        ...prev,
+        [listaId]: res.data,
+      }));
+      
+      const todasTarefasRes = await api.get("/tarefas", {
+        headers: { Authorization: `Basic ${auth}` }, withCredentials: true,
+      });
+      setTarefas(Array.isArray(todasTarefasRes.data) ? todasTarefasRes.data : []);
+    } catch (e) {}
+  };
+
+  const adicionarBoard = async () => {
+    try {
+      const auth = localStorage.getItem("auth");
+      const novoNome = "Novo board";
+      const novaPosicao = listas.length + 1;
+      const res = await api.post("/listas", { nome: novoNome, posicao: novaPosicao, cor: "#ccc" }, { // Adicionando cor padrão para evitar null
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+      setListas((prev) => [...prev, res.data]);
+      setListaSelecionada(res.data.id);
+      showToast("Board criado!", "success");
+      await recarregarTarefasLista(res.data.id);
+    } catch (error) {
+      showToast("Erro ao criar board.", "error");
+    }
+  };
+
+  const editarBoard = async (listaId: number, novoNome: string) => {
+    try {
+      const auth = localStorage.getItem("auth");
+      // Necessário enviar todos os campos obrigatórios do DTO de atualização
+      const listaAtual = listas.find(l => l.id === listaId);
+      if (!listaAtual) return;
+
+      await api.put(`/listas/${listaId}`, { nome: novoNome, posicao: listaAtual.posicao, cor: listaAtual.cor }, {
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+      setListas((prev) => prev.map(l => l.id === listaId ? { ...l, nome: novoNome } : l));
+      showToast("Board editado!", "success");
+    } catch (error) {
+      showToast("Erro ao editar board.", "error");
+    }
+  };
+
+  const deletarBoard = async (listaId: number, listaNome: string) => {
+    const tarefasNoBoard = tarefasPorLista[listaId] || [];
+    if (tarefasNoBoard.length > 0) {
+      showToast(
+        `Não é possível deletar o board "${listaNome}" pois ele contém ${tarefasNoBoard.length} tarefa(s).`,
+        "warning"
+      );
+      return;
+    }
+    const confirmar = window.confirm(`Tem certeza que deseja deletar o board "${listaNome}"?`);
+    if (!confirmar) return;
+
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.delete(`/listas/${listaId}`, {
+        headers: { Authorization: `Basic ${auth}` },
+        withCredentials: true,
+      });
+      setListas((prev) => prev.filter((l) => l.id !== listaId));
+      showToast("Board deletado!", "success");
+    } catch (error) {
+      showToast("Erro ao deletar board.", "error");
+    }
+  };
+
+  const adicionarTarefa = async () => {
+    if (!listaSelecionada || !novoTitulo.trim()) {
       showToast("Digite o título da tarefa!", "warning");
       return;
     }
-
     if (empresas.length === 0) {
       showToast("Cadastre pelo menos uma empresa antes de criar tarefas!", "warning");
       setTimeout(() => navigate("/ajustes"), 1500);
       return;
     }
-
     if (!empresaSelecionada) {
       showToast("Selecione uma empresa para a tarefa!", "warning");
       return;
     }
-
     if (listas.length === 0) {
       showToast("Nenhuma lista disponível. Contate o administrador.", "error");
       return;
     }
 
-    if (!listaSelecionada) {
-      showToast("Selecione uma lista para a tarefa!", "warning");
-      return;
-    }
-
+    // Enviamos apenas o essencial. Backend calcula status/posicao.
     const novaTarefa = {
       titulo: novoTitulo,
-      status: statusSelecionado,
-      prioridade: "MEDIA",
-      posicao: tarefas.filter((t) => t.status === statusSelecionado).length,
-      dtEntrega: null,
       empresaId: empresaSelecionada,
       listaId: listaSelecionada,
+      prioridade: "MEDIA", // Valor default para a prioridade
     };
-
-    console.log("🆕 Payload da nova tarefa:", novaTarefa);
 
     try {
       const auth = localStorage.getItem("auth");
-
       const res = await api.post<TarefaDTO>("/tarefas", novaTarefa, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         withCredentials: true,
       });
-
-      console.log("✅ Tarefa criada com sucesso:", res.data);
-      setTarefas((prev) => [...prev, res.data]);
-
       setNovoTitulo("");
       setStatusSelecionado(null);
-
       showToast("Tarefa criada com sucesso!", "success");
+      await recarregarTarefasLista(listaSelecionada);
       setTimeout(() => navigate(`/detalhamento/${res.data.id}`), 800);
     } catch (error: any) {
-      console.error("❌ Erro ao adicionar tarefa:", error);
-      console.error("❌ Resposta do servidor:", error.response?.data);
-
-      if (error.response?.status === 400) {
-        showToast("Erro ao criar tarefa: " + (error.response.data.message || "Dados inválidos"), "error");
-      } else if (error.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        setTimeout(() => navigate("/login", { replace: true }), 1500);
-      } else if (error.response?.status === 500) {
-        showToast("Erro interno no servidor. Verifique os campos obrigatórios.", "error");
-      } else {
-        showToast("Erro ao adicionar tarefa. Tente novamente.", "error");
-      }
+      showToast("Erro ao adicionar tarefa. Tente novamente.", "error");
     }
   };
 
-  const adicionarBoard = () => {
-    const novoBoard = {
-      id: Date.now(),
-      status: `CUSTOM_${boards.length + 1}`,
-      label: "Novo board",
-      isDeletable: true,
-    };
-    setBoards((prev) => [...prev, novoBoard]);
-  };
-
-  const deletarBoard = (boardId: number, boardLabel: string) => {
-    const tarefasNoBoard = tarefas.filter((t) => {
-      const board = boards.find((b) => b.id === boardId);
-      return board && t.status === board.status;
-    });
-
-    if (tarefasNoBoard.length > 0) {
-      showToast(`Não é possível deletar o board "${boardLabel}" pois ele contém ${tarefasNoBoard.length} tarefa(s).`, "warning");
-      return;
-    }
-
-    const confirmar = window.confirm(
-      `Tem certeza que deseja deletar o board "${boardLabel}"?`
-    );
-
-    if (confirmar) {
-      setBoards((prev) => prev.filter((b) => b.id !== boardId));
-      showToast("Board deletado com sucesso!", "success");
-    }
-  };
-
+  // DnD: Após mover, recarrega só as duas listas envolvidas (origem e destino)
   const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
-    
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
+      
     const tarefaId = Number(draggableId);
-    const novoStatus = destination.droppableId as StatusTarefa;
-    
-    console.log("🔄 Movendo tarefa:", tarefaId, "para", novoStatus);
+    const novoListaId = Number(destination.droppableId.replace("CUSTOM_", ""));
 
-    setTarefas(prev => prev.map(t => 
-      t.id === tarefaId ? { ...t, status: novoStatus } : t
-    ));
+    const tarefasDestino = (tarefasPorLista[novoListaId] || []).filter((tarefa) => {
+    // Filtra igual à renderização
+    const passaFiltroEmpresa =
+      filtrosAtivos.empresas.length === 0 ||
+      (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
+    const passaFiltroMembro =
+      filtrosAtivos.membros.length === 0 ||
+      (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
+    return passaFiltroEmpresa && passaFiltroMembro;
+    }).sort((a, b) => a.posicao - b.posicao);
+
+    const anterior = tarefasDestino[destination.index - 1] || null;
+    const posterior = tarefasDestino[destination.index + 1] || null;
+    const posicaoVizinhoAnterior = anterior ? anterior.posicao : null;
+    const posicaoVizinhoPosterior = posterior ? posterior.posicao : null;
 
     try {
       const auth = localStorage.getItem("auth");
-
-      const response = await api.get(`/tarefas/${tarefaId}`, {
-        headers: { Authorization: `Basic ${auth}` },
-        withCredentials: true,
-      });
-
-      const detalhes = response.data;
-      console.log("📋 Detalhes da tarefa:", detalhes);
-
-      const payload = {
-        titulo: detalhes.titulo,
-        descricao: detalhes.descricao || "",
-        status: novoStatus,
-        prioridade: detalhes.prioridade,
-        dtEntrega: detalhes.dtEntrega,
-        links: detalhes.anexos?.map((a: any) => a.url) || [],
-        criteriosAceite: detalhes.checklist?.map((c: any) => c.descricao) || [],
-        tasks: detalhes.checklist || [],
-      };
-
-      console.log("💾 Salvando tarefa com novo status:", payload);
-
-      await api.put(`/tarefas/${tarefaId}`, payload, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
-
-      console.log("✅ Status atualizado com sucesso!");
+      
+      await api.patch( 
+        `/tarefas/${tarefaId}/mover`, 
+        { 
+          posicaoVizinhoAnterior,
+          posicaoVizinhoPosterior,
+          novoListaId },
+        {
+          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+          withCredentials: true,
+        }
+      );
+      
       showToast("Tarefa movida com sucesso!", "success");
-    } catch (error: any) {
-      console.error("❌ Erro ao atualizar status:", error);
-      console.error("❌ Detalhes:", error.response?.data);
+      await recarregarTarefasLista(novoListaId);
       
-      setTarefas(tarefas);
-      
-      if (error.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        localStorage.removeItem("auth");
-        localStorage.removeItem("usuario");
-        setTimeout(() => navigate("/login", { replace: true }), 1500);
-      } else {
-        showToast("Erro ao mover tarefa. Tente novamente.", "error");
+      // Recarrega a lista de origem
+      if (source.droppableId !== destination.droppableId) {
+        const origemId = Number(source.droppableId.replace("CUSTOM_", ""));
+        await recarregarTarefasLista(origemId);
       }
+    } catch (error: any) {
+      showToast("Erro ao mover tarefa. Tente novamente.", "error");
     }
   };
 
@@ -417,27 +352,29 @@ export default function TelaKanbanBoard() {
     );
   }
 
-  const tarefasSeguras = Array.isArray(tarefas) ? tarefas : [];
-
-  const tarefasFiltradas = tarefasSeguras.filter((tarefa) => {
+  // Estatísticas globais (com base no array global de tarefas, para manter tudo funcionando)
+  const tarefasFiltradas = tarefas.filter((tarefa) => {
     if (filtrosAtivos.membros.length === 0 && filtrosAtivos.empresas.length === 0) {
       return true;
     }
-
     const passaFiltroEmpresa =
       filtrosAtivos.empresas.length === 0 ||
       (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
-
     const passaFiltroMembro =
       filtrosAtivos.membros.length === 0 ||
       (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
-
     return passaFiltroEmpresa && passaFiltroMembro;
   });
 
+  const tarefasVencidas = tarefasFiltradas.filter(
+    (t) => t.dtEntrega && new Date(t.dtEntrega) < new Date()
+  ).length;
+  const tarefasPendentes = tarefasFiltradas.filter(
+    (t) => t.status !== `CUSTOM_CONCLUIDA` // Assume que a lista concluída tem este status/label
+  ).length;
+
   return (
     <>
-      {/* ✅ TOAST */}
       {toast.show && (
         <Toast
           message={toast.message}
@@ -445,16 +382,11 @@ export default function TelaKanbanBoard() {
           onClose={() => setToast({ ...toast, show: false })}
         />
       )}
-
       <div className="kanban-wrapper">
         <div className="kanban-top">
           <div className="kanban-card-top">
             <h3>Tarefas perto do vencimento:</h3>
-            <div className="kanban-number">
-              {tarefasFiltradas.filter(
-                (t) => t.dtEntrega && new Date(t.dtEntrega) < new Date()
-              ).length}
-            </div>
+            <div className="kanban-number">{tarefasVencidas}</div>
           </div>
           <div className="kanban-card-top">
             <h3>Tarefas totais:</h3>
@@ -466,8 +398,7 @@ export default function TelaKanbanBoard() {
                 <h3>{getSaudacao()}, User!</h3>
                 <p>
                   Você tem{" "}
-                  {tarefasFiltradas.filter((t) => t.status !== "CONCLUIDA").length} tarefas
-                  pendentes.
+                  {tarefasPendentes} tarefas pendentes.
                 </p>
               </div>
               <img src={logoFlap} alt="FLAP Logo" className="flap-logo" />
@@ -487,7 +418,6 @@ export default function TelaKanbanBoard() {
             </div>
           </div>
         </div>
-
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="kanban-columns">
             {boards.map((board) => (
@@ -505,13 +435,18 @@ export default function TelaKanbanBoard() {
                           value={board.label}
                           onChange={(e) => {
                             const novoLabel = e.target.value;
-                            setBoards((prev) =>
-                              prev.map((b) =>
-                                b.id === board.id ? { ...b, label: novoLabel } : b
+                            setListas((prev) =>
+                              prev.map((l) =>
+                                l.id === board.id ? { ...l, nome: novoLabel } : l
                               )
                             );
                           }}
-                          onBlur={() => setEditingBoardId(null)}
+                          onBlur={() => {
+                            if (editingBoardId !== null) {
+                              editarBoard(board.id, board.label);
+                            }
+                            setEditingBoardId(null);
+                          }}
                           autoFocus
                         />
                       ) : (
@@ -519,28 +454,34 @@ export default function TelaKanbanBoard() {
                           {board.label}
                         </h4>
                       )}
-
                       <div className="column-header-actions">
                         <div
                           className="column-icons"
-                          onClick={() => setStatusSelecionado(board.status as StatusTarefa)}
+                          onClick={() => {
+                            setStatusSelecionado(board.status);
+                            setListaSelecionada(board.id);
+                          }}
                         >
                           <Plus size={16} />
                         </div>
-
-                        {board.isDeletable && (
-                          <div
-                            className="column-icons delete-icon"
-                            onClick={() => deletarBoard(board.id, board.label)}
-                          >
-                            <Trash2 size={16} />
-                          </div>
-                        )}
+                        <div
+                          className="column-icons delete-icon"
+                          onClick={() => deletarBoard(board.id, board.label)}
+                        >
+                          <Trash2 size={16} />
+                        </div>
                       </div>
                     </div>
-
                     {statusSelecionado === board.status && (
-                      <div className="nova-tarefa" style={{ padding: "12px", backgroundColor: "#f9f9f9", borderRadius: "8px", marginBottom: "10px" }}>
+                      <div
+                        className="nova-tarefa"
+                        style={{
+                          padding: "12px",
+                          backgroundColor: "#f9f9f9",
+                          borderRadius: "8px",
+                          marginBottom: "10px",
+                        }}
+                      >
                         <input
                           type="text"
                           value={novoTitulo}
@@ -560,7 +501,6 @@ export default function TelaKanbanBoard() {
                             fontSize: "0.95rem",
                           }}
                         />
-
                         {empresas.length > 0 ? (
                           <select
                             value={empresaSelecionada || ""}
@@ -586,57 +526,20 @@ export default function TelaKanbanBoard() {
                             ))}
                           </select>
                         ) : (
-                          <div style={{
-                            padding: "10px",
-                            marginBottom: "8px",
-                            backgroundColor: "#fff3cd",
-                            border: "1px solid #ffc107",
-                            borderRadius: "6px",
-                            fontSize: "0.85rem",
-                            color: "#856404"
-                          }}>
+                          <div
+                            style={{
+                              padding: "10px",
+                              marginBottom: "8px",
+                              backgroundColor: "#fff3cd",
+                              border: "1px solid #ffc107",
+                              borderRadius: "6px",
+                              fontSize: "0.85rem",
+                              color: "#856404",
+                            }}
+                          >
                             ⚠️ Nenhuma empresa cadastrada.
                           </div>
                         )}
-
-                        {listas.length > 0 ? (
-                          <select
-                            value={listaSelecionada || ""}
-                            onChange={(e) => setListaSelecionada(Number(e.target.value))}
-                            style={{
-                              width: "100%",
-                              padding: "10px",
-                              marginBottom: "10px",
-                              borderRadius: "6px",
-                              border: "1px solid #ddd",
-                              fontSize: "0.95rem",
-                              backgroundColor: "white",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <option value="" disabled>
-                              Selecione uma lista *
-                            </option>
-                            {listas.map((lista) => (
-                              <option key={lista.id} value={lista.id}>
-                                {lista.nome}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div style={{
-                            padding: "10px",
-                            marginBottom: "10px",
-                            backgroundColor: "#fff3cd",
-                            border: "1px solid #ffc107",
-                            borderRadius: "6px",
-                            fontSize: "0.85rem",
-                            color: "#856404"
-                          }}>
-                            ⚠️ Nenhuma lista disponível.
-                          </div>
-                        )}
-
                         <div style={{ display: "flex", gap: "8px" }}>
                           <button
                             className="new-board-btn"
@@ -644,8 +547,8 @@ export default function TelaKanbanBoard() {
                             disabled={!novoTitulo.trim() || !empresaSelecionada || !listaSelecionada}
                             style={{
                               flex: 1,
-                              opacity: (!novoTitulo.trim() || !empresaSelecionada || !listaSelecionada) ? 0.6 : 1,
-                              cursor: (!novoTitulo.trim() || !empresaSelecionada || !listaSelecionada) ? "not-allowed" : "pointer",
+                              opacity: !novoTitulo.trim() || !empresaSelecionada || !listaSelecionada ? 0.6 : 1,
+                              cursor: !novoTitulo.trim() || !empresaSelecionada || !listaSelecionada ? "not-allowed" : "pointer",
                             }}
                           >
                             Adicionar
@@ -670,9 +573,21 @@ export default function TelaKanbanBoard() {
                         </div>
                       </div>
                     )}
-
-                    {tarefasFiltradas
-                      .filter((t) => t.status === board.status)
+                    {/* FILTRAGEM E RENDERIZAÇÃO AQUI */}
+                    {(tarefasPorLista[board.id] || [])
+                      .filter((tarefa) => {
+                            // 1. Filtra por Membros
+                            const passaFiltroMembro =
+                                filtrosAtivos.membros.length === 0 ||
+                                (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
+                            
+                            // 2. Filtra por Empresas
+                            const passaFiltroEmpresa =
+                                filtrosAtivos.empresas.length === 0 ||
+                                (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
+                            
+                            return passaFiltroMembro && passaFiltroEmpresa;
+                        })
                       .sort((a, b) => a.posicao - b.posicao)
                       .map((tarefa, index) => (
                         <Draggable
@@ -698,11 +613,12 @@ export default function TelaKanbanBoard() {
                               </div>
                               <div className="kanban-text">{tarefa.titulo}</div>
                               <div className="kanban-tags">
-                                {tarefa.tags && tarefa.tags.map((tag) => (
-                                  <span className="tag" key={tag}>
-                                    {tag}
-                                  </span>
-                                ))}
+                                {tarefa.tags &&
+                                  tarefa.tags.map((tag) => (
+                                    <span className="tag" key={tag}>
+                                      {tag}
+                                    </span>
+                                  ))}
                               </div>
                               <div className="kanban-footer">
                                 <span>{tarefa.empresa}</span>
@@ -723,7 +639,6 @@ export default function TelaKanbanBoard() {
             ))}
           </div>
         </DragDropContext>
-
         <FiltroModal
           isOpen={filtroAberto}
           onClose={() => setFiltroAberto(false)}
