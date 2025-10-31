@@ -11,9 +11,11 @@ import { Toast } from "./Toast";
 export type StatusTarefa = string;
 
 interface Membro {
-  id: number;
+  membroId: number;
+  usuarioId: number;
   nome: string;
   username: string;
+  foto?: string;
 }
 
 interface TarefaDTO {
@@ -24,9 +26,11 @@ interface TarefaDTO {
   posicao: number;
   tags: string[];
   dtEntrega?: string;
-  empresa: string;
+  empresa: string;       // ✅ NOME DA EMPRESA
   empresaId?: number;
-  membroIds?: number[];
+  membroIds?: number[];  // ✅ IDs DOS MEMBROS
+  usuarioIds?: number[]; // ✅ IDs DOS USUÁRIOS (PARA FILTRO)
+  membros?: Membro[];    // ✅ DETALHES DOS MEMBROS
   listaId?: number;
 }
 
@@ -48,7 +52,6 @@ interface ToastState {
   show: boolean;
 }
 
-// ✅ ADICIONAR INTERFACE DO USUÁRIO
 interface Usuario {
   id?: number;
   nome: string;
@@ -72,7 +75,7 @@ export default function TelaKanbanBoard() {
   const [tarefasPorLista, setTarefasPorLista] = useState<{ [listaId: number]: TarefaDTO[] }>({});
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [listas, setListas] = useState<Lista[]>([]);
-  const [membros, setMembros] = useState<Membro[]>([]);
+  const [membros, setMembros] = useState<Usuario[]>([]); // ✅ LISTA DE USUÁRIOS PARA O FILTRO
   const [novoTitulo, setNovoTitulo] = useState("");
   const [empresaSelecionada, setEmpresaSelecionada] = useState<number | null>(null);
   const [listaSelecionada, setListaSelecionada] = useState<number | null>(null);
@@ -85,7 +88,7 @@ export default function TelaKanbanBoard() {
     empresas: [],
   });
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
-  const [usuario, setUsuario] = useState<Usuario | null>(null); // ✅ ESTADO DO USUÁRIO
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const navigate = useNavigate();
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
@@ -105,7 +108,6 @@ export default function TelaKanbanBoard() {
     return "Boa noite";
   };
 
-  // ✅ FUNÇÃO PARA PEGAR PRIMEIRO NOME
   const getPrimeiroNome = (nomeCompleto: string) => {
     return nomeCompleto.split(' ')[0];
   };
@@ -117,7 +119,6 @@ export default function TelaKanbanBoard() {
         const auth = localStorage.getItem("auth");
         const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
-        // ✅ CARREGAR DADOS DO USUÁRIO DO LOCALSTORAGE
         const usuarioSalvo = localStorage.getItem("usuario");
         if (usuarioSalvo) {
           setUsuario(JSON.parse(usuarioSalvo));
@@ -139,6 +140,7 @@ export default function TelaKanbanBoard() {
         if (Array.isArray(listasRes.data) && listasRes.data.length > 0)
           setListaSelecionada(listasRes.data[0].id);
 
+        // ✅ CARREGAR LISTA DE USUÁRIOS PARA FILTRO
         setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
 
         if (Array.isArray(listasRes.data)) {
@@ -399,6 +401,7 @@ export default function TelaKanbanBoard() {
     );
   }
 
+  // ✅ FILTRO CORRIGIDO - USA usuarioIds AO INVÉS DE membroIds
   const tarefasFiltradas = tarefas.filter((tarefa) => {
     if (filtrosAtivos.membros.length === 0 && filtrosAtivos.empresas.length === 0) {
       return true;
@@ -406,9 +409,12 @@ export default function TelaKanbanBoard() {
     const passaFiltroEmpresa =
       filtrosAtivos.empresas.length === 0 ||
       (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
+
+    // ✅ CORRIGIDO: Usa usuarioIds ao invés de membroIds
     const passaFiltroMembro =
       filtrosAtivos.membros.length === 0 ||
-      (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
+      (tarefa.usuarioIds && tarefa.usuarioIds.some((id: number) => filtrosAtivos.membros.includes(id)));
+
     return passaFiltroEmpresa && passaFiltroMembro;
   });
 
@@ -442,7 +448,6 @@ export default function TelaKanbanBoard() {
           <div className="kanban-card-top kanban-card-welcome">
             <div className="welcome-content">
               <div className="welcome-text">
-                {/* ✅ MOSTRAR NOME DO USUÁRIO */}
                 <h3>{getSaudacao()}, {usuario ? getPrimeiroNome(usuario.nome) : 'User'}!</h3>
                 <p>Você tem {tarefasPendentes} tarefas pendentes.</p>
               </div>
@@ -591,10 +596,13 @@ export default function TelaKanbanBoard() {
                       </div>
                     )}
 
+                    {/* ✅ FILTRO CORRIGIDO NO MAP TAMBÉM */}
                     {(tarefasPorLista[board.id] || [])
                       .filter((tarefa) => {
-                        const passaFiltroMembro = filtrosAtivos.membros.length === 0 || (tarefa.membroIds && tarefa.membroIds.some((id: number) => filtrosAtivos.membros.includes(id)));
-                        const passaFiltroEmpresa = filtrosAtivos.empresas.length === 0 || (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
+                        const passaFiltroMembro = filtrosAtivos.membros.length === 0 ||
+                          (tarefa.usuarioIds && tarefa.usuarioIds.some((id: number) => filtrosAtivos.membros.includes(id)));
+                        const passaFiltroEmpresa = filtrosAtivos.empresas.length === 0 ||
+                          (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
                         return passaFiltroMembro && passaFiltroEmpresa;
                       })
                       .sort((a, b) => a.posicao - b.posicao)
