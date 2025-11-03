@@ -46,7 +46,10 @@ const Login: React.FC = () => {
           localStorage.setItem("usuario", JSON.stringify(usuario));
           localStorage.setItem("authenticated", "true");
 
-          navigate("/home", { replace: true });
+          // ✅ DISPARA O EVENTO PARA ATUALIZAR O MENU
+          window.dispatchEvent(new Event('user-updated'));
+
+          navigate("/Dashboard", { replace: true });
         } else {
           setErro("Erro ao carregar dados do usuário.");
         }
@@ -129,19 +132,6 @@ const Login: React.FC = () => {
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
           </button>
-
-          <div className="register-section">
-            <p style={{ marginTop: "20px", textAlign: "center" }}>
-              Ainda não tem uma conta?
-            </p>
-            <button
-              type="button"
-              className="register-button"
-              onClick={() => navigate("/cadastro")}
-            >
-              Cadastrar-se
-            </button>
-          </div>
         </form>
       </div>
     </div>

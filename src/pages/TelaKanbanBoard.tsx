@@ -14,7 +14,7 @@ interface Membro {
   membroId: number;
   usuarioId: number;
   nome: string;
-  username: string;
+  username?: string;
   foto?: string;
 }
 
@@ -26,11 +26,11 @@ interface TarefaDTO {
   posicao: number;
   tags: string[];
   dtEntrega?: string;
-  empresa: string;       // ✅ NOME DA EMPRESA
+  empresa: string;
   empresaId?: number;
-  membroIds?: number[];  // ✅ IDs DOS MEMBROS
-  usuarioIds?: number[]; // ✅ IDs DOS USUÁRIOS (PARA FILTRO)
-  membros?: Membro[];    // ✅ DETALHES DOS MEMBROS
+  membroIds?: number[];
+  usuarioIds?: number[];
+  membros?: Membro[];
   listaId?: number;
 }
 
@@ -75,7 +75,7 @@ export default function TelaKanbanBoard() {
   const [tarefasPorLista, setTarefasPorLista] = useState<{ [listaId: number]: TarefaDTO[] }>({});
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [listas, setListas] = useState<Lista[]>([]);
-  const [membros, setMembros] = useState<Usuario[]>([]); // ✅ LISTA DE USUÁRIOS PARA O FILTRO
+  const [membros, setMembros] = useState<Usuario[]>([]);
   const [novoTitulo, setNovoTitulo] = useState("");
   const [empresaSelecionada, setEmpresaSelecionada] = useState<number | null>(null);
   const [listaSelecionada, setListaSelecionada] = useState<number | null>(null);
@@ -112,6 +112,16 @@ export default function TelaKanbanBoard() {
     return nomeCompleto.split(' ')[0];
   };
 
+  // ✅ ADICIONADO: Função para pegar iniciais
+  const getInitials = (nome: string) => {
+    if (!nome) return "??";
+    const words = nome.trim().split(' ');
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return nome.substring(0, 2).toUpperCase();
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -120,15 +130,19 @@ export default function TelaKanbanBoard() {
         const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
         const usuarioSalvo = localStorage.getItem("usuario");
+        let usuarioLogado: Usuario | null = null;
         if (usuarioSalvo) {
-          setUsuario(JSON.parse(usuarioSalvo));
+          usuarioLogado = JSON.parse(usuarioSalvo);
+          setUsuario(usuarioLogado);
         }
 
-        const [tarefasRes, empresasRes, listasRes, membrosRes] = await Promise.all([
+        console.log("Usuário logado:", usuarioLogado);
+        console.log("Role do usuário:", usuarioLogado?.role);
+
+        const [tarefasRes, empresasRes, listasRes] = await Promise.all([
           api.get("/tarefas", headers),
           api.get("/empresas", headers),
           api.get("/listas", headers),
-          api.get("/usuarios", headers),
         ]);
 
         setTarefas(Array.isArray(tarefasRes.data) ? tarefasRes.data : []);
@@ -140,8 +154,39 @@ export default function TelaKanbanBoard() {
         if (Array.isArray(listasRes.data) && listasRes.data.length > 0)
           setListaSelecionada(listasRes.data[0].id);
 
-        // ✅ CARREGAR LISTA DE USUÁRIOS PARA FILTRO
-        setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
+        const isAdmin = usuarioLogado?.role === "ADMINISTRADOR_MASTER";
+        console.log("É admin?", isAdmin);
+
+        if (isAdmin) {
+          try {
+            console.log("Buscando lista de usuários (admin)...");
+            const membrosRes = await api.get("/usuarios", headers);
+            const usuariosComUsername = Array.isArray(membrosRes.data)
+              ? membrosRes.data.map((u: any) => ({
+                  id: u.id,
+                  nome: u.nome,
+                  email: u.email,
+                  foto: u.foto,
+                  role: u.role,
+                  cargo: u.cargo,
+                  username: u.email
+                }))
+              : [];
+            setMembros(usuariosComUsername);
+            console.log("Usuários carregados:", usuariosComUsername.length);
+          } catch (error: any) {
+            console.error("Erro ao carregar usuários:", error);
+            setMembros([]);
+          }
+        } else {
+          console.log("Usuário comum - usando apenas dados próprios");
+          if (usuarioLogado) {
+            setMembros([{
+              ...usuarioLogado,
+              username: usuarioLogado.email
+            }]);
+          }
+        }
 
         if (Array.isArray(listasRes.data)) {
           const tarefasBoard: { [listaId: number]: TarefaDTO[] } = {};
@@ -165,7 +210,7 @@ export default function TelaKanbanBoard() {
           showToast("Sessão expirada. Faça login novamente.", "error");
           localStorage.removeItem("auth");
           localStorage.removeItem("usuario");
-          setTimeout(() => navigate("/login", { replace: true }), 1500);
+          setTimeout(() => navigate("/"), 1500);
         } else {
           showToast("Erro ao carregar dados.", "error");
         }
@@ -401,8 +446,8 @@ export default function TelaKanbanBoard() {
     );
   }
 
-  // ✅ FILTRO CORRIGIDO - USA usuarioIds AO INVÉS DE membroIds
   const tarefasFiltradas = tarefas.filter((tarefa) => {
+    if (tarefa.status === "ARQUIVADA") return false;
     if (filtrosAtivos.membros.length === 0 && filtrosAtivos.empresas.length === 0) {
       return true;
     }
@@ -410,7 +455,6 @@ export default function TelaKanbanBoard() {
       filtrosAtivos.empresas.length === 0 ||
       (tarefa.empresaId && filtrosAtivos.empresas.includes(tarefa.empresaId));
 
-    // ✅ CORRIGIDO: Usa usuarioIds ao invés de membroIds
     const passaFiltroMembro =
       filtrosAtivos.membros.length === 0 ||
       (tarefa.usuarioIds && tarefa.usuarioIds.some((id: number) => filtrosAtivos.membros.includes(id)));
@@ -596,9 +640,9 @@ export default function TelaKanbanBoard() {
                       </div>
                     )}
 
-                    {/* ✅ FILTRO CORRIGIDO NO MAP TAMBÉM */}
                     {(tarefasPorLista[board.id] || [])
                       .filter((tarefa) => {
+                        if (tarefa.status === "ARQUIVADA") return false;
                         const passaFiltroMembro = filtrosAtivos.membros.length === 0 ||
                           (tarefa.usuarioIds && tarefa.usuarioIds.some((id: number) => filtrosAtivos.membros.includes(id)));
                         const passaFiltroEmpresa = filtrosAtivos.empresas.length === 0 ||
@@ -634,7 +678,74 @@ export default function TelaKanbanBoard() {
                                 {tarefa.tags && tarefa.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
                               </div>
                               <div className="kanban-footer">
-                                <span>{tarefa.empresa}</span>
+                                <div className="kanban-footer-left">
+                                  <span>{tarefa.empresa}</span>
+
+                                  {/* ✅ FOTOS DOS MEMBROS */}
+                                  {tarefa.membros && tarefa.membros.length > 0 && (
+                                    <div className="kanban-membros-avatars">
+                                      {tarefa.membros.slice(0, 3).map((membro, idx) => (
+                                        <div
+                                          key={membro.membroId}
+                                          className="kanban-avatar"
+                                          style={{
+                                            width: '24px',
+                                            height: '24px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#667eea',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            marginLeft: idx > 0 ? '-6px' : '0',
+                                            border: '2px solid white',
+                                            zIndex: 10 - idx,
+                                          }}
+                                          title={membro.nome}
+                                        >
+                                          {membro.foto ? (
+                                            <img
+                                              src={membro.foto}
+                                              alt={membro.nome}
+                                              style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                borderRadius: '50%',
+                                                objectFit: 'cover'
+                                              }}
+                                            />
+                                          ) : (
+                                            getInitials(membro.nome)
+                                          )}
+                                        </div>
+                                      ))}
+                                      {tarefa.membros.length > 3 && (
+                                        <div
+                                          className="kanban-avatar-more"
+                                          style={{
+                                            width: '24px',
+                                            height: '24px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#e0e0e0',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#666',
+                                            fontSize: '9px',
+                                            fontWeight: 'bold',
+                                            marginLeft: '-6px',
+                                            border: '2px solid white',
+                                          }}
+                                          title={`+${tarefa.membros.length - 3} membros`}
+                                        >
+                                          +{tarefa.membros.length - 3}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                                 <span>{tarefa.dtEntrega ? new Date(tarefa.dtEntrega).toLocaleDateString("pt-BR") : "Sem prazo"}</span>
                               </div>
                             </div>

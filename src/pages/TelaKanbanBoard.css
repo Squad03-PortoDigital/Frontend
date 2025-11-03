@@ -112,6 +112,7 @@
   background: white;
   color: #333;
   border: 2px solid #e0e0e0;
+  position: relative;
 }
 
 .filter-btn:hover {
@@ -119,6 +120,20 @@
   color: #1E52A5;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(30, 82, 165, 0.2);
+}
+
+.filtro-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #FF5630;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
 }
 
 .new-board-btn {
@@ -251,6 +266,21 @@
   box-shadow: 0 4px 12px rgba(30, 82, 165, 0.5);
 }
 
+.column-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.delete-icon {
+  background: linear-gradient(135deg, #ff4d4f 0%, #d32f2f 100%) !important;
+}
+
+.delete-icon:hover {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%) !important;
+  transform: scale(1.1) rotate(0deg) !important;
+}
+
 /* ==== FORMULÁRIO NOVA TAREFA ==== */
 .nova-tarefa {
   background: white;
@@ -294,6 +324,25 @@
   color: #999;
 }
 
+.nova-tarefa select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: white;
+  cursor: pointer;
+}
+
+.nova-tarefa select:focus {
+  border-color: #1E52A5;
+  box-shadow: 0 0 0 3px rgba(30, 82, 165, 0.1);
+}
+
 .nova-tarefa button {
   width: 100%;
   padding: 12px;
@@ -314,6 +363,11 @@
 
 .nova-tarefa button:active {
   transform: translateY(0);
+}
+
+.nova-tarefa button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ==== CARDS ==== */
@@ -396,23 +450,65 @@
   box-shadow: 0 2px 8px rgba(30, 82, 165, 0.3);
 }
 
+/* ✅ AVATARES DOS MEMBROS EM LINHA HORIZONTAL */
 .kanban-footer {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  align-items: center;
+  margin-top: 12px;
+  font-size: 0.85rem;
   color: #666;
   padding-top: 10px;
   border-top: 1px solid #f0f0f0;
 }
 
-.kanban-footer span:first-child {
-  font-weight: 600;
-  color: #333;
+.kanban-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
-.kanban-footer span:last-child {
+.kanban-footer-left > span {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.kanban-membros-avatars {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.kanban-avatar {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.kanban-avatar:hover {
+  transform: scale(1.1);
+  z-index: 100 !important;
+}
+
+.kanban-avatar-more {
+  cursor: pointer;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.kanban-avatar-more:hover {
+  transform: scale(1.1);
+}
+
+.kanban-footer > span:last-child {
   color: #1E52A5;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* ==== RESPONSIVIDADE ==== */
@@ -436,19 +532,3 @@
     width: 60px;
   }
 }
-
-.column-header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.delete-icon {
-  background: linear-gradient(135deg, #ff4d4f 0%, #d32f2f 100%) !important;
-}
-
-.delete-icon:hover {
-  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%) !important;
-  transform: scale(1.1) rotate(0deg) !important; /* Sem rotação no delete */
-}
-

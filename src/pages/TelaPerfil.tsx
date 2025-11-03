@@ -7,6 +7,7 @@ import {
   Upload,
   Save,
   Loader2,
+  X,
 } from "lucide-react";
 import { Toast } from "./Toast";
 import { usuarioApi } from "../services/api";
@@ -181,8 +182,12 @@ const TelaPerfil: React.FC = () => {
     }
   };
 
+  const handleCancel = () => {
+    setEditable(false);
+  };
+
   if (!user) {
-    return <p style={{ textAlign: "center" }}>Carregando informações do usuário...</p>;
+    return <p style={{ textAlign: "center", marginTop: "20px" }}>Carregando informações do usuário...</p>;
   }
 
   return (
@@ -200,39 +205,124 @@ const TelaPerfil: React.FC = () => {
           <h1 className="profile-title">Perfil</h1>
           <div className="profile-wrapper">
             <div className="profile-left">
-              <h2 className="edit-title">
-                Informações{" "}
-                {editable ? (
-                  isSaving ? (
-                    <Loader2
-                      size={24}
-                      color="#1E1E1E"
-                      style={{
-                        opacity: 0.5,
-                        cursor: 'not-allowed',
-                        animation: 'spin 1s linear infinite'
-                      }}
-                    />
-                  ) : (
-                    <Save
-                      size={24}
-                      color="#1E1E1E"
-                      style={{
-                        opacity: 0.5,
-                        cursor: 'pointer'
-                      }}
-                      onClick={handleSave}
-                    />
-                  )
-                ) : (
-                  <PenLine
-                    size={24}
-                    color="#1E1E1E"
-                    style={{ opacity: 0.5, cursor: "pointer" }}
+              <div className="edit-title-section">
+                <h2 className="edit-title">Informações</h2>
+                {!editable ? (
+                  <button
+                    className="edit-btn"
                     onClick={() => setEditable(true)}
-                  />
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 16px',
+                      backgroundColor: '#f0f0f0',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#1E1E1E',
+                      transition: 'all 0.3s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#e0e0e0';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0';
+                    }}
+                  >
+                    <PenLine size={18} />
+                    Editar
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* ✅ BOTÃO SALVAR COM LOADING */}
+                    <button
+                      className="save-btn"
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '10px 18px',
+                        backgroundColor: isSaving ? '#ccc' : '#1E52A5',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: isSaving ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: 'white',
+                        transition: 'all 0.3s',
+                        opacity: isSaving ? 0.8 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSaving) {
+                          e.currentTarget.style.backgroundColor = '#164399';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSaving) {
+                          e.currentTarget.style.backgroundColor = '#1E52A5';
+                        }
+                      }}
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2
+                            size={18}
+                            style={{
+                              animation: 'spin 1s linear infinite'
+                            }}
+                          />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={18} />
+                          Salvar
+                        </>
+                      )}
+                    </button>
+
+                    {/* ✅ BOTÃO CANCELAR */}
+                    <button
+                      className="cancel-btn"
+                      onClick={handleCancel}
+                      disabled={isSaving}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '10px 18px',
+                        backgroundColor: '#f0f0f0',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        cursor: isSaving ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#1E1E1E',
+                        transition: 'all 0.3s',
+                        opacity: isSaving ? 0.5 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSaving) {
+                          e.currentTarget.style.backgroundColor = '#e0e0e0';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSaving) {
+                          e.currentTarget.style.backgroundColor = '#f0f0f0';
+                        }
+                      }}
+                    >
+                      <X size={18} />
+                      Cancelar
+                    </button>
+                  </div>
                 )}
-              </h2>
+              </div>
 
               <div className="profile-main-content">
                 <div className="profile-header">
@@ -278,23 +368,64 @@ const TelaPerfil: React.FC = () => {
                   </div>
 
                   {editable && (
-                    <label
-                      className="avatar-upload"
+                    <button
+                      className="avatar-upload-btn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const fileInput = document.getElementById('avatar-file-input') as HTMLInputElement;
+                        fileInput?.click();
+                      }}
+                      disabled={isUploading}
                       style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 16px',
+                        backgroundColor: isUploading ? '#ccc' : '#1E52A5',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
                         cursor: isUploading ? 'not-allowed' : 'pointer',
-                        opacity: isUploading ? 0.5 : 1
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        transition: 'all 0.3s',
+                        opacity: isUploading ? 0.7 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isUploading) {
+                          e.currentTarget.style.backgroundColor = '#164399';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isUploading) {
+                          e.currentTarget.style.backgroundColor = '#1E52A5';
+                        }
                       }}
                     >
-                      <Upload size={18} />
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={handleAvatarChange}
-                        disabled={isUploading}
-                        hidden
-                      />
-                    </label>
+                      {isUploading ? (
+                        <>
+                          <Loader2
+                            size={18}
+                            style={{ animation: 'spin 1s linear infinite' }}
+                          />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={18} />
+                          Mudar foto
+                        </>
+                      )}
+                    </button>
                   )}
+                  <input
+                    id="avatar-file-input"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleAvatarChange}
+                    disabled={isUploading}
+                    hidden
+                  />
                 </div>
 
                 <form className="profile-form">
@@ -304,6 +435,10 @@ const TelaPerfil: React.FC = () => {
                     value={user.nome || ""}
                     onChange={(e) => handleChange("nome", e.target.value)}
                     readOnly={!editable || isSaving}
+                    style={{
+                      backgroundColor: editable && !isSaving ? '#fff' : '#f5f5f5',
+                      cursor: editable && !isSaving ? 'text' : 'default',
+                    }}
                   />
 
                   <label>Email</label>
@@ -313,6 +448,10 @@ const TelaPerfil: React.FC = () => {
                       type="email"
                       value={user.email || ""}
                       readOnly
+                      style={{
+                        backgroundColor: '#f5f5f5',
+                        cursor: 'default',
+                      }}
                     />
                   </div>
 
@@ -321,6 +460,10 @@ const TelaPerfil: React.FC = () => {
                     type="text"
                     value={user.cargo?.nome || "—"}
                     readOnly
+                    style={{
+                      backgroundColor: '#f5f5f5',
+                      cursor: 'default',
+                    }}
                   />
 
                   <label>Role</label>
@@ -328,6 +471,10 @@ const TelaPerfil: React.FC = () => {
                     type="text"
                     value={user.role || "—"}
                     readOnly
+                    style={{
+                      backgroundColor: '#f5f5f5',
+                      cursor: 'default',
+                    }}
                   />
                 </form>
               </div>
@@ -335,6 +482,28 @@ const TelaPerfil: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .edit-title-section {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+
+        .profile-form input:disabled {
+          opacity: 0.7;
+        }
+      `}</style>
     </>
   );
 };

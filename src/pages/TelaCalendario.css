@@ -91,6 +91,124 @@
   box-shadow: 0 4px 12px rgba(30, 82, 165, 0.4);
 }
 
+/* ✅ TAREFAS NO CALENDÁRIO */
+.tarefa-mini {
+  height: 4px;
+  border-radius: 2px;
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tarefa-card {
+  background: white;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.tarefa-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.tarefa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.tarefa-titulo-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tarefa-titulo-icon h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.tarefa-descricao {
+  font-size: 13px;
+  color: #666;
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.tarefa-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tarefa-empresa {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.tarefa-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tarefa-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.tarefa-badge.prioridade {
+  color: white;
+}
+
+.tarefa-badge.status {
+  background: #E8F0FC;
+  color: #1E52A5;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E52A5;
+  margin: 16px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #E8F0FC;
+}
+
+.section-title:first-child {
+  margin-top: 0;
+}
+
+.legenda-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.legenda-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.legenda-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
+
 .btn-novo-evento:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(30, 82, 165, 0.6);

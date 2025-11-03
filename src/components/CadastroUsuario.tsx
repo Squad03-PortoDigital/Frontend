@@ -1,19 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 import LogoFlap from "../images/Logo-azul-FLAP 1.png";
 import FundoLogin from "../images/imagem-fundo-azul-login.png";
 
-const Cadastro: React.FC = () => {
+interface Role {
+  id: number;
+  nome: string;
+}
+
+interface Cargo {
+  id: number;
+  nome: string;
+}
+
+const CadastroUsuario: React.FC = () => {
   const navigate = useNavigate();
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [roleId, setRoleId] = useState<number | "">("");
+  const [cargoId, setCargoId] = useState<number | "">("");
+
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
+
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Busca roles e cargos ao carregar o componente
+  useEffect(() => {
+    const fetchRolesECargos = async () => {
+      try {
+        // Buscar roles
+        const rolesResponse = await fetch("http://localhost:8080/roles");
+
+        if (rolesResponse.ok) {
+          const rolesData = await rolesResponse.json();
+          setRoles(rolesData);
+        }
+
+        // Buscar cargos
+        const cargosResponse = await fetch("http://localhost:8080/cargos");
+
+        if (cargosResponse.ok) {
+          const cargosData = await cargosResponse.json();
+          setCargos(cargosData);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar roles e cargos:", error);
+        setErro("Erro ao carregar opções de role e cargo.");
+      }
+    };
+
+    fetchRolesECargos();
+  }, []);
 
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +80,16 @@ const Cadastro: React.FC = () => {
       return;
     }
 
+    if (!roleId) {
+      setErro("Selecione uma role para o usuário.");
+      return;
+    }
+
+    if (!cargoId) {
+      setErro("Selecione um cargo para o usuário.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -43,12 +97,14 @@ const Cadastro: React.FC = () => {
       const response = await fetch("http://localhost:8080/usuarios/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // ✅ Mantém sessão do admin
         body: JSON.stringify({
           nome,
           email,
           senha,
           foto: null,
-          cargoId: 1,
+          roleId: Number(roleId),
+          cargoId: Number(cargoId),
         }),
       });
 
@@ -67,38 +123,24 @@ const Cadastro: React.FC = () => {
       if (response.ok) {
         setSucesso("Usuário cadastrado com sucesso!");
 
-        // Aguarda 1 segundo para mostrar mensagem de sucesso
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Limpa os campos do formulário
+        setNome("");
+        setEmail("");
+        setSenha("");
+        setConfirmarSenha("");
+        setRoleId("");
+        setCargoId("");
 
-        // Faz login automático após cadastro
-        const loginResponse = await fetch("http://localhost:8080/usuarios/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, senha }),
-        });
-
-        if (loginResponse.ok) {
-          const loginData = await loginResponse.json();
-
-          // Armazena dados do usuário
-          localStorage.setItem("usuario", JSON.stringify(loginData));
-          localStorage.setItem("authenticated", "true");
-          localStorage.setItem("userEmail", email);
-
-          navigate("/home", { replace: true });
-        } else {
-          // Se login falhar, redireciona para tela de login
-          setErro("Cadastro realizado! Redirecionando para login...");
-          setTimeout(() => navigate("/"), 2000);
-        }
+        // Aguarda 2 segundos e volta para home
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        navigate("/home");
       } else if (response.status === 400) {
-        // Erro de validação
         setErro(data.message || "Dados inválidos. Verifique as informações.");
       } else if (response.status === 409) {
-        // Conflito (email já existe)
-        setErro("Este e-mail já está cadastrado. Tente fazer login.");
+        setErro("Este e-mail já está cadastrado.");
+      } else if (response.status === 403) {
+        setErro("Você não tem permissão para cadastrar usuários.");
       } else {
-        // Outros erros
         setErro(data.message || "Erro ao realizar cadastro. Tente novamente.");
       }
     } catch (error) {
@@ -130,28 +172,29 @@ const Cadastro: React.FC = () => {
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        height: "100vh",
+        minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        padding: "20px 0",
       }}
     >
-      <div className="login-box">
+      <div className="login-box" style={{ maxHeight: "90vh", overflowY: "auto" }}>
         <div className="logo-login-flap">
           <img src={LogoFlap} alt="Logo Flap" className="login-logo" />
         </div>
 
         <form className="login-form" onSubmit={handleCadastro}>
-          <h2 style={{ textAlign: "center", marginBottom: "10px" }}>
-            Criar nova conta
+          <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+            Cadastrar Novo Usuário
           </h2>
 
           <div className="input-group">
-            <label htmlFor="nome">Nome</label>
+            <label htmlFor="nome">Nome Completo</label>
             <input
               type="text"
               id="nome"
-              placeholder="Digite seu nome completo"
+              placeholder="Digite o nome completo"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               minLength={3}
@@ -164,11 +207,61 @@ const Cadastro: React.FC = () => {
             <input
               type="email"
               id="email"
-              placeholder="Digite seu e-mail"
+              placeholder="Digite o e-mail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="roleId">Role (Permissão)</label>
+            <select
+              id="roleId"
+              value={roleId}
+              onChange={(e) => setRoleId(Number(e.target.value))}
+              required
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid #ddd",
+                fontSize: "14px",
+                backgroundColor: "white",
+              }}
+            >
+              <option value="">Selecione uma role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="cargoId">Cargo</label>
+            <select
+              id="cargoId"
+              value={cargoId}
+              onChange={(e) => setCargoId(Number(e.target.value))}
+              required
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid #ddd",
+                fontSize: "14px",
+                backgroundColor: "white",
+              }}
+            >
+              <option value="">Selecione um cargo</option>
+              {cargos.map((cargo) => (
+                <option key={cargo.id} value={cargo.id}>
+                  {cargo.nome}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="input-group">
@@ -185,11 +278,11 @@ const Cadastro: React.FC = () => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="confirmarSenha">Confirmar senha</label>
+            <label htmlFor="confirmarSenha">Confirmar Senha</label>
             <input
               type="password"
               id="confirmarSenha"
-              placeholder="Confirme sua senha"
+              placeholder="Confirme a senha"
               value={confirmarSenha}
               onChange={(e) => setConfirmarSenha(e.target.value)}
               minLength={6}
@@ -201,16 +294,15 @@ const Cadastro: React.FC = () => {
           {sucesso && <p className="sucesso-login">{sucesso}</p>}
 
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? "Cadastrando..." : "Cadastrar"}
+            {loading ? "Cadastrando..." : "Cadastrar Usuário"}
           </button>
 
           <p style={{ textAlign: "center", marginTop: "15px" }}>
-            Já possui uma conta?{" "}
             <span
               style={{ color: "#007bff", cursor: "pointer" }}
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
             >
-              Entrar
+              ← Voltar para Home
             </span>
           </p>
         </form>
@@ -219,4 +311,4 @@ const Cadastro: React.FC = () => {
   );
 };
 
-export default Cadastro;
+export default CadastroUsuario;

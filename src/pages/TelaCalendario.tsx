@@ -10,8 +10,9 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Users,
-  MapPin
+  MapPin,
+  CheckSquare,
+  Circle
 } from "lucide-react";
 import api from "../services/api";
 import { Toast } from "./Toast";
@@ -20,12 +21,23 @@ interface EventoDTO {
   id: number;
   titulo: string;
   descricao?: string;
-  data: string; // formato ISO: "2025-12-10"
-  horario?: string; // formato: "14:30"
+  data: string;
+  horario?: string;
   local?: string;
   participantes?: string[];
   cor?: string;
   tipo: "ANIVERSARIO" | "REUNIAO" | "FERIADO" | "OUTRO";
+}
+
+interface TarefaDTO {
+  id: number;
+  titulo: string;
+  descricao?: string;
+  status: string;
+  prioridade: string;
+  dtEntrega?: string;
+  empresa?: string;
+  empresaId?: number;
 }
 
 interface ToastState {
@@ -41,6 +53,13 @@ const tipoEventoCores: { [key: string]: string } = {
   OUTRO: "#FFAB00",
 };
 
+const prioridadeCores: { [key: string]: string } = {
+  BAIXA: "#36B37E",
+  MEDIA: "#FFAB00",
+  ALTA: "#fd7e14",
+  CRITICA: "#FF5630",
+};
+
 const mesesNomes = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
@@ -50,6 +69,7 @@ const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export default function TelaCalendario() {
   const [eventos, setEventos] = useState<EventoDTO[]>([]);
+  const [tarefas, setTarefas] = useState<TarefaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [mesAtual, setMesAtual] = useState(new Date().getMonth());
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
@@ -57,8 +77,9 @@ export default function TelaCalendario() {
   const [modalAberto, setModalAberto] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<EventoDTO | null>(null);
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
+  const [mostrarTarefas, setMostrarTarefas] = useState(true);
+  const [mostrarEventos, setMostrarEventos] = useState(true);
 
-  // Form states
   const [formTitulo, setFormTitulo] = useState("");
   const [formDescricao, setFormDescricao] = useState("");
   const [formData, setFormData] = useState("");
@@ -73,26 +94,32 @@ export default function TelaCalendario() {
   };
 
   useEffect(() => {
-    carregarEventos();
+    carregarDados();
   }, []);
 
-  const carregarEventos = async () => {
+  const carregarDados = async () => {
     try {
       setLoading(true);
       const auth = localStorage.getItem("auth");
       const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
-      const eventosRes = await api.get("/eventos", headers);
+      const [eventosRes, tarefasRes] = await Promise.all([
+        api.get("/eventos", headers),
+        api.get("/tarefas", headers),
+      ]);
+
       setEventos(Array.isArray(eventosRes.data) ? eventosRes.data : []);
+      setTarefas(Array.isArray(tarefasRes.data) ? tarefasRes.data : []);
     } catch (error: any) {
       setEventos([]);
+      setTarefas([]);
       if (error.response?.status === 401) {
         showToast("Sessão expirada. Faça login novamente.", "error");
         localStorage.removeItem("auth");
         localStorage.removeItem("usuario");
-        setTimeout(() => navigate("/login", { replace: true }), 1500);
+        setTimeout(() => navigate("/", { replace: true }), 1500);
       } else {
-        showToast("Erro ao carregar eventos.", "error");
+        showToast("Erro ao carregar dados.", "error");
       }
     } finally {
       setLoading(false);
@@ -131,6 +158,18 @@ export default function TelaCalendario() {
         dataEvento.getDate() === dia &&
         dataEvento.getMonth() === mesAtual &&
         dataEvento.getFullYear() === anoAtual
+      );
+    });
+  };
+
+  const getTarefasDoDia = (dia: number) => {
+    return tarefas.filter(t => {
+      if (!t.dtEntrega) return false;
+      const dataVencimento = new Date(t.dtEntrega);
+      return (
+        dataVencimento.getDate() === dia &&
+        dataVencimento.getMonth() === mesAtual &&
+        dataVencimento.getFullYear() === anoAtual
       );
     });
   };
@@ -212,7 +251,7 @@ export default function TelaCalendario() {
       }
 
       setModalAberto(false);
-      await carregarEventos();
+      await carregarDados();
     } catch (error) {
       showToast("Erro ao salvar evento.", "error");
     }
@@ -229,13 +268,18 @@ export default function TelaCalendario() {
         withCredentials: true,
       });
       showToast("Evento deletado!", "success");
-      await carregarEventos();
+      await carregarDados();
     } catch (error) {
       showToast("Erro ao deletar evento.", "error");
     }
   };
 
+  const abrirDetalhamentoTarefa = (tarefaId: number) => {
+    navigate(`/detalhamento/${tarefaId}`);
+  };
+
   const eventosDiaSelecionado = diaSelecionado ? getEventosDoDia(diaSelecionado) : [];
+  const tarefasDiaSelecionado = diaSelecionado ? getTarefasDoDia(diaSelecionado) : [];
 
   if (loading) {
     return (
@@ -261,11 +305,10 @@ export default function TelaCalendario() {
       )}
 
       <div className="calendario-wrapper">
-        {/* HEADER DO CALENDÁRIO */}
         <div className="calendario-header">
           <div className="calendario-titulo">
             <CalendarIcon size={28} color="#1E52A5" />
-            <h1>Calendário de Eventos</h1>
+            <h1>Calendário de Eventos & Tarefas</h1>
           </div>
 
           <div className="calendario-acoes">
@@ -284,28 +327,52 @@ export default function TelaCalendario() {
           </div>
         </div>
 
-        {/* LEGENDA */}
+        {/* LEGENDA COM TAREFAS */}
         <div className="calendario-legenda">
-          <div className="legenda-item">
-            <div className="legenda-cor" style={{ background: tipoEventoCores.ANIVERSARIO }}></div>
-            <span>Aniversário</span>
+          <div className="legenda-section">
+            <strong>Eventos:</strong>
+            <label className="legenda-checkbox">
+              <input
+                type="checkbox"
+                checked={mostrarEventos}
+                onChange={() => setMostrarEventos(!mostrarEventos)}
+              />
+              <div className="legenda-item">
+                <div className="legenda-cor" style={{ background: tipoEventoCores.ANIVERSARIO }}></div>
+                <span>Aniversário</span>
+              </div>
+            </label>
+            <div className="legenda-item">
+              <div className="legenda-cor" style={{ background: tipoEventoCores.REUNIAO }}></div>
+              <span>Reunião</span>
+            </div>
+            <div className="legenda-item">
+              <div className="legenda-cor" style={{ background: tipoEventoCores.FERIADO }}></div>
+              <span>Feriado</span>
+            </div>
+            <div className="legenda-item">
+              <div className="legenda-cor" style={{ background: tipoEventoCores.OUTRO }}></div>
+              <span>Outro</span>
+            </div>
           </div>
-          <div className="legenda-item">
-            <div className="legenda-cor" style={{ background: tipoEventoCores.REUNIAO }}></div>
-            <span>Reunião</span>
-          </div>
-          <div className="legenda-item">
-            <div className="legenda-cor" style={{ background: tipoEventoCores.FERIADO }}></div>
-            <span>Feriado</span>
-          </div>
-          <div className="legenda-item">
-            <div className="legenda-cor" style={{ background: tipoEventoCores.OUTRO }}></div>
-            <span>Outro</span>
+
+          <div className="legenda-section">
+            <label className="legenda-checkbox">
+              <input
+                type="checkbox"
+                checked={mostrarTarefas}
+                onChange={() => setMostrarTarefas(!mostrarTarefas)}
+              />
+              <strong>Tarefas:</strong>
+            </label>
+            <div className="legenda-item">
+              <CheckSquare size={16} color="#1E52A5" />
+              <span>Vencimento</span>
+            </div>
           </div>
         </div>
 
         <div className="calendario-content">
-          {/* CALENDÁRIO */}
           <div className="calendario-grid-container">
             <div className="calendario-dias-semana">
               {diasSemana.map(dia => (
@@ -319,7 +386,8 @@ export default function TelaCalendario() {
                   return <div key={`empty-${index}`} className="dia-vazio"></div>;
                 }
 
-                const eventosDia = getEventosDoDia(dia);
+                const eventosDia = mostrarEventos ? getEventosDoDia(dia) : [];
+                const tarefasDia = mostrarTarefas ? getTarefasDoDia(dia) : [];
 
                 return (
                   <div
@@ -329,18 +397,30 @@ export default function TelaCalendario() {
                     onDoubleClick={() => abrirModalNovoEvento(dia)}
                   >
                     <div className="dia-numero">{dia}</div>
-                    {eventosDia.length > 0 && (
+                    {(eventosDia.length > 0 || tarefasDia.length > 0) && (
                       <div className="eventos-mini">
-                        {eventosDia.slice(0, 3).map(evento => (
+                        {eventosDia.slice(0, 2).map(evento => (
                           <div
-                            key={evento.id}
+                            key={`evento-${evento.id}`}
                             className="evento-mini"
                             style={{ backgroundColor: evento.cor }}
                             title={evento.titulo}
-                          ></div>
+                          >
+                            <Circle size={8} fill="white" color="white" />
+                          </div>
                         ))}
-                        {eventosDia.length > 3 && (
-                          <span className="mais-eventos">+{eventosDia.length - 3}</span>
+                        {tarefasDia.slice(0, 2).map(tarefa => (
+                          <div
+                            key={`tarefa-${tarefa.id}`}
+                            className="tarefa-mini"
+                            style={{ backgroundColor: prioridadeCores[tarefa.prioridade] }}
+                            title={tarefa.titulo}
+                          >
+                            <CheckSquare size={8} color="white" />
+                          </div>
+                        ))}
+                        {(eventosDia.length + tarefasDia.length > 4) && (
+                          <span className="mais-eventos">+{eventosDia.length + tarefasDia.length - 4}</span>
                         )}
                       </div>
                     )}
@@ -350,7 +430,6 @@ export default function TelaCalendario() {
             </div>
           </div>
 
-          {/* PAINEL LATERAL DE EVENTOS */}
           {diaSelecionado !== null && (
             <div className="tarefas-panel">
               <div className="panel-header">
@@ -372,63 +451,111 @@ export default function TelaCalendario() {
               </div>
 
               <div className="panel-content">
-                {eventosDiaSelecionado.length > 0 ? (
+                {(eventosDiaSelecionado.length > 0 || tarefasDiaSelecionado.length > 0) ? (
                   <div className="tarefas-lista">
-                    {eventosDiaSelecionado.map(evento => (
-                      <div
-                        key={evento.id}
-                        className="evento-card"
-                        style={{ borderLeft: `4px solid ${evento.cor}` }}
-                      >
-                        <div className="evento-header">
-                          <h4>{evento.titulo}</h4>
-                          <div className="evento-acoes">
-                            <button
-                              className="btn-icon"
-                              onClick={() => abrirModalEditarEvento(evento)}
-                              title="Editar"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              className="btn-icon delete"
-                              onClick={() => deletarEvento(evento.id, evento.titulo)}
-                              title="Deletar"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                    {/* EVENTOS */}
+                    {mostrarEventos && eventosDiaSelecionado.length > 0 && (
+                      <>
+                        <h4 className="section-title">Eventos</h4>
+                        {eventosDiaSelecionado.map(evento => (
+                          <div
+                            key={`evento-${evento.id}`}
+                            className="evento-card"
+                            style={{ borderLeft: `4px solid ${evento.cor}` }}
+                          >
+                            <div className="evento-header">
+                              <h4>{evento.titulo}</h4>
+                              <div className="evento-acoes">
+                                <button
+                                  className="btn-icon"
+                                  onClick={() => abrirModalEditarEvento(evento)}
+                                  title="Editar"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon delete"
+                                  onClick={() => deletarEvento(evento.id, evento.titulo)}
+                                  title="Deletar"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {evento.descricao && (
+                              <p className="evento-descricao">{evento.descricao}</p>
+                            )}
+
+                            <div className="evento-detalhes">
+                              {evento.horario && (
+                                <div className="evento-info">
+                                  <Clock size={14} />
+                                  <span>{evento.horario}</span>
+                                </div>
+                              )}
+                              {evento.local && (
+                                <div className="evento-info">
+                                  <MapPin size={14} />
+                                  <span>{evento.local}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="evento-tipo-badge" style={{ backgroundColor: evento.cor }}>
+                              {evento.tipo.replace('_', ' ')}
+                            </div>
                           </div>
-                        </div>
+                        ))}
+                      </>
+                    )}
 
-                        {evento.descricao && (
-                          <p className="evento-descricao">{evento.descricao}</p>
-                        )}
-
-                        <div className="evento-detalhes">
-                          {evento.horario && (
-                            <div className="evento-info">
-                              <Clock size={14} />
-                              <span>{evento.horario}</span>
+                    {/* TAREFAS */}
+                    {mostrarTarefas && tarefasDiaSelecionado.length > 0 && (
+                      <>
+                        <h4 className="section-title">Tarefas com Vencimento</h4>
+                        {tarefasDiaSelecionado.map(tarefa => (
+                          <div
+                            key={`tarefa-${tarefa.id}`}
+                            className="tarefa-card"
+                            style={{ borderLeft: `4px solid ${prioridadeCores[tarefa.prioridade]}` }}
+                            onClick={() => abrirDetalhamentoTarefa(tarefa.id)}
+                          >
+                            <div className="tarefa-header">
+                              <div className="tarefa-titulo-icon">
+                                <CheckSquare size={18} color={prioridadeCores[tarefa.prioridade]} />
+                                <h4>{tarefa.titulo}</h4>
+                              </div>
                             </div>
-                          )}
-                          {evento.local && (
-                            <div className="evento-info">
-                              <MapPin size={14} />
-                              <span>{evento.local}</span>
-                            </div>
-                          )}
-                        </div>
 
-                        <div className="evento-tipo-badge" style={{ backgroundColor: evento.cor }}>
-                          {evento.tipo.replace('_', ' ')}
-                        </div>
-                      </div>
-                    ))}
+                            {tarefa.descricao && (
+                              <p className="tarefa-descricao">{tarefa.descricao}</p>
+                            )}
+
+                            <div className="tarefa-detalhes">
+                              {tarefa.empresa && (
+                                <div className="tarefa-info">
+                                  <span className="tarefa-empresa">{tarefa.empresa}</span>
+                                </div>
+                              )}
+                              <div className="tarefa-badges">
+                                <span className="tarefa-badge prioridade" style={{ backgroundColor: prioridadeCores[tarefa.prioridade] }}>
+                                  {tarefa.prioridade}
+                                </span>
+                                <span className="tarefa-badge status">
+                                  {tarefa.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="empty-state">
                     <CalendarIcon size={48} color="#ccc" />
-                    <p>Nenhum evento para este dia</p>
+                    <p>Nenhum evento ou tarefa para este dia</p>
                     <button
                       className="btn-criar-evento"
                       onClick={() => abrirModalNovoEvento(diaSelecionado)}
@@ -443,7 +570,6 @@ export default function TelaCalendario() {
         </div>
       </div>
 
-      {/* MODAL DE CRIAR/EDITAR EVENTO */}
       {modalAberto && (
         <div className="modal-overlay" onClick={() => setModalAberto(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

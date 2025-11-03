@@ -104,7 +104,11 @@ export default function TelaDashboard() {
           api.get("/listas", headers),
         ]);
 
-        setTarefas(Array.isArray(tarefasRes.data) ? tarefasRes.data : []);
+        const tarefasFiltradas = Array.isArray(tarefasRes.data)
+                ? tarefasRes.data.filter((t: TarefaDTO) => t.status !== "ARQUIVADA")
+                : [];
+
+        setTarefas(tarefasFiltradas);
         setEmpresas(Array.isArray(empresasRes.data) ? empresasRes.data : []);
         setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
         setListas(Array.isArray(listasRes.data) ? listasRes.data : []);
