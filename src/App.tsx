@@ -12,7 +12,8 @@ import KanbanBoard from "./pages/TelaKanbanBoard";
 import TelaDetalhamento from "./pages/TelaDetalhamento";
 import TelaDashboard from "./pages/TelaDashboard";
 import TelaCalendario from "./pages/TelaCalendario";
-import TelaArquivadas from "./pages/TelaArquivadas"; // ✅ ADICIONAR
+import TelaArquivadas from "./pages/TelaArquivadas";
+import TelaEquipe from "./pages/TelaEquipe";
 import "./App.css";
 
 // Tipo para o usuário
@@ -99,6 +100,20 @@ export default function App() {
           </div>
         }
       />
+
+      <Route
+          path="/equipe"
+          element={
+            <div className="app-grid">
+              <Header />
+              <Menu user={usuario} />
+              <main className="app-content">
+              <TelaEquipe />
+            </main>
+          </div>
+        }
+      />
+
 
       {/* ✅ NOVO: Tela de tarefas arquivadas */}
       <Route

@@ -130,8 +130,10 @@ export default function Menu({ user: userProp }: MenuProps) {
             <div className="menu-item-nome">Dashboard</div>
           </Link>
           <div className="menu-item">
+          <Link to="/equipe" className={`menu-item ${isActive('/equipe')}`}>
             <Users size={22} />
             <div className="menu-item-nome">Equipe</div>
+          </Link>
           </div>
         </div>
 

@@ -84,7 +84,7 @@ export default function TelaDetalhamento() {
   const [statusOpen, setStatusOpen] = useState(false);
   const [prioridadeOpen, setPrioridadeOpen] = useState(false);
   const [membrosDropdownOpen, setMembrosDropdownOpen] = useState(false);
-  const [mostrarModalArquivar, setMostrarModalArquivar] = useState(false); // ✅ ADICIONAR
+  const [mostrarModalArquivar, setMostrarModalArquivar] = useState(false);
 
   const progresso = tarefa?.progresso || 0;
 
@@ -103,25 +103,50 @@ export default function TelaDetalhamento() {
     setToast({ message, type, show: true });
   };
 
+  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  const handleSessionExpired = () => {
+    showToast("Sessão expirada. Faça login novamente.", "error");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("authenticated");
+    setTimeout(() => navigate("/", { replace: true }), 1500);
+  };
+
+  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+  const getAuth = (): string | null => {
+    const auth = localStorage.getItem("auth");
+    if (!auth) {
+      navigate("/", { replace: true });
+      return null;
+    }
+    return auth;
+  };
+
   useEffect(() => {
+    let isSubscribed = true; // ✅ Previne race conditions
+
     const carregarTarefa = async () => {
+      if (!id) {
+        navigate("/home", { replace: true });
+        return;
+      }
+
+      const auth = getAuth();
+      if (!auth) return;
+
       try {
         setLoading(true);
-        const auth = localStorage.getItem("auth");
-
-        if (!auth) {
-          navigate("/", { replace: true });
-          return;
-        }
 
         const res = await api.get(`/tarefas/${id}`, {
           headers: { Authorization: `Basic ${auth}` },
           withCredentials: true,
         });
 
-        console.log("📋 Tarefa carregada:", res.data);
+        if (!isSubscribed) return;
+
         let tarefaData = res.data;
 
+        // Carregar dados da empresa
         if (tarefaData.empresaId || tarefaData.empresa?.id) {
           try {
             const empresaId = tarefaData.empresaId || tarefaData.empresa?.id;
@@ -130,34 +155,41 @@ export default function TelaDetalhamento() {
               withCredentials: true,
             });
 
-            tarefaData.empresa = {
-              id: empresaRes.data.id,
-              nome: empresaRes.data.nome,
-              logoUrl: empresaRes.data.foto || null,
-              agenteLink: empresaRes.data.agenteLink || null,
-            };
+            if (isSubscribed) {
+              tarefaData.empresa = {
+                id: empresaRes.data.id,
+                nome: empresaRes.data.nome,
+                logoUrl: empresaRes.data.foto || null,
+                agenteLink: empresaRes.data.agenteLink || null,
+              };
+            }
           } catch (err) {
             console.warn("⚠️ Não foi possível carregar dados da empresa:", err);
           }
         }
 
+        // Carregar usuários
         try {
           const usuariosRes = await api.get("/usuarios", {
             headers: { Authorization: `Basic ${auth}` },
             withCredentials: true,
           });
-          const usuarios = Array.isArray(usuariosRes.data)
-            ? usuariosRes.data.map((u: any) => ({
-                ...u,
-                username: u.email
-              }))
-            : [];
-          setTodosUsuarios(usuarios);
-          console.log("👥 Usuários carregados:", usuarios.length);
+
+          if (isSubscribed) {
+            const usuarios = Array.isArray(usuariosRes.data)
+              ? usuariosRes.data.map((u: any) => ({
+                  ...u,
+                  username: u.email
+                }))
+              : [];
+            setTodosUsuarios(usuarios);
+          }
         } catch (err) {
           console.warn("⚠️ Erro ao carregar usuários:", err);
-          setTodosUsuarios([]);
+          if (isSubscribed) setTodosUsuarios([]);
         }
+
+        if (!isSubscribed) return;
 
         setTarefa(tarefaData);
         setTitulo(tarefaData.titulo || "");
@@ -179,16 +211,15 @@ export default function TelaDetalhamento() {
         if (tarefaData.membros && Array.isArray(tarefaData.membros)) {
           const membroIds = tarefaData.membros.map((m: MembroDTO) => m.usuarioId);
           setMembrosSelecionados(membroIds);
-          console.log("✅ Membros selecionados:", membroIds);
         }
 
       } catch (error: any) {
+        if (!isSubscribed) return;
+
         console.error("❌ Erro ao carregar tarefa:", error);
+        
         if (error.response?.status === 401) {
-          showToast("Sessão expirada. Faça login novamente.", "error");
-          localStorage.removeItem("auth");
-          localStorage.removeItem("usuario");
-          setTimeout(() => navigate("/", { replace: true }), 1500);
+          handleSessionExpired();
         } else if (error.response?.status === 404) {
           showToast("Tarefa não encontrada.", "error");
           setTimeout(() => navigate("/home"), 1500);
@@ -197,13 +228,15 @@ export default function TelaDetalhamento() {
           setTimeout(() => navigate("/home"), 1500);
         }
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
 
-    if (id) {
-      carregarTarefa();
-    }
+    carregarTarefa();
+
+    return () => {
+      isSubscribed = false; // ✅ Cleanup
+    };
   }, [id, navigate]);
 
   const salvarAlteracoes = async () => {
@@ -212,9 +245,10 @@ export default function TelaDetalhamento() {
       return;
     }
 
-    try {
-      const auth = localStorage.getItem("auth");
+    const auth = getAuth();
+    if (!auth) return;
 
+    try {
       let dtEntregaFormatada = null;
       if (dtEntrega) {
         dtEntregaFormatada = `${dtEntrega}T00:00:00`;
@@ -231,8 +265,6 @@ export default function TelaDetalhamento() {
         membroIds: membrosSelecionados,
       };
 
-      console.log("💾 Salvando alterações:", payload);
-
       await api.put(`/tarefas/${id}`, payload, {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -245,21 +277,20 @@ export default function TelaDetalhamento() {
       setTimeout(() => navigate("/home"), 1000);
     } catch (error: any) {
       console.error("❌ Erro ao salvar:", error);
+      
       if (error.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        localStorage.removeItem("auth");
-        localStorage.removeItem("usuario");
-        setTimeout(() => navigate("/", { replace: true }), 1500);
+        handleSessionExpired();
       } else {
         showToast("Erro ao salvar alterações.", "error");
       }
     }
   };
 
-  // ✅ ADICIONAR: Função de arquivar
   const arquivarTarefa = async () => {
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
-      const auth = localStorage.getItem("auth");
       await api.patch(`/tarefas/${id}/arquivar`, {}, {
         headers: { Authorization: `Basic ${auth}` },
         withCredentials: true,
@@ -269,7 +300,12 @@ export default function TelaDetalhamento() {
       setTimeout(() => navigate("/home"), 1000);
     } catch (error: any) {
       console.error("❌ Erro ao arquivar:", error);
-      showToast("Erro ao arquivar tarefa.", "error");
+      
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao arquivar tarefa.", "error");
+      }
     } finally {
       setMostrarModalArquivar(false);
     }
@@ -698,7 +734,6 @@ export default function TelaDetalhamento() {
             </div>
           </div>
 
-          {/* ✅ FOOTER ATUALIZADO COM BOTÃO DE ARQUIVAR */}
           <div className="detalhamento-footer">
             <div style={{ display: 'flex', gap: '12px' }}>
               <Button variant="outlined" onClick={() => navigate("/home")}>
@@ -757,7 +792,6 @@ export default function TelaDetalhamento() {
         </div>
       </div>
 
-      {/* ✅ MODAL DE CONFIRMAÇÃO DE ARQUIVAMENTO */}
       {mostrarModalArquivar && (
         <div
           className="modal-overlay"

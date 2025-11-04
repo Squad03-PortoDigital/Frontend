@@ -95,6 +95,25 @@ export default function TelaKanbanBoard() {
     setToast({ message, type, show: true });
   };
 
+  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  const handleSessionExpired = () => {
+    showToast("Sessão expirada. Faça login novamente.", "error");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("authenticated");
+    setTimeout(() => navigate("/", { replace: true }), 1500);
+  };
+
+  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+  const getAuth = (): string | null => {
+    const auth = localStorage.getItem("auth");
+    if (!auth) {
+      navigate("/", { replace: true });
+      return null;
+    }
+    return auth;
+  };
+
   const getSaudacao = () => {
     const agora = new Date();
     const horaBrasilia = agora.toLocaleString("pt-BR", {
@@ -112,7 +131,6 @@ export default function TelaKanbanBoard() {
     return nomeCompleto.split(' ')[0];
   };
 
-  // ✅ ADICIONADO: Função para pegar iniciais
   const getInitials = (nome: string) => {
     if (!nome) return "??";
     const words = nome.trim().split(' ');
@@ -123,27 +141,30 @@ export default function TelaKanbanBoard() {
   };
 
   useEffect(() => {
+    let isSubscribed = true; // ✅ Previne race conditions
+
     const carregarDados = async () => {
+      const auth = getAuth();
+      if (!auth) return;
+
       try {
         setLoading(true);
-        const auth = localStorage.getItem("auth");
         const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
         const usuarioSalvo = localStorage.getItem("usuario");
         let usuarioLogado: Usuario | null = null;
         if (usuarioSalvo) {
           usuarioLogado = JSON.parse(usuarioSalvo);
-          setUsuario(usuarioLogado);
+          if (isSubscribed) setUsuario(usuarioLogado);
         }
-
-        console.log("Usuário logado:", usuarioLogado);
-        console.log("Role do usuário:", usuarioLogado?.role);
 
         const [tarefasRes, empresasRes, listasRes] = await Promise.all([
           api.get("/tarefas", headers),
           api.get("/empresas", headers),
           api.get("/listas", headers),
         ]);
+
+        if (!isSubscribed) return;
 
         setTarefas(Array.isArray(tarefasRes.data) ? tarefasRes.data : []);
         setEmpresas(Array.isArray(empresasRes.data) ? empresasRes.data : []);
@@ -155,32 +176,30 @@ export default function TelaKanbanBoard() {
           setListaSelecionada(listasRes.data[0].id);
 
         const isAdmin = usuarioLogado?.role === "ADMINISTRADOR_MASTER";
-        console.log("É admin?", isAdmin);
 
         if (isAdmin) {
           try {
-            console.log("Buscando lista de usuários (admin)...");
             const membrosRes = await api.get("/usuarios", headers);
-            const usuariosComUsername = Array.isArray(membrosRes.data)
-              ? membrosRes.data.map((u: any) => ({
-                  id: u.id,
-                  nome: u.nome,
-                  email: u.email,
-                  foto: u.foto,
-                  role: u.role,
-                  cargo: u.cargo,
-                  username: u.email
-                }))
-              : [];
-            setMembros(usuariosComUsername);
-            console.log("Usuários carregados:", usuariosComUsername.length);
+            if (isSubscribed) {
+              const usuariosComUsername = Array.isArray(membrosRes.data)
+                ? membrosRes.data.map((u: any) => ({
+                    id: u.id,
+                    nome: u.nome,
+                    email: u.email,
+                    foto: u.foto,
+                    role: u.role,
+                    cargo: u.cargo,
+                    username: u.email
+                  }))
+                : [];
+              setMembros(usuariosComUsername);
+            }
           } catch (error: any) {
             console.error("Erro ao carregar usuários:", error);
-            setMembros([]);
+            if (isSubscribed) setMembros([]);
           }
         } else {
-          console.log("Usuário comum - usando apenas dados próprios");
-          if (usuarioLogado) {
+          if (usuarioLogado && isSubscribed) {
             setMembros([{
               ...usuarioLogado,
               username: usuarioLogado.email
@@ -188,7 +207,7 @@ export default function TelaKanbanBoard() {
           }
         }
 
-        if (Array.isArray(listasRes.data)) {
+        if (Array.isArray(listasRes.data) && isSubscribed) {
           const tarefasBoard: { [listaId: number]: TarefaDTO[] } = {};
           await Promise.all(listasRes.data.map(async (lista: Lista) => {
             try {
@@ -198,27 +217,32 @@ export default function TelaKanbanBoard() {
               tarefasBoard[lista.id] = [];
             }
           }));
-          setTarefasPorLista(tarefasBoard);
+          if (isSubscribed) setTarefasPorLista(tarefasBoard);
         }
       } catch (error: any) {
+        if (!isSubscribed) return;
+
         setTarefas([]);
         setListas([]);
         setEmpresas([]);
         setMembros([]);
         setTarefasPorLista({});
+        
         if (error.response?.status === 401) {
-          showToast("Sessão expirada. Faça login novamente.", "error");
-          localStorage.removeItem("auth");
-          localStorage.removeItem("usuario");
-          setTimeout(() => navigate("/"), 1500);
+          handleSessionExpired();
         } else {
           showToast("Erro ao carregar dados.", "error");
         }
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
+
     carregarDados();
+
+    return () => {
+      isSubscribed = false; // ✅ Cleanup
+    };
   }, [navigate]);
 
   const aplicarFiltros = (filtros: FiltrosAtivos) => {
@@ -233,25 +257,35 @@ export default function TelaKanbanBoard() {
   }));
 
   const recarregarTarefasLista = async (listaId: number) => {
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
-      const auth = localStorage.getItem("auth");
       const res = await api.get(`/tarefas/lista/${listaId}`, {
-        headers: { Authorization: `Basic ${auth}` }, withCredentials: true,
+        headers: { Authorization: `Basic ${auth}` }, 
+        withCredentials: true,
       });
       setTarefasPorLista(prev => ({
         ...prev,
         [listaId]: res.data,
       }));
       const todasTarefasRes = await api.get("/tarefas", {
-        headers: { Authorization: `Basic ${auth}` }, withCredentials: true,
+        headers: { Authorization: `Basic ${auth}` }, 
+        withCredentials: true,
       });
       setTarefas(Array.isArray(todasTarefasRes.data) ? todasTarefasRes.data : []);
-    } catch (e) {}
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      }
+    }
   };
 
   const adicionarBoard = async () => {
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
-      const auth = localStorage.getItem("auth");
       const novoNome = "Novo board";
       const novaPosicao = listas.length + 1;
       const res = await api.post("/listas", { nome: novoNome, posicao: novaPosicao, cor: "#ccc" }, {
@@ -262,14 +296,20 @@ export default function TelaKanbanBoard() {
       setListaSelecionada(res.data.id);
       showToast("Board criado!", "success");
       await recarregarTarefasLista(res.data.id);
-    } catch (error) {
-      showToast("Erro ao criar board.", "error");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao criar board.", "error");
+      }
     }
   };
 
   const editarBoard = async (listaId: number, novoNome: string) => {
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
-      const auth = localStorage.getItem("auth");
       const listaAtual = listas.find(l => l.id === listaId);
       if (!listaAtual) return;
       await api.put(`/listas/${listaId}`, { nome: novoNome, posicao: listaAtual.posicao, cor: listaAtual.cor }, {
@@ -278,8 +318,12 @@ export default function TelaKanbanBoard() {
       });
       setListas((prev) => prev.map(l => l.id === listaId ? { ...l, nome: novoNome } : l));
       showToast("Board editado!", "success");
-    } catch (error) {
-      showToast("Erro ao editar board.", "error");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao editar board.", "error");
+      }
     }
   };
 
@@ -295,16 +339,22 @@ export default function TelaKanbanBoard() {
     const confirmar = window.confirm(`Tem certeza que deseja deletar o board "${listaNome}"?`);
     if (!confirmar) return;
 
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
-      const auth = localStorage.getItem("auth");
       await api.delete(`/listas/${listaId}`, {
         headers: { Authorization: `Basic ${auth}` },
         withCredentials: true,
       });
       setListas((prev) => prev.filter((l) => l.id !== listaId));
       showToast("Board deletado!", "success");
-    } catch (error) {
-      showToast("Erro ao deletar board.", "error");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao deletar board.", "error");
+      }
     }
   };
 
@@ -327,6 +377,9 @@ export default function TelaKanbanBoard() {
       return;
     }
 
+    const auth = getAuth();
+    if (!auth) return;
+
     const novaTarefa = {
       titulo: novoTitulo,
       empresaId: empresaSelecionada,
@@ -335,7 +388,6 @@ export default function TelaKanbanBoard() {
     };
 
     try {
-      const auth = localStorage.getItem("auth");
       const res = await api.post("/tarefas", novaTarefa, {
         headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         withCredentials: true,
@@ -346,7 +398,11 @@ export default function TelaKanbanBoard() {
       await recarregarTarefasLista(listaSelecionada);
       setTimeout(() => navigate(`/detalhamento/${res.data.id}`), 800);
     } catch (error: any) {
-      showToast("Erro ao adicionar tarefa. Tente novamente.", "error");
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao adicionar tarefa. Tente novamente.", "error");
+      }
     }
   };
 
@@ -403,8 +459,13 @@ export default function TelaKanbanBoard() {
       };
     });
 
+    const auth = getAuth();
+    if (!auth) {
+      setTarefasPorLista(backupTarefasPorLista);
+      return;
+    }
+
     try {
-      const auth = localStorage.getItem("auth");
       await api.patch(
         `/tarefas/${tarefaId}/mover`,
         {
@@ -422,7 +483,12 @@ export default function TelaKanbanBoard() {
     } catch (error: any) {
       console.error("Erro ao mover tarefa:", error);
       setTarefasPorLista(backupTarefasPorLista);
-      showToast("Erro ao mover tarefa. Tente novamente.", "error");
+      
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao mover tarefa. Tente novamente.", "error");
+      }
     }
   };
 
@@ -681,7 +747,6 @@ export default function TelaKanbanBoard() {
                                 <div className="kanban-footer-left">
                                   <span>{tarefa.empresa}</span>
 
-                                  {/* ✅ FOTOS DOS MEMBROS */}
                                   {tarefa.membros && tarefa.membros.length > 0 && (
                                     <div className="kanban-membros-avatars">
                                       {tarefa.membros.slice(0, 3).map((membro, idx) => (

@@ -31,7 +31,7 @@ export default function EmpresaDetalhes() {
   const [deleting, setDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // ✅ ESTADO DO MODAL
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
 
@@ -39,29 +39,54 @@ export default function EmpresaDetalhes() {
     setToast({ message, type, show: true });
   };
 
+  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  const handleSessionExpired = () => {
+    showToast("Sessão expirada. Faça login novamente.", "error");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("authenticated");
+    setTimeout(() => navigate("/", { replace: true }), 1500);
+  };
+
+  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+  const getAuth = (): string | null => {
+    const auth = localStorage.getItem("auth");
+    if (!auth) {
+      navigate("/", { replace: true });
+      return null;
+    }
+    return auth;
+  };
+
   useEffect(() => {
+    let isSubscribed = true; // ✅ Previne race conditions
+
     const carregarEmpresa = async () => {
+      if (!id) {
+        navigate("/ajustes", { replace: true });
+        return;
+      }
+
+      const auth = getAuth();
+      if (!auth) return;
+
       setLoading(true);
       try {
-        const auth = localStorage.getItem("auth");
-
         const res = await api.get(`/empresas/${id}`, {
-          headers: {
-            Authorization: `Basic ${auth}`,
-          },
+          headers: { Authorization: `Basic ${auth}` },
           withCredentials: true,
         });
 
-        console.log("Empresa carregada:", res.data);
+        if (!isSubscribed) return;
+
         setEmpresa(res.data);
       } catch (error: any) {
+        if (!isSubscribed) return;
+
         console.error("Erro ao carregar empresa:", error);
 
         if (error.response?.status === 401) {
-          showToast("Sessão expirada. Faça login novamente.", "error");
-          localStorage.removeItem("auth");
-          localStorage.removeItem("usuario");
-          setTimeout(() => navigate("/login", { replace: true }), 1500);
+          handleSessionExpired();
         } else if (error.response?.status === 404) {
           showToast("Empresa não encontrada.", "error");
           setTimeout(() => navigate("/ajustes"), 1500);
@@ -69,28 +94,29 @@ export default function EmpresaDetalhes() {
           showToast("Erro ao carregar empresa. Tente novamente.", "error");
         }
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
 
-    if (id) {
-      carregarEmpresa();
-    }
+    carregarEmpresa();
+
+    return () => {
+      isSubscribed = false; // ✅ Cleanup
+    };
   }, [id, navigate]);
 
   const handleDelete = async () => {
     if (!empresa) return;
 
+    const auth = getAuth();
+    if (!auth) return;
+
     setDeleting(true);
-    setShowDeleteModal(false); // ✅ FECHAR MODAL
+    setShowDeleteModal(false);
 
     try {
-      const auth = localStorage.getItem("auth");
-
       await api.delete(`/empresas/${empresa.id}`, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
+        headers: { Authorization: `Basic ${auth}` },
         withCredentials: true,
       });
 
@@ -100,8 +126,7 @@ export default function EmpresaDetalhes() {
       console.error("Erro ao deletar:", error);
 
       if (error.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        setTimeout(() => navigate("/login", { replace: true }), 1500);
+        handleSessionExpired();
       } else if (error.response?.status === 404) {
         showToast("Empresa não encontrada.", "error");
       } else if (error.response?.status === 405) {
@@ -127,10 +152,11 @@ export default function EmpresaDetalhes() {
       return;
     }
 
+    const auth = getAuth();
+    if (!auth) return;
+
     setSaving(true);
     try {
-      const auth = localStorage.getItem("auth");
-
       const res = await api.put(`/empresas/${empresa.id}`, empresa, {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -139,7 +165,6 @@ export default function EmpresaDetalhes() {
         withCredentials: true,
       });
 
-      console.log("Empresa atualizada:", res.data);
       setEmpresa(res.data);
       showToast("Empresa atualizada com sucesso!", "success");
       setIsEditing(false);
@@ -149,8 +174,7 @@ export default function EmpresaDetalhes() {
       if (error.response?.status === 400) {
         showToast("Dados inválidos. Verifique os campos e tente novamente.", "error");
       } else if (error.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        setTimeout(() => navigate("/login", { replace: true }), 1500);
+        handleSessionExpired();
       } else if (error.response?.status === 404) {
         showToast("Empresa não encontrada.", "error");
       } else {
@@ -188,7 +212,6 @@ export default function EmpresaDetalhes() {
         />
       )}
 
-      {/* ✅ MODAL DE CONFIRMAÇÃO */}
       <ConfirmModal
         isOpen={showDeleteModal}
         title="Deletar Empresa"
@@ -350,7 +373,7 @@ export default function EmpresaDetalhes() {
                   </button>
                   <button
                     className="delete-button"
-                    onClick={() => setShowDeleteModal(true)} // ✅ ABRIR MODAL
+                    onClick={() => setShowDeleteModal(true)}
                     disabled={deleting}
                   >
                     {deleting ? "Deletando..." : "Apagar empresa"}

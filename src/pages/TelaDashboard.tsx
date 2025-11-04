@@ -10,7 +10,6 @@ import {
   AlertCircle,
   BarChart3,
   Calendar,
-  Menu as MenuIcon // ✅ ADICIONAR
 } from "lucide-react";
 import api from "../services/api";
 import logoFlap from "../images/Logo-azul-FLAP 1.png";
@@ -76,6 +75,24 @@ export default function TelaDashboard() {
     setToast({ message, type, show: true });
   };
 
+  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  const handleSessionExpired = () => {
+    showToast("Sessão expirada. Faça login novamente.", "error");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("authenticated");
+    setTimeout(() => navigate("/", { replace: true }), 1500);
+  };
+
+  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+  const getAuth = (): string | null => {
+    const auth = localStorage.getItem("auth");
+    if (!auth) {
+      navigate("/", { replace: true });
+      return null;
+    }
+    return auth;
+  };
 
   const getSaudacao = () => {
     const agora = new Date();
@@ -91,10 +108,14 @@ export default function TelaDashboard() {
   };
 
   useEffect(() => {
+    let isSubscribed = true; // ✅ Previne race conditions
+
     const carregarDados = async () => {
+      const auth = getAuth();
+      if (!auth) return;
+
       try {
         setLoading(true);
-        const auth = localStorage.getItem("auth");
         const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
         const [tarefasRes, empresasRes, membrosRes, listasRes] = await Promise.all([
@@ -104,32 +125,39 @@ export default function TelaDashboard() {
           api.get("/listas", headers),
         ]);
 
+        if (!isSubscribed) return;
+
         const tarefasFiltradas = Array.isArray(tarefasRes.data)
-                ? tarefasRes.data.filter((t: TarefaDTO) => t.status !== "ARQUIVADA")
-                : [];
+          ? tarefasRes.data.filter((t: TarefaDTO) => t.status !== "ARQUIVADA")
+          : [];
 
         setTarefas(tarefasFiltradas);
         setEmpresas(Array.isArray(empresasRes.data) ? empresasRes.data : []);
         setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
         setListas(Array.isArray(listasRes.data) ? listasRes.data : []);
       } catch (error: any) {
+        if (!isSubscribed) return;
+
         setTarefas([]);
         setEmpresas([]);
         setMembros([]);
         setListas([]);
+        
         if (error.response?.status === 401) {
-          showToast("Sessão expirada. Faça login novamente.", "error");
-          localStorage.removeItem("auth");
-          localStorage.removeItem("usuario");
-          setTimeout(() => navigate("/login", { replace: true }), 1500);
+          handleSessionExpired();
         } else {
           showToast("Erro ao carregar dados do dashboard.", "error");
         }
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
+
     carregarDados();
+
+    return () => {
+      isSubscribed = false; // ✅ Cleanup
+    };
   }, [navigate]);
 
   // ✅ CÁLCULOS DE MÉTRICAS
@@ -220,8 +248,6 @@ export default function TelaDashboard() {
       )}
 
       <div className="dashboard-wrapper">
-
-
         {/* ==== CARDS SUPERIORES ==== */}
         <div className="dashboard-top">
           <div className="dashboard-card-top">
@@ -324,7 +350,7 @@ export default function TelaDashboard() {
             </div>
             <div className="membro-list">
               {performanceMembros.length > 0 ? (
-                performanceMembros.map((membro, index) => (
+                performanceMembros.map((membro) => (
                   <div key={membro.nome} className="membro-item">
                     <div className="membro-avatar">
                       {membro.nome.charAt(0).toUpperCase()}

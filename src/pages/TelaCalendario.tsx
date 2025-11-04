@@ -93,14 +93,73 @@ export default function TelaCalendario() {
     setToast({ message, type, show: true });
   };
 
+  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  const handleSessionExpired = () => {
+    showToast("Sessão expirada. Faça login novamente.", "error");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("authenticated");
+    setTimeout(() => navigate("/", { replace: true }), 1500);
+  };
+
+  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+  const getAuth = (): string | null => {
+    const auth = localStorage.getItem("auth");
+    if (!auth) {
+      navigate("/", { replace: true });
+      return null;
+    }
+    return auth;
+  };
+
   useEffect(() => {
+    let isSubscribed = true; // ✅ Previne race conditions
+
+    const carregarDados = async () => {
+      const auth = getAuth();
+      if (!auth) return;
+
+      try {
+        setLoading(true);
+        const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
+
+        const [eventosRes, tarefasRes] = await Promise.all([
+          api.get("/eventos", headers),
+          api.get("/tarefas", headers),
+        ]);
+
+        if (!isSubscribed) return;
+
+        setEventos(Array.isArray(eventosRes.data) ? eventosRes.data : []);
+        setTarefas(Array.isArray(tarefasRes.data) ? tarefasRes.data : []);
+      } catch (error: any) {
+        if (!isSubscribed) return;
+
+        setEventos([]);
+        setTarefas([]);
+        if (error.response?.status === 401) {
+          handleSessionExpired();
+        } else {
+          showToast("Erro ao carregar dados.", "error");
+        }
+      } finally {
+        if (isSubscribed) setLoading(false);
+      }
+    };
+
     carregarDados();
-  }, []);
+
+    return () => {
+      isSubscribed = false; // ✅ Cleanup
+    };
+  }, [navigate]);
 
   const carregarDados = async () => {
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
       setLoading(true);
-      const auth = localStorage.getItem("auth");
       const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
 
       const [eventosRes, tarefasRes] = await Promise.all([
@@ -114,10 +173,7 @@ export default function TelaCalendario() {
       setEventos([]);
       setTarefas([]);
       if (error.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        localStorage.removeItem("auth");
-        localStorage.removeItem("usuario");
-        setTimeout(() => navigate("/", { replace: true }), 1500);
+        handleSessionExpired();
       } else {
         showToast("Erro ao carregar dados.", "error");
       }
@@ -225,6 +281,9 @@ export default function TelaCalendario() {
       return;
     }
 
+    const auth = getAuth();
+    if (!auth) return;
+
     const eventoData = {
       titulo: formTitulo,
       descricao: formDescricao,
@@ -236,7 +295,6 @@ export default function TelaCalendario() {
     };
 
     try {
-      const auth = localStorage.getItem("auth");
       const headers = {
         headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
         withCredentials: true
@@ -252,8 +310,12 @@ export default function TelaCalendario() {
 
       setModalAberto(false);
       await carregarDados();
-    } catch (error) {
-      showToast("Erro ao salvar evento.", "error");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao salvar evento.", "error");
+      }
     }
   };
 
@@ -261,16 +323,22 @@ export default function TelaCalendario() {
     const confirmar = window.confirm(`Tem certeza que deseja deletar o evento "${titulo}"?`);
     if (!confirmar) return;
 
+    const auth = getAuth();
+    if (!auth) return;
+
     try {
-      const auth = localStorage.getItem("auth");
       await api.delete(`/eventos/${id}`, {
         headers: { Authorization: `Basic ${auth}` },
         withCredentials: true,
       });
       showToast("Evento deletado!", "success");
       await carregarDados();
-    } catch (error) {
-      showToast("Erro ao deletar evento.", "error");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao deletar evento.", "error");
+      }
     }
   };
 
@@ -327,7 +395,6 @@ export default function TelaCalendario() {
           </div>
         </div>
 
-        {/* LEGENDA COM TAREFAS */}
         <div className="calendario-legenda">
           <div className="legenda-section">
             <strong>Eventos:</strong>
@@ -453,7 +520,6 @@ export default function TelaCalendario() {
               <div className="panel-content">
                 {(eventosDiaSelecionado.length > 0 || tarefasDiaSelecionado.length > 0) ? (
                   <div className="tarefas-lista">
-                    {/* EVENTOS */}
                     {mostrarEventos && eventosDiaSelecionado.length > 0 && (
                       <>
                         <h4 className="section-title">Eventos</h4>
@@ -510,7 +576,6 @@ export default function TelaCalendario() {
                       </>
                     )}
 
-                    {/* TAREFAS */}
                     {mostrarTarefas && tarefasDiaSelecionado.length > 0 && (
                       <>
                         <h4 className="section-title">Tarefas com Vencimento</h4>

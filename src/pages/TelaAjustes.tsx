@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "../pages/TelaAjustes.css";
 import LogoAzulFlap from "../images/Logo-azul-FLAP 1.png";
-import { Toast } from "./Toast"; // ✅ IMPORTAR
+import { Toast } from "./Toast";
 
 interface FormData {
   nome: string;
@@ -28,7 +28,6 @@ interface BuscaEmpresa {
   agenteLink?: string;
 }
 
-// ✅ ESTADO DO TOAST
 interface ToastState {
   message: string;
   type: 'success' | 'error' | 'warning';
@@ -48,35 +47,48 @@ export default function AjustesEmpresas() {
   });
   const [loading, setLoading] = useState(false);
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | null>(null);
-  
-  // ✅ ESTADO DO TOAST
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
   
   const navigate = useNavigate();
 
-  // ✅ FUNÇÃO PARA MOSTRAR TOAST
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
   };
 
-  useEffect(() => {
+  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  const handleSessionExpired = () => {
+    showToast("Sessão expirada. Faça login novamente.", "error");
+    localStorage.removeItem("auth");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("authenticated");
+    setTimeout(() => navigate("/", { replace: true }), 1500);
+  };
+
+  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+  const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
-      navigate("/login", { replace: true });
-      return;
+      navigate("/", { replace: true });
+      return null;
     }
+    return auth;
+  };
+
+  useEffect(() => {
+    let isSubscribed = true; // ✅ Previne race conditions
 
     const carregarEmpresas = async () => {
+      const auth = getAuth();
+      if (!auth) return;
+
       try {
         setLoading(true);
         const res = await api.get("/empresas", {
-          headers: {
-            Authorization: `Basic ${auth}`,
-          },
+          headers: { Authorization: `Basic ${auth}` },
           withCredentials: true,
         });
 
-        console.log("Empresas recebidas:", res.data);
+        if (!isSubscribed) return;
 
         if (Array.isArray(res.data)) {
           setEmpresas(res.data);
@@ -87,21 +99,26 @@ export default function AjustesEmpresas() {
           setEmpresas([]);
         }
       } catch (err: any) {
+        if (!isSubscribed) return;
+        
         console.error("Erro ao buscar empresas:", err);
         setEmpresas([]);
 
         if (err.response?.status === 401) {
-          showToast("Sessão expirada. Faça login novamente.", "error");
-          localStorage.removeItem("auth");
-          localStorage.removeItem("usuario");
-          setTimeout(() => navigate("/login", { replace: true }), 1500);
+          handleSessionExpired();
+        } else {
+          showToast("Erro ao carregar empresas.", "error");
         }
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
 
     carregarEmpresas();
+
+    return () => {
+      isSubscribed = false; // ✅ Cleanup
+    };
   }, [navigate]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -122,9 +139,11 @@ export default function AjustesEmpresas() {
       return;
     }
 
+    const auth = getAuth();
+    if (!auth) return;
+
     setLoading(true);
     try {
-      const auth = localStorage.getItem("auth");
       const res = await api.post<BuscaEmpresa>("/empresas", formData, {
         headers: {
           Authorization: `Basic ${auth}`,
@@ -148,15 +167,11 @@ export default function AjustesEmpresas() {
       showToast("Empresa cadastrada com sucesso!", "success");
     } catch (err: any) {
       console.error("Erro no cadastro:", err);
-      console.error("Resposta do servidor:", err.response?.data);
 
       if (err.response?.status === 400) {
         showToast("Erro ao cadastrar: " + (err.response.data.message || "Dados inválidos"), "error");
       } else if (err.response?.status === 401) {
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        localStorage.removeItem("auth");
-        localStorage.removeItem("usuario");
-        setTimeout(() => navigate("/login", { replace: true }), 1500);
+        handleSessionExpired();
       } else if (err.response?.status === 500) {
         showToast("Erro interno no servidor. Verifique os dados e tente novamente.", "error");
       } else {
@@ -171,7 +186,6 @@ export default function AjustesEmpresas() {
 
   return (
     <>
-      {/* ✅ TOAST */}
       {toast.show && (
         <Toast
           message={toast.message}
@@ -367,9 +381,6 @@ export default function AjustesEmpresas() {
               background-color: #e0e7ff;
               color: #1E52A5;
               font-weight: 500;
-            }
-            .empty-placeholder {
-              visibility: hidden;
             }
           `}
         </style>
