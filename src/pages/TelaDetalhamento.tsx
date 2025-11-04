@@ -6,18 +6,29 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { Toast } from "./Toast";
 
-interface Task {
+interface Item {
   id: number;
-  name: string;
-  done: boolean;
+  nome: string;
+  status: boolean;  // ✅ Mudado de 'concluido' para 'status'
+}
+
+interface Checklist {
+  id: number;
+  titulo: string;
+  cor: string;
+  itens: Item[];
 }
 
 interface Comentario {
   id: number;
-  usuario: string;
-  cor: string;
+  usuario: {
+    id: number;
+    nome: string;
+    email: string;
+    foto?: string;
+  };
   texto: string;
-  data: string;
+  dataCriacao: string;
 }
 
 interface Usuario {
@@ -51,11 +62,9 @@ interface Tarefa {
     agenteLink?: string;
   };
   empresaId?: number;
-  empresaNome?: string;
   links?: string[];
   progresso?: number;
-  tags?: string[];
-  tasks?: Task[];
+  checklists?: Checklist[];
   comentarios?: Comentario[];
   membros?: MembroDTO[];
 }
@@ -88,14 +97,15 @@ export default function TelaDetalhamento() {
 
   const progresso = tarefa?.progresso || 0;
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [novoTaskName, setNovoTaskName] = useState("");
+  const [checklists, setChecklists] = useState<Checklist[]>([]);
+  const [novoChecklistTitulo, setNovoChecklistTitulo] = useState("");
+  const [novoItemNome, setNovoItemNome] = useState("");
+  const [checklistSelecionada, setChecklistSelecionada] = useState<number | null>(null);
 
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [novoComentario, setNovoComentario] = useState("");
 
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
-
   const [todosUsuarios, setTodosUsuarios] = useState<Usuario[]>([]);
   const [membrosSelecionados, setMembrosSelecionados] = useState<number[]>([]);
 
@@ -190,6 +200,33 @@ export default function TelaDetalhamento() {
         }
 
         if (!isSubscribed) return;
+        try {
+          const checklistsRes = await api.get(`/checklists/tarefa/${id}`, {
+            headers: { Authorization: `Basic ${auth}` },
+            withCredentials: true,
+          });
+
+          const checklistsComItens = (checklistsRes.data || []).map((c: any) => ({
+            ...c,
+            itens: Array.isArray(c.itens) ? c.itens : []
+          }));
+
+          setChecklists(checklistsComItens);
+        } catch (err) {
+          console.warn("⚠️ Erro ao carregar checklists:", err);
+          setChecklists([]);
+        }
+
+        try {
+          const comentariosRes = await api.get(`/comentarios/tarefa/${id}`, {
+            headers: { Authorization: `Basic ${auth}` },
+            withCredentials: true,
+          });
+          setComentarios(comentariosRes.data || []);
+        } catch (err) {
+          console.warn("⚠️ Erro ao carregar comentários:", err);
+          setComentarios([]);
+        }
 
         setTarefa(tarefaData);
         setTitulo(tarefaData.titulo || "");
@@ -205,8 +242,6 @@ export default function TelaDetalhamento() {
         }
 
         setLinks(tarefaData.links || []);
-        setTasks(tarefaData.tasks || []);
-        setComentarios(tarefaData.comentarios || []);
 
         if (tarefaData.membros && Array.isArray(tarefaData.membros)) {
           const membroIds = tarefaData.membros.map((m: MembroDTO) => m.usuarioId);
@@ -225,7 +260,6 @@ export default function TelaDetalhamento() {
           setTimeout(() => navigate("/home"), 1500);
         } else {
           showToast("Erro ao carregar tarefa.", "error");
-          setTimeout(() => navigate("/home"), 1500);
         }
       } finally {
         if (isSubscribed) setLoading(false);
@@ -261,7 +295,6 @@ export default function TelaDetalhamento() {
         prioridade,
         dtEntrega: dtEntregaFormatada,
         links,
-        tasks,
         membroIds: membrosSelecionados,
       };
 
@@ -311,6 +344,145 @@ export default function TelaDetalhamento() {
     }
   };
 
+  const adicionarChecklist = async () => {
+    if (!novoChecklistTitulo.trim()) return;
+
+    try {
+      const auth = localStorage.getItem("auth");
+      const res = await api.post(`/checklists`, {
+        titulo: novoChecklistTitulo,
+        cor: "#667eea",
+        tarefaId: Number(id)
+      }, {
+        headers: { Authorization: `Basic ${auth}` },
+        withCredentials: true,
+      });
+
+      setChecklists([...checklists, { ...res.data, itens: res.data.itens || [] }]);
+      setNovoChecklistTitulo("");
+      showToast("Checklist criada!", "success");
+    } catch (error) {
+      console.error("❌ Erro ao criar checklist:", error);
+      showToast("Erro ao criar checklist.", "error");
+    }
+  };
+
+  // ✅ ADICIONAR ITEM - CORRIGIDO COM TAREFAID
+  const adicionarItem = async (checklistId: number) => {
+    if (!novoItemNome.trim()) return;
+
+    try {
+      const auth = localStorage.getItem("auth");
+
+      const payload = {
+        nome: novoItemNome,
+        tarefaId: Number(id),      // ✅ OBRIGATÓRIO
+        checklistId: checklistId,  // ✅ Opcional
+        status: false              // ✅ Status inicial
+      };
+
+      console.log("📤 Payload do item:", payload);
+
+      const res = await api.post(`/itens`, payload, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json"
+        },
+        withCredentials: true,
+      });
+
+      console.log("✅ Item criado:", res.data);
+
+      setChecklists(checklists.map(c =>
+        c.id === checklistId
+          ? { ...c, itens: [...(c.itens || []), res.data] }
+          : c
+      ));
+      setNovoItemNome("");
+      setChecklistSelecionada(null);
+      showToast("Item adicionado!", "success");
+    } catch (error: any) {
+      console.error("❌ Erro ao adicionar item:", error);
+      console.error("❌ Response:", error.response?.data);
+      showToast("Erro ao adicionar item.", "error");
+    }
+  };
+
+  // ✅ TOGGLE ITEM - CORRIGIDO
+  const toggleItem = async (checklistId: number, itemId: number) => {
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.patch(`/itens/${itemId}/toggle-status`, {}, {
+        headers: { Authorization: `Basic ${auth}` },
+        withCredentials: true,
+      });
+
+      setChecklists(checklists.map(c =>
+        c.id === checklistId
+          ? {
+              ...c,
+              itens: (c.itens || []).map(i =>
+                i.id === itemId ? { ...i, status: !i.status } : i
+              )
+            }
+          : c
+      ));
+    } catch (error) {
+      console.error("❌ Erro ao atualizar item:", error);
+      showToast("Erro ao atualizar item.", "error");
+    }
+  };
+
+  // ✅ ADICIONAR COMENTÁRIO - CORRIGIDO
+  const adicionarComentario = async () => {
+    if (!novoComentario.trim()) return;
+
+    try {
+      const auth = localStorage.getItem("auth");
+      const usuarioString = localStorage.getItem("usuario");
+
+      if (!usuarioString) {
+        showToast("Usuário não encontrado. Faça login novamente.", "error");
+        return;
+      }
+
+      const usuario = JSON.parse(usuarioString);
+
+      const payload = {
+        texto: novoComentario,
+        usuarioId: usuario.id,
+        tarefaId: Number(id)
+      };
+
+      const res = await api.post(`/comentarios`, payload, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json"
+        },
+        withCredentials: true,
+      });
+
+      const novoComentarioCompleto = {
+        id: res.data.id,
+        texto: res.data.texto,
+        dataCriacao: res.data.dataCriacao,
+        usuario: {
+          id: usuario.id,
+          nome: usuario.nome,
+          email: usuario.email,
+          foto: usuario.foto
+        }
+      };
+
+      setComentarios([novoComentarioCompleto, ...comentarios]);
+      setNovoComentario("");
+      showToast("Comentário adicionado!", "success");
+    } catch (error: any) {
+      console.error("❌ Erro ao adicionar comentário:", error);
+      showToast("Erro ao adicionar comentário.", "error");
+    }
+  };
+
   const toggleMembro = (usuarioId: number) => {
     setMembrosSelecionados((prev) =>
       prev.includes(usuarioId)
@@ -332,29 +504,6 @@ export default function TelaDetalhamento() {
     return nome.substring(0, 2).toUpperCase();
   };
 
-  const toggleTask = (taskId: number) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, done: !task.done } : task
-      )
-    );
-  };
-
-  const adicionarTask = () => {
-    if (!novoTaskName.trim()) return;
-    const novaTask = {
-      id: Date.now(),
-      name: novoTaskName,
-      done: false,
-    };
-    setTasks([novaTask, ...tasks]);
-    setNovoTaskName("");
-  };
-
-  const removerTask = (taskId: number) => {
-    setTasks((prev) => prev.filter((task) => task.id !== taskId));
-  };
-
   const adicionarLink = () => {
     if (!novoLink.trim()) return;
     setLinks([...links, novoLink]);
@@ -363,24 +512,6 @@ export default function TelaDetalhamento() {
 
   const removerLink = (index: number) => {
     setLinks(links.filter((_, i) => i !== index));
-  };
-
-  const adicionarComentario = () => {
-    if (!novoComentario.trim()) return;
-    const novo = {
-      id: Date.now(),
-      usuario: "EU",
-      cor: "#e0f0ff",
-      texto: novoComentario,
-      data: new Date().toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setComentarios([novo, ...comentarios]);
-    setNovoComentario("");
   };
 
   const irParaAgente = () => {
@@ -700,36 +831,77 @@ export default function TelaDetalhamento() {
             </div>
 
             <div className="detalhamento-body-item">
-              <h2>Task List</h2>
+              <h2>Checklists</h2>
               <div className="add-item-container">
                 <input
                   type="text"
-                  placeholder="Novo item da task list"
-                  value={novoTaskName}
-                  onChange={(e) => setNovoTaskName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && adicionarTask()}
+                  placeholder="Nova checklist"
+                  value={novoChecklistTitulo}
+                  onChange={(e) => setNovoChecklistTitulo(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && adicionarChecklist()}
                   className="add-item-input"
                 />
-                <button onClick={adicionarTask} className="add-item-button">
-                  Adicionar
+                <button onClick={adicionarChecklist} className="add-item-button">
+                  Criar Checklist
                 </button>
               </div>
-              {tasks.length > 0 ? (
-                <ul className="task-list">
-                  {tasks.map((task) => (
-                    <li key={task.id} className={`task-item ${task.done ? "done" : ""}`}>
-                      <div className="task-content" onClick={() => toggleTask(task.id)}>
-                        <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} />
-                        <span>{task.name}</span>
+
+              {checklists.length > 0 ? (
+                checklists.map((checklist) => (
+                  <div key={checklist.id} style={{ marginBottom: '20px', padding: '12px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+                    <h3 style={{ marginBottom: '8px', color: checklist.cor || '#667eea' }}>{checklist.titulo}</h3>
+
+                    {Array.isArray(checklist.itens) && checklist.itens.length > 0 ? (
+                      <ul className="task-list">
+                        {checklist.itens.map((item) => (
+                          <li key={item.id} className={`task-item ${item.status ? "done" : ""}`}>
+                            <div className="task-content" onClick={() => toggleItem(checklist.id, item.id)}>
+                              <input type="checkbox" checked={item.status} onChange={() => toggleItem(checklist.id, item.id)} />
+                              <span>{item.nome}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="empty-message" style={{ fontSize: '14px', color: '#999', marginTop: '8px' }}>
+                        Nenhum item nesta checklist.
+                      </p>
+                    )}
+
+                    {checklistSelecionada === checklist.id ? (
+                      <div className="add-item-container" style={{ marginTop: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Novo item"
+                          value={novoItemNome}
+                          onChange={(e) => setNovoItemNome(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && adicionarItem(checklist.id)}
+                          className="add-item-input"
+                        />
+                        <button onClick={() => adicionarItem(checklist.id)} className="add-item-button">
+                          Adicionar
+                        </button>
                       </div>
-                      <button onClick={() => removerTask(task.id)} className="remove-button">
-                        ×
+                    ) : (
+                      <button
+                        onClick={() => setChecklistSelecionada(checklist.id)}
+                        style={{
+                          marginTop: '8px',
+                          padding: '6px 12px',
+                          backgroundColor: '#667eea',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + Adicionar Item
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    )}
+                  </div>
+                ))
               ) : (
-                <p className="empty-message">Nenhuma task adicionada ainda.</p>
+                <p className="empty-message">Nenhuma checklist criada ainda.</p>
               )}
             </div>
           </div>
@@ -759,21 +931,45 @@ export default function TelaDetalhamento() {
             <h2 className="detalhamento-historico-title">Histórico</h2>
             <p>Tarefa criada: {tarefa.dtCriacao ? new Date(tarefa.dtCriacao).toLocaleString("pt-BR") : "Data não disponível"}</p>
           </div>
+
           <div className="detalhamento-comentarios">
             <h2 className="detalhamento-comentarios-title">Comentários</h2>
             <div className="detalhamento-comentarios-list">
               {comentarios.length > 0 ? (
-                comentarios.map((c) => (
-                  <div key={c.id} className="detalhamento-comentarios-item">
-                    <div className="comentario-avatar" style={{ backgroundColor: c.cor }}>
-                      {c.usuario}
+                comentarios.map((c) => {
+                  if (!c.usuario) {
+                    console.warn("⚠️ Comentário sem objeto usuario:", c);
+                    return null;
+                  }
+
+                  return (
+                    <div key={c.id} className="detalhamento-comentarios-item">
+                      <div className="comentario-avatar" style={{ backgroundColor: '#667eea' }}>
+                        {c.usuario.foto ? (
+                          <img
+                            src={c.usuario.foto}
+                            alt={c.usuario.nome}
+                            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          getInitials(c.usuario.nome)
+                        )}
+                      </div>
+                      <div className="comentario-conteudo">
+                        <strong>{c.usuario.nome}</strong>
+                        <p className="comentario-texto">{c.texto}</p>
+                        <span className="comentario-data">
+                          {new Date(c.dataCriacao).toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="comentario-conteudo">
-                      <p className="comentario-texto">{c.texto}</p>
-                      <span className="comentario-data">{c.data}</span>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="empty-message-comentarios">Nenhum comentário ainda.</p>
               )}
