@@ -15,6 +15,7 @@ import api from "../services/api";
 import logoFlap from "../images/Logo-azul-FLAP 1.png";
 import { Toast } from "./Toast";
 
+
 interface TarefaDTO {
   id: number;
   titulo: string;
@@ -31,16 +32,19 @@ interface TarefaDTO {
   listaId?: number;
 }
 
+
 interface Empresa {
   id: number;
   nome: string;
 }
+
 
 interface Membro {
   id: number;
   nome: string;
   username: string;
 }
+
 
 interface Lista {
   id: number;
@@ -49,11 +53,13 @@ interface Lista {
   cor?: string;
 }
 
+
 interface ToastState {
   message: string;
   type: 'success' | 'error' | 'warning';
   show: boolean;
 }
+
 
 const prioridadeCores: { [key: string]: string } = {
   BAIXA: "green",
@@ -61,6 +67,7 @@ const prioridadeCores: { [key: string]: string } = {
   ALTA: "orange",
   CRITICA: "red",
 };
+
 
 export default function TelaDashboard() {
   const [tarefas, setTarefas] = useState<TarefaDTO[]>([]);
@@ -71,11 +78,12 @@ export default function TelaDashboard() {
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
   const navigate = useNavigate();
 
+
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
   };
 
-  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+
   const handleSessionExpired = () => {
     showToast("Sessão expirada. Faça login novamente.", "error");
     localStorage.removeItem("auth");
@@ -84,7 +92,7 @@ export default function TelaDashboard() {
     setTimeout(() => navigate("/", { replace: true }), 1500);
   };
 
-  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
+
   const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
@@ -93,6 +101,7 @@ export default function TelaDashboard() {
     }
     return auth;
   };
+
 
   const getSaudacao = () => {
     const agora = new Date();
@@ -107,8 +116,10 @@ export default function TelaDashboard() {
     return "Boa noite";
   };
 
+
   useEffect(() => {
-    let isSubscribed = true; // ✅ Previne race conditions
+    let isSubscribed = true;
+    const controller = new AbortController();  // ✅ NOVO
 
     const carregarDados = async () => {
       const auth = getAuth();
@@ -116,7 +127,16 @@ export default function TelaDashboard() {
 
       try {
         setLoading(true);
-        const headers = { headers: { Authorization: `Basic ${auth}` }, withCredentials: true };
+        
+        const headers = {
+          headers: {
+            Authorization: `Basic ${auth}`,
+            'Accept-Encoding': 'gzip, deflate'
+          },
+          withCredentials: true,
+          timeout: 30000,
+          signal: controller.signal  // ✅ NOVO
+        };
 
         const [tarefasRes, empresasRes, membrosRes, listasRes] = await Promise.all([
           api.get("/tarefas", headers),
@@ -138,6 +158,12 @@ export default function TelaDashboard() {
       } catch (error: any) {
         if (!isSubscribed) return;
 
+        // ✅ Ignora erro de abort (cancelamento normal)
+        if (error.name === 'AbortError') {
+          console.log("📋 Requisição cancelada");
+          return;
+        }
+
         setTarefas([]);
         setEmpresas([]);
         setMembros([]);
@@ -145,6 +171,8 @@ export default function TelaDashboard() {
         
         if (error.response?.status === 401) {
           handleSessionExpired();
+        } else if (error.code === 'ECONNABORTED') {
+          showToast("Tempo limite de requisição excedido. Tente novamente.", "error");
         } else {
           showToast("Erro ao carregar dados do dashboard.", "error");
         }
@@ -156,9 +184,11 @@ export default function TelaDashboard() {
     carregarDados();
 
     return () => {
-      isSubscribed = false; // ✅ Cleanup
+      isSubscribed = false;
+      controller.abort();  // ✅ NOVO - Cancela requisição ao desmontar
     };
-  }, [navigate]);
+  }, []);
+
 
   // ✅ CÁLCULOS DE MÉTRICAS
   const totalTarefas = tarefas.length;
