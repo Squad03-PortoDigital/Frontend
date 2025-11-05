@@ -21,8 +21,7 @@ export interface UserProfile {
   areaAtuacao?: string;
   foto?: string;
   projetos?: string[];
-  role?: string;
-  cargo?: {
+  role?: {
     id?: number;
     nome: string;
   };
@@ -458,18 +457,7 @@ const TelaPerfil: React.FC = () => {
                   <label>Cargo</label>
                   <input
                     type="text"
-                    value={user.cargo?.nome || "—"}
-                    readOnly
-                    style={{
-                      backgroundColor: '#f5f5f5',
-                      cursor: 'default',
-                    }}
-                  />
-
-                  <label>Role</label>
-                  <input
-                    type="text"
-                    value={user.role || "—"}
+                    value={user.role?.nome || "—"}
                     readOnly
                     style={{
                       backgroundColor: '#f5f5f5',
