@@ -4,6 +4,7 @@ import "../styles/login.css";
 import LogoFlap from "../images/Logo-azul-FLAP 1.png";
 import FundoLogin from "../images/imagem-fundo-azul-login.png";
 
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -11,68 +12,87 @@ const Login: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setErro(null);
-  setLoading(true);
+    e.preventDefault();
+    setErro(null);
+    setLoading(true);
 
-  try {
-    const formData = new URLSearchParams();
-    formData.append("email", email);
-    formData.append("senha", senha);
+    try {
+      const formData = new URLSearchParams();
+      formData.append("email", email);
+      formData.append("senha", senha);
 
-    const loginResponse = await fetch("http://localhost:8080/usuarios/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData,
-      credentials: "include",
-    });
-
-    if (loginResponse.ok) {
-      const usuarioResponse = await fetch("http://localhost:8080/usuarios/me", {
-        method: "GET",
+      const loginResponse = await fetch("http://localhost:8080/usuarios/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData,
         credentials: "include",
       });
 
-      if (usuarioResponse.ok) {
-        const usuario = await usuarioResponse.json();
+      if (loginResponse.ok) {
+        const usuarioResponse = await fetch("http://localhost:8080/usuarios/me", {
+          method: "GET",
+          credentials: "include",
+        });
 
-        // ✅ ADICIONA: Cria e salva o token Basic Auth
-        const token = btoa(`${email}:${senha}`);
-        localStorage.setItem("auth", token);
-        
-        localStorage.setItem("usuario", JSON.stringify(usuario));
-        localStorage.setItem("authenticated", "true");
+        if (usuarioResponse.ok) {
+          const usuario = await usuarioResponse.json();
 
-        window.dispatchEvent(new Event('user-updated'));
+          // ✅ ADICIONA: Cria e salva o token Basic Auth
+          const token = btoa(`${email}:${senha}`);
+          localStorage.setItem("auth", token);
+          localStorage.setItem("usuario", JSON.stringify(usuario));
+          localStorage.setItem("authenticated", "true");
 
-        navigate("/Dashboard", { replace: true });
+          window.dispatchEvent(new Event('user-updated'));
+
+          navigate("/Dashboard", { replace: true });
+        } else {
+          setErro("Erro ao carregar dados do usuário.");
+        }
+      } else if (loginResponse.status === 401) {
+        setErro("E-mail ou senha incorretos. Verifique e tente novamente.");
       } else {
-        setErro("Erro ao carregar dados do usuário.");
+        setErro("Erro inesperado no login. Tente novamente mais tarde.");
       }
-    } else if (loginResponse.status === 401) {
-      setErro("E-mail ou senha incorretos. Verifique e tente novamente.");
-    } else {
-      setErro("Erro inesperado no login. Tente novamente mais tarde.");
-    }
-  } catch (error) {
-    console.error("Falha na requisição:", error);
+    } catch (error) {
+      console.error("Falha na requisição:", error);
 
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      setErro(
-        "Não foi possível conectar ao servidor. " +
-        "Verifique se ele está rodando em http://localhost:8080"
-      );
-    } else {
-      setErro("Erro ao processar a requisição. Tente novamente.");
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setErro(
+          "Não foi possível conectar ao servidor. " +
+          "Verifique se ele está rodando em http://localhost:8080"
+        );
+      } else {
+        setErro("Erro ao processar a requisição. Tente novamente.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
+  // ✅ NOVO: Função de logout
+  const handleLogout = async () => {
+    try {
+      // ✅ Limpa todos os dados do localStorage
+      localStorage.removeItem('auth');
+      localStorage.removeItem('usuario');
+      localStorage.removeItem('authenticated');
+      
+      console.log('✅ Logout realizado - cache limpo');
+
+      // ✅ Dispara evento para atualizar componentes
+      window.dispatchEvent(new Event('user-updated'));
+
+      // ✅ Redireciona para login
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('❌ Erro ao fazer logout:', error);
+    }
+  };
 
   return (
     <div

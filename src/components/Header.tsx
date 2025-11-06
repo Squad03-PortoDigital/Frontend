@@ -2,17 +2,18 @@ import "../styles/header.css";
 import LogoBrancaFlap from "../images/LogoBrancaFlap.png";
 import { LogOut, Menu, Search } from "lucide-react";
 import { InputAdornment, TextField } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useLogout } from "../hooks/useLogout";
+
 
 export default function Header() {
-  const navigate = useNavigate();
+  const { logout } = useLogout();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = () => {
     setLoggingOut(true);
     setTimeout(() => {
-      navigate("/", { replace: true });
+      logout();
     }, 500);
   };
 
@@ -42,9 +43,9 @@ export default function Header() {
                   </InputAdornment>
                 ),
                 style: {
-                  backgroundColor: "#cbd5f7", // COR APLICADA SÓ NA CAIXA
+                  backgroundColor: "#cbd5f7",
                   borderRadius: "8px",
-                  width: "500px", // tamanho fixo da caixa
+                  width: "500px",
                   height: "40px",
                 },
               }}
