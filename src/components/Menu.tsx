@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users, User, X, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePermissao } from "../contexts/PermissaoContext";
 import "../styles/menu.css";
 
 interface UserProfile {
@@ -24,7 +25,8 @@ export default function Menu({ user: userProp }: MenuProps) {
   const currentPath = location.pathname;
   const [user, setUser] = useState<UserProfile | null>(userProp || null);
   const [isOpen, setIsOpen] = useState(true);
-
+  const { temPermissao } = usePermissao();
+  
   const loadUser = () => {
     const usuarioSalvo = localStorage.getItem("usuario");
     if (usuarioSalvo) {
@@ -62,7 +64,6 @@ export default function Menu({ user: userProp }: MenuProps) {
   }, []);
 
   const isActive = (path: string) => currentPath === path ? 'active' : '';
-  const isAdminMaster = user?.role === "ADMINISTRADOR_MASTER";
 
   return (
     <aside className={`menu-container ${isOpen ? 'menu-open' : 'menu-closed'}`}>
@@ -123,6 +124,7 @@ export default function Menu({ user: userProp }: MenuProps) {
           </div>
         </div>
 
+      {temPermissao('USUARIO_CADASTRAR') && (
         <div className="menu-section">
           <h2 className="menu-item-titulo">Gestor:</h2>
           <Link to="/dashboard" className={`menu-item ${isActive('/dashboard')}`}>
@@ -136,7 +138,8 @@ export default function Menu({ user: userProp }: MenuProps) {
           </Link>
           </div>
         </div>
-
+        )}
+        
         <div className="menu-section">
           <h2 className="menu-item-titulo">Mais:</h2>
           <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
@@ -148,17 +151,6 @@ export default function Menu({ user: userProp }: MenuProps) {
             <div className="menu-item-nome">Ajuda</div>
           </Link>
         </div>
-
-        {isAdminMaster && (
-          <div className="menu-section">
-            <h2 className="menu-item-titulo">Administração:</h2>
-            <Link to="/cadastrar-usuario" className={`menu-item ${isActive('/cadastrar-usuario')}`}>
-              <UserPlus size={22} />
-              <div className="menu-item-nome">Cadastrar Usuário</div>
-            </Link>
-          </div>
-        )}
-
         <div className="menu-final">
           Flap - All Rights Reserved © 2025
         </div>

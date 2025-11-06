@@ -119,7 +119,7 @@ export default function TelaDashboard() {
 
   useEffect(() => {
     let isSubscribed = true;
-    const controller = new AbortController();  // ✅ NOVO
+    const controller = new AbortController();
 
     const carregarDados = async () => {
       const auth = getAuth();
@@ -135,7 +135,7 @@ export default function TelaDashboard() {
           },
           withCredentials: true,
           timeout: 30000,
-          signal: controller.signal  // ✅ NOVO
+          signal: controller.signal
         };
 
         const [tarefasRes, empresasRes, membrosRes, listasRes] = await Promise.all([
@@ -158,7 +158,6 @@ export default function TelaDashboard() {
       } catch (error: any) {
         if (!isSubscribed) return;
 
-        // ✅ Ignora erro de abort (cancelamento normal)
         if (error.name === 'AbortError') {
           console.log("📋 Requisição cancelada");
           return;
@@ -185,12 +184,11 @@ export default function TelaDashboard() {
 
     return () => {
       isSubscribed = false;
-      controller.abort();  // ✅ NOVO - Cancela requisição ao desmontar
+      controller.abort(); 
     };
   }, []);
 
 
-  // ✅ CÁLCULOS DE MÉTRICAS
   const totalTarefas = tarefas.length;
   const tarefasConcluidas = tarefas.filter((t) =>
     t.status?.toLowerCase().includes("conclu") ||

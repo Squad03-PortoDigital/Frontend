@@ -139,7 +139,6 @@ export default function TelaDetalhamento() {
   const [salvandoMembro, setSalvandoMembro] = useState(false);
 
 
-  // ✅ NOVO STATE: Rastreia formatação ativa nos botões
   const [formatacaoAtiva, setFormatacaoAtiva] = useState<FormatacaoAtiva>({
     bold: false,
     italic: false,
@@ -147,6 +146,60 @@ export default function TelaDetalhamento() {
     insertUnorderedList: false,
     formatBlock: false
   });
+
+  const salvarTituloAuto = async () => {
+    if (!titulo.trim()) {
+      showToast("O título não pode estar vazio!", "warning");
+      setTitulo(tarefa?.titulo || "");
+      return;
+    }
+
+    if (titulo === tarefa?.titulo) return;
+
+    const auth = getAuth();
+    if (!auth) return;
+
+    try {
+      let dtEntregaFormatada = null;
+      if (dtEntrega) {
+        dtEntregaFormatada = `${dtEntrega}T00:00:00`;
+      }
+
+      const payload = {
+        titulo,
+        descricao,
+        status,
+        prioridade,
+        dtEntrega: dtEntregaFormatada,
+        links,
+        membroIds: membrosSelecionados,
+      };
+
+      await api.put(`/tarefas/${id}`, payload, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+          'Accept-Encoding': 'gzip, deflate'
+        },
+        withCredentials: true,
+        timeout: 30000,
+      });
+
+      showToast("Título salvo", "success");
+
+      if (tarefa) {
+        setTarefa({ ...tarefa, titulo });
+      }
+
+    } catch (error: any) {
+      console.error("❌ Erro ao salvar título:", error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao salvar título.", "error");
+      }
+    }
+  };
 
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
@@ -173,7 +226,6 @@ export default function TelaDetalhamento() {
   };
 
 
-  // ✅ NOVO: Função que detecta formatação ativa
   const atualizarFormatacaoAtiva = () => {
     if (!descricaoRef.current) return;
 
@@ -470,64 +522,64 @@ export default function TelaDetalhamento() {
 
 
   const adicionarMembroAuto = async (usuarioId: number) => {
-    const auth = getAuth();
-    if (!auth) return;
+  const auth = getAuth();
+  if (!auth) return;
 
+  try {
+    setSalvandoMembro(true);
 
-    try {
-      setSalvandoMembro(true);
+    const estaRemovendo = membrosSelecionados.includes(usuarioId);
 
+    const novosMembros = estaRemovendo
+      ? membrosSelecionados.filter((id) => id !== usuarioId)
+      : [...membrosSelecionados, usuarioId];
 
-      const novosMembros = membrosSelecionados.includes(usuarioId)
-        ? membrosSelecionados.filter((id) => id !== usuarioId)
-        : [...membrosSelecionados, usuarioId];
+    setMembrosSelecionados(novosMembros);
 
+    setTimeout(async () => {
+      try {
+        const payload = {
+          titulo,
+          descricao,
+          status,
+          prioridade,
+          dtEntrega: dtEntrega ? `${dtEntrega}T00:00:00` : null,
+          links,
+          membroIds: novosMembros,
+        };
 
-      setMembrosSelecionados(novosMembros);
+        await api.put(`/tarefas/${id}`, payload, {
+          headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/json",
+            'Accept-Encoding': 'gzip, deflate'
+          },
+          withCredentials: true,
+          timeout: 30000,
+        });
 
-
-      setTimeout(async () => {
-        try {
-          const payload = {
-            titulo,
-            descricao,
-            status,
-            prioridade,
-            dtEntrega: dtEntrega ? `${dtEntrega}T00:00:00` : null,
-            links,
-            membroIds: novosMembros,
-          };
-
-
-          await api.put(`/tarefas/${id}`, payload, {
-            headers: {
-              Authorization: `Basic ${auth}`,
-              "Content-Type": "application/json",
-              'Accept-Encoding': 'gzip, deflate'
-            },
-            withCredentials: true,
-            timeout: 30000,
-          });
-
-
-          showToast("Membro adicionado!", "success");
-          setMembrosDropdownOpen(false);
-        } catch (error: any) {
-          console.error("❌ Erro ao salvar membro:", error);
-          if (error.response?.status === 401) {
-            handleSessionExpired();
-          } else {
-            showToast("Erro ao salvar membro.", "error");
-          }
-        } finally {
-          setSalvandoMembro(false);
+        showToast(
+          estaRemovendo ? "Membro removido!" : "Membro adicionado!", 
+          "success"
+        );
+        
+        setMembrosDropdownOpen(false);
+      } catch (error: any) {
+        console.error("❌ Erro ao salvar membro:", error);
+        if (error.response?.status === 401) {
+          handleSessionExpired();
+        } else {
+          showToast("Erro ao salvar membro.", "error");
         }
-      }, 300);
-    } catch (error) {
-      console.error("Erro ao processar membro:", error);
-      setSalvandoMembro(false);
-    }
-  };
+      } finally {
+        setSalvandoMembro(false);
+      }
+    }, 300);
+  } catch (error) {
+    console.error("Erro ao processar membro:", error);
+    setSalvandoMembro(false);
+  }
+};
 
 
   const membrosFiltrados = todosUsuarios.filter((u) =>
@@ -931,6 +983,12 @@ export default function TelaDetalhamento() {
                 type="text"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
+                onBlur={salvarTituloAuto}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                }}
                 placeholder="Título da tarefa"
                 className="titulo-input"
               />
@@ -1069,7 +1127,7 @@ export default function TelaDetalhamento() {
 
 
           <div className="detalhamento-body">
-            {/* ✅ DESCRIÇÃO COM FORMATAÇÃO ATIVA */}
+            {/* DESCRIÇÃO COM FORMATAÇÃO ATIVA */}
             <div className="detalhamento-body-item descricao-item">
               <div className="descricao-header">
                 <h2>Descrição</h2>

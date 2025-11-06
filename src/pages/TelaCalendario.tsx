@@ -102,7 +102,6 @@ export default function TelaCalendario() {
     setTimeout(() => navigate("/", { replace: true }), 1500);
   };
 
-  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
   const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
@@ -113,7 +112,7 @@ export default function TelaCalendario() {
   };
 
   useEffect(() => {
-    let isSubscribed = true; // ✅ Previne race conditions
+    let isSubscribed = true;
 
     const carregarDados = async () => {
       const auth = getAuth();
@@ -150,7 +149,7 @@ export default function TelaCalendario() {
     carregarDados();
 
     return () => {
-      isSubscribed = false; // ✅ Cleanup
+      isSubscribed = false;
     };
   }, [navigate]);
 

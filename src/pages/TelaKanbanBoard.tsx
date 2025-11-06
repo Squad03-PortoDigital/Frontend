@@ -156,7 +156,7 @@ export default function TelaKanbanBoard() {
 
   useEffect(() => {
     let isSubscribed = true;
-    const controller = new AbortController();  // ✅ NOVO
+    const controller = new AbortController();
 
     const carregarDados = async () => {
       const auth = getAuth();
@@ -165,7 +165,6 @@ export default function TelaKanbanBoard() {
       try {
         setLoading(true);
         
-        // ✅ MUDANÇA: Adiciona timeout e signal
         const headers = {
           headers: {
             Authorization: `Basic ${auth}`,
@@ -173,7 +172,7 @@ export default function TelaKanbanBoard() {
           },
           withCredentials: true,
           timeout: 30000,
-          signal: controller.signal  // ✅ NOVO
+          signal: controller.signal
         };
 
         const usuarioSalvo = localStorage.getItem("usuario");
@@ -247,7 +246,6 @@ export default function TelaKanbanBoard() {
       } catch (error: any) {
         if (!isSubscribed) return;
 
-        // ✅ NOVO: Ignora erro de abort
         if (error.name === 'AbortError') {
           console.log("📋 Requisição cancelada");
           return;
@@ -275,7 +273,7 @@ export default function TelaKanbanBoard() {
 
     return () => {
       isSubscribed = false;
-      controller.abort();  // ✅ NOVO - Cancela requisição
+      controller.abort();
     };
   }, [navigate]);
 
@@ -301,10 +299,10 @@ export default function TelaKanbanBoard() {
       const res = await api.get(`/tarefas/lista/${listaId}`, {
         headers: { 
           Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+          'Accept-Encoding': 'gzip, deflate'
         }, 
         withCredentials: true,
-        timeout: 30000  // ✅ NOVO
+        timeout: 30000
       });
       setTarefasPorLista(prev => ({
         ...prev,
@@ -313,10 +311,10 @@ export default function TelaKanbanBoard() {
       const todasTarefasRes = await api.get("/tarefas", {
         headers: { 
           Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+          'Accept-Encoding': 'gzip, deflate'
         }, 
         withCredentials: true,
-        timeout: 30000  // ✅ NOVO
+        timeout: 30000
       });
       setTarefas(Array.isArray(todasTarefasRes.data) ? todasTarefasRes.data : []);
     } catch (error: any) {
@@ -338,10 +336,10 @@ export default function TelaKanbanBoard() {
         headers: { 
           Authorization: `Basic ${auth}`, 
           "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+          'Accept-Encoding': 'gzip, deflate'
         },
         withCredentials: true,
-        timeout: 30000  // ✅ NOVO
+        timeout: 30000
       });
       setListas((prev) => [...prev, res.data]);
       setListaSelecionada(res.data.id);
@@ -368,10 +366,10 @@ export default function TelaKanbanBoard() {
         headers: { 
           Authorization: `Basic ${auth}`, 
           "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+          'Accept-Encoding': 'gzip, deflate'
         },
         withCredentials: true,
-        timeout: 30000  // ✅ NOVO
+        timeout: 30000
       });
       setListas((prev) => prev.map(l => l.id === listaId ? { ...l, nome: novoNome } : l));
       showToast("Board editado!", "success");
@@ -404,10 +402,10 @@ export default function TelaKanbanBoard() {
       await api.delete(`/listas/${listaId}`, {
         headers: { 
           Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+          'Accept-Encoding': 'gzip, deflate'
         },
         withCredentials: true,
-        timeout: 30000  // ✅ NOVO
+        timeout: 30000
       });
       setListas((prev) => prev.filter((l) => l.id !== listaId));
       showToast("Board deletado!", "success");
@@ -455,10 +453,10 @@ export default function TelaKanbanBoard() {
         headers: { 
           Authorization: `Basic ${auth}`, 
           "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+          'Accept-Encoding': 'gzip, deflate'
         },
         withCredentials: true,
-        timeout: 30000  // ✅ NOVO
+        timeout: 30000 
       });
       setNovoTitulo("");
       setStatusSelecionado(null);
@@ -545,10 +543,10 @@ export default function TelaKanbanBoard() {
           headers: {
             Authorization: `Basic ${auth}`,
             "Content-Type": "application/json",
-            'Accept-Encoding': 'gzip, deflate'  // ✅ NOVO
+            'Accept-Encoding': 'gzip, deflate'
           },
           withCredentials: true,
-          timeout: 30000  // ✅ NOVO
+          timeout: 30000
         }
       );
     } catch (error: any) {

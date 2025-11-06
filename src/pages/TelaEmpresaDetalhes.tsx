@@ -39,7 +39,6 @@ export default function EmpresaDetalhes() {
     setToast({ message, type, show: true });
   };
 
-  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
   const handleSessionExpired = () => {
     showToast("Sessão expirada. Faça login novamente.", "error");
     localStorage.removeItem("auth");
@@ -48,7 +47,6 @@ export default function EmpresaDetalhes() {
     setTimeout(() => navigate("/", { replace: true }), 1500);
   };
 
-  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
   const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
@@ -59,7 +57,7 @@ export default function EmpresaDetalhes() {
   };
 
   useEffect(() => {
-    let isSubscribed = true; // ✅ Previne race conditions
+    let isSubscribed = true;
 
     const carregarEmpresa = async () => {
       if (!id) {
@@ -101,7 +99,7 @@ export default function EmpresaDetalhes() {
     carregarEmpresa();
 
     return () => {
-      isSubscribed = false; // ✅ Cleanup
+      isSubscribed = false;
     };
   }, [id, navigate]);
 
