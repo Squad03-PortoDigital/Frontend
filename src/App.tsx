@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { RotaProtegida } from "./components/RotaProtegida";
 import Login from "./components/Login";
-import CadastroUsuario from './components/CadastroUsuario';
 import Menu from "./components/Menu";
 import Header from "./components/Header";
 import TelaPerfil from "./pages/TelaPerfil";
@@ -32,7 +32,6 @@ interface Usuario {
 export default function App() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
-  // ✅ Função para carregar usuário do localStorage
   const loadUser = () => {
     const usuarioSalvo = localStorage.getItem("usuario");
     if (usuarioSalvo) {
@@ -40,12 +39,10 @@ export default function App() {
     }
   };
 
-  // ✅ Carrega o usuário logado do localStorage quando o app inicializa
   useEffect(() => {
     loadUser();
   }, []);
 
-  // ✅ Escuta o evento 'user-updated' para atualizar o estado
   useEffect(() => {
     window.addEventListener('user-updated', loadUser);
 
@@ -58,20 +55,6 @@ export default function App() {
     <Routes>
       {/* Tela de login */}
       <Route path="/" element={<Login />} />
-
-      {/* Tela de cadastro de usuário (admin) */}
-      <Route
-        path="/cadastrar-usuario"
-        element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario} />
-            <main className="app-content">
-              <CadastroUsuario />
-            </main>
-          </div>
-        }
-      />
 
       {/* Home - Kanban Board */}
       <Route
@@ -100,10 +83,12 @@ export default function App() {
           </div>
         }
       />
-
+    
       <Route
           path="/equipe"
           element={
+            <RotaProtegida permissaesRequeridas="USUARIO_CADASTRAR"
+            todasPermissoes={true}>
             <div className="app-grid">
               <Header />
               <Menu user={usuario} />
@@ -111,11 +96,12 @@ export default function App() {
               <TelaEquipe />
             </main>
           </div>
+          </RotaProtegida>
         }
       />
+    
 
-
-      {/* ✅ NOVO: Tela de tarefas arquivadas */}
+      {/*Tela de tarefas arquivadas */}
       <Route
         path="/arquivadas"
         element={
