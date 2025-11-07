@@ -116,7 +116,7 @@ export default function TelaEquipe() {
         setLoading(true);
 
         // Carregar usuários
-        const usuariosRes = await fetch("http://localhost/api/usuarios", {
+        const usuariosRes = await fetch("http://54.147.178.97:8080/usuarios", {
           headers: { Authorization: `Basic ${auth}` },
           credentials: "include",
         });
@@ -136,7 +136,7 @@ export default function TelaEquipe() {
         }
 
         // Carregar roles
-        const rolesRes = await fetch("http://localhost/api/roles", {
+        const rolesRes = await fetch("http://54.147.178.97:8080/roles", {
           headers: { Authorization: `Basic ${auth}` },
           credentials: "include",
         });
@@ -150,7 +150,7 @@ export default function TelaEquipe() {
         }
 
         // Carregar permissões
-        const permissoesRes = await fetch("http://localhost/api/permissoes", {
+        const permissoesRes = await fetch("http://54.147.178.97:8080/permissoes", {
           headers: { Authorization: `Basic ${auth}` },
           credentials: "include",
         });
@@ -246,7 +246,7 @@ export default function TelaEquipe() {
       const auth = getAuth();
       if (!auth) return;
 
-      const response = await fetch("http://localhost/api/usuarios/cadastro", {
+      const response = await fetch("http://54.147.178.97:8080/usuarios/cadastro", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -281,7 +281,7 @@ export default function TelaEquipe() {
         // Recarrega usuários
         const auth = getAuth();
         if (auth) {
-          const usuariosRes = await fetch("http://localhost/api/usuarios", {
+          const usuariosRes = await fetch("http://54.147.178.97:8080/usuarios", {
             headers: { Authorization: `Basic ${auth}` },
             credentials: "include",
           });
@@ -356,7 +356,7 @@ export default function TelaEquipe() {
 
       if (roleEditando) {
         // Atualizar role
-        const response = await fetch(`http://localhost/api/roles/${roleEditando.id}`, {
+        const response = await fetch(`http://54.147.178.97:8080/roles/${roleEditando.id}`, {
           method: "PUT",
           headers: { 
             "Content-Type": "application/json",
@@ -380,7 +380,7 @@ export default function TelaEquipe() {
           setModalPermissoesAberto(false);
           
           // Recarrega roles
-          const rolesRes = await fetch("http://localhost/api/roles", {
+          const rolesRes = await fetch("http://54.147.178.97:8080/roles", {
             headers: { Authorization: `Basic ${auth}` },
             credentials: "include",
           });
@@ -393,7 +393,7 @@ export default function TelaEquipe() {
         }
       } else {
         // Criar novo role
-        const response = await fetch("http://localhost/api/roles", {
+        const response = await fetch("http://54.147.178.97:8080/roles", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -417,7 +417,7 @@ export default function TelaEquipe() {
           setModalPermissoesAberto(false);
           
           // Recarrega roles
-          const rolesRes = await fetch("http://localhost/api/roles", {
+          const rolesRes = await fetch("http://54.147.178.97:8080/roles", {
             headers: { Authorization: `Basic ${auth}` },
             credentials: "include",
           });
@@ -450,7 +450,7 @@ export default function TelaEquipe() {
       const auth = getAuth();
       if (!auth) return;
 
-      const response = await fetch(`http://localhost/api/roles/${itemParaDeletar.id}`, {
+      const response = await fetch(`http://54.147.178.97:8080/roles/${itemParaDeletar.id}`, {
         method: "DELETE",
         headers: { Authorization: `Basic ${auth}` },
         credentials: "include",
@@ -488,7 +488,7 @@ export default function TelaEquipe() {
       const auth = getAuth();
       if (!auth) return;
 
-      const response = await fetch(`http://localhost/api/usuarios/${itemParaDeletar.id}`, {
+      const response = await fetch(`http://54.147.178.97:8080/usuarios/${itemParaDeletar.id}`, {
         method: "DELETE",
         headers: { Authorization: `Basic ${auth}` },
         credentials: "include",

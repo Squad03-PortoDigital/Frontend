@@ -21,7 +21,7 @@ const Login: React.FC = () => {
       formData.append("email", email);
       formData.append("senha", senha);
 
-      const loginResponse = await fetch("http://localhost/api/usuarios/login", {
+      const loginResponse = await fetch("http://54.147.178.97:8080/usuarios/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -40,7 +40,7 @@ const Login: React.FC = () => {
         
         try {
           // ✅ CARREGA OS DADOS DO USUÁRIO
-          const usuarioResponse = await fetch("http://localhost/api/usuarios/me", {
+          const usuarioResponse = await fetch("http://54.147.178.97:8080/usuarios/me", {
             method: "GET",
             headers: {
               "Authorization": `Basic ${token}`,
