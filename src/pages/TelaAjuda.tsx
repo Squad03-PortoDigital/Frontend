@@ -1,4 +1,3 @@
-import React from "react";
 import "../pages/TelaAjuda.css";
 import LogoAzulFlap from "../images/Logo-azul-FLAP 1.png";
 

@@ -1,6 +1,7 @@
 import { Button } from "@mui/material";
 import "./TelaDetalhamento.css";
 import agentegpt from "../images/agentegpt-logo.png";
+import { MoveLeft } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -234,7 +235,7 @@ export default function TelaDetalhamento() {
       italic: document.queryCommandState('italic'),
       underline: document.queryCommandState('underline'),
       insertUnorderedList: document.queryCommandState('insertUnorderedList'),
-      formatBlock: document.queryCommandState('formatBlock') === 'h2'
+      formatBlock: (document.queryCommandState('formatBlock') as any) === 'h2'
     });
   };
 
@@ -586,65 +587,6 @@ export default function TelaDetalhamento() {
     u.nome.toLowerCase().includes(pesquisaMembros.toLowerCase())
   );
 
-
-  const salvarAlteracoes = async () => {
-    if (!titulo.trim()) {
-      showToast("O título da tarefa é obrigatório!", "warning");
-      return;
-    }
-
-
-    const auth = getAuth();
-    if (!auth) return;
-
-
-    try {
-      let dtEntregaFormatada = null;
-      if (dtEntrega) {
-        dtEntregaFormatada = `${dtEntrega}T00:00:00`;
-      }
-
-
-      const payload = {
-        titulo,
-        descricao,
-        status,
-        prioridade,
-        dtEntrega: dtEntregaFormatada,
-        links,
-        membroIds: membrosSelecionados,
-      };
-
-
-      console.log("📤 Payload sendo enviado:", payload);
-
-
-      await api.put(`/tarefas/${id}`, payload, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'
-        },
-        withCredentials: true,
-        timeout: 30000,
-      });
-
-
-      showToast("Tarefa atualizada com sucesso!", "success");
-      setTimeout(() => navigate("/home"), 1000);
-    } catch (error: any) {
-      console.error("❌ Erro ao salvar:", error);
-
-
-      if (error.response?.status === 401) {
-        handleSessionExpired();
-      } else {
-        showToast("Erro ao salvar alterações.", "error");
-      }
-    }
-  };
-
-
   const arquivarTarefa = async () => {
     const auth = getAuth();
     if (!auth) return;
@@ -953,7 +895,7 @@ export default function TelaDetalhamento() {
           <div className="detalhamento-header">
             <div className="detalhamento-header-empresa">
               <button onClick={() => navigate("/home")} className="return-button">
-                ←
+                <MoveLeft size={18} />
               </button>
 
 
@@ -1005,7 +947,7 @@ export default function TelaDetalhamento() {
 
             <div className="detalhamento-title-infos">
               <div className="detalhamento-title-info-usuarios" ref={membrosDropdownRef}>
-                {getMembrosAtribuidos().slice(0, 3).map((membro, index) => (
+                {getMembrosAtribuidos().slice(0, 3).map((membro) => (
                   <div
                     key={membro.id}
                     className="user-avatar"

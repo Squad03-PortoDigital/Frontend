@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./TelaArquivadas.css";
 import { useNavigate } from "react-router-dom";
 import { Archive, Eye, RotateCcw, Trash2 } from "lucide-react";

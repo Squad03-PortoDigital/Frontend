@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Archive, Bell, Calendar, ChartPie, House, Info, Settings, SquareCheckBig, Users, User, X, UserPlus } from "lucide-react";
+import { Archive, Bell, Calendar, ChartPie, Info, SquareCheckBig, Users, User, X, Building2, SquareKanban } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePermissao } from "../contexts/PermissaoContext";
 import "../styles/menu.css";
@@ -13,6 +13,7 @@ interface UserProfile {
   cargo?: {
     id: number;
     nome: string;
+    role?: string;
   };
 }
 
@@ -97,7 +98,7 @@ export default function Menu({ user: userProp }: MenuProps) {
           <h2 className="menu-item-titulo">Kanban:</h2>
 
           <Link to="/home" className={`menu-item ${isActive('/home')}`}>
-            <House size={22} />
+            <SquareKanban size={22} />
             <div className="menu-item-nome">Kanban</div>
           </Link>
 
@@ -110,6 +111,11 @@ export default function Menu({ user: userProp }: MenuProps) {
             <SquareCheckBig size={22} />
             <div className="menu-item-nome">Finalizados</div>
           </div>
+
+          <Link to="/dashboard" className={`menu-item ${isActive('/dashboard')}`}>
+            <ChartPie size={22} />
+            <div className="menu-item-nome">Dashboard</div>
+          </Link>
         </div>
 
         <div className="menu-section">
@@ -127,25 +133,19 @@ export default function Menu({ user: userProp }: MenuProps) {
       {temPermissao('USUARIO_CADASTRAR') && (
         <div className="menu-section">
           <h2 className="menu-item-titulo">Gestor:</h2>
-          <Link to="/dashboard" className={`menu-item ${isActive('/dashboard')}`}>
-            <ChartPie size={22} />
-            <div className="menu-item-nome">Dashboard</div>
-          </Link>
-          <div className="menu-item">
           <Link to="/equipe" className={`menu-item ${isActive('/equipe')}`}>
             <Users size={22} />
             <div className="menu-item-nome">Equipe</div>
           </Link>
-          </div>
+          <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
+            <Building2 size={22} />
+            <div className="menu-item-nome">Empresas</div>
+          </Link>
         </div>
         )}
         
         <div className="menu-section">
           <h2 className="menu-item-titulo">Mais:</h2>
-          <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
-            <Settings size={22} />
-            <div className="menu-item-nome">Empresas</div>
-          </Link>
           <Link to="/ajuda" className={`menu-item ${isActive('/ajuda')}`}>
             <Info size={22} />
             <div className="menu-item-nome">Ajuda</div>

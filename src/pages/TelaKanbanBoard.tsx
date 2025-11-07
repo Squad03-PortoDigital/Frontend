@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./TelaKanbanBoard.css";
 import { Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -68,6 +68,7 @@ interface Usuario {
   cargo?: {
     nome: string;
   };
+  username?: string;
 }
 
 
@@ -895,7 +896,7 @@ export default function TelaKanbanBoard() {
             ))}
           </div>
         </DragDropContext>
-        <FiltroModal isOpen={filtroAberto} onClose={() => setFiltroAberto(false)} membros={membros} empresas={empresas} onAplicar={aplicarFiltros} filtrosAtuais={filtrosAtivos} />
+        <FiltroModal isOpen={filtroAberto} onClose={() => setFiltroAberto(false)} membros={membros as any} empresas={empresas} onAplicar={aplicarFiltros} filtrosAtuais={filtrosAtivos} />
       </div>
     </>
   );

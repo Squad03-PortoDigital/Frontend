@@ -1,8 +1,19 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
-  withCredentials: true, // ✅ IMPORTANTE: Envia cookies de sessão
+  baseURL: 'http://localhost/api',
+  withCredentials: true,
+});
+
+// ✅ INTERCEPTOR: Adiciona Authorization header automaticamente
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth');
+  
+  if (token) {
+    config.headers.Authorization = `Basic ${token}`;
+  }
+  
+  return config;
 });
 
 // ✅ Funções da API de usuário

@@ -48,8 +48,7 @@ export const PermissaoProvider = ({ children }: { children: React.ReactNode }) =
       const response = await api.get(`/permissoes/usuarios/${usuarioData.id}`, {
         headers: {
           Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate',
-          'Cache-Control': 'no-cache'
+          'Accept-Encoding': 'gzip, deflate'
         },
         withCredentials: true,
         timeout: 30000,

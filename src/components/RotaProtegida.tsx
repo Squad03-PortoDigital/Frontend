@@ -13,7 +13,7 @@ export const RotaProtegida = ({
   permissaesRequeridas,
   todasPermissoes = false 
 }: RotaProtegidaProps) => {
-  const { temPermissao, temAlgumaPermissao, carregando, recarregarPermissoes } = usePermissao();
+  const { temPermissao, temAlgumaPermissao, recarregarPermissoes } = usePermissao();
 
   useEffect(() => {
     recarregarPermissoes();

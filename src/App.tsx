@@ -17,20 +17,22 @@ import TelaEquipe from "./pages/TelaEquipe";
 import "./App.css";
 
 // Tipo para o usuário
-interface Usuario {
+interface UserProfile {
   id?: number;
   nome: string;
   email: string;
-  foto?: string | null;
+  foto?: string;
+  role?: string;
   cargo?: {
     id: number;
     nome: string;
+    role?: string;
   };
-  role?: string;
 }
 
+
 export default function App() {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [usuario, setUsuario] = useState<UserProfile | null>(null);
 
   const loadUser = () => {
     const usuarioSalvo = localStorage.getItem("usuario");
@@ -62,7 +64,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content kanban-area">
               <KanbanBoard />
             </main>
@@ -76,7 +78,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <TelaDetalhamento />
             </main>
@@ -91,7 +93,7 @@ export default function App() {
             todasPermissoes={true}>
             <div className="app-grid">
               <Header />
-              <Menu user={usuario} />
+              <Menu user={usuario as UserProfile | undefined} />
               <main className="app-content">
               <TelaEquipe />
             </main>
@@ -107,7 +109,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <TelaArquivadas />
             </main>
@@ -121,7 +123,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <TelaPerfil />
             </main>
@@ -135,7 +137,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <TelaDashboard />
             </main>
@@ -149,7 +151,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <TelaCalendario />
             </main>
@@ -163,7 +165,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <Ajuda />
             </main>
@@ -177,7 +179,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <TelaAjustes />
             </main>
@@ -191,7 +193,7 @@ export default function App() {
         element={
           <div className="app-grid">
             <Header />
-            <Menu user={usuario} />
+            <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content">
               <EmpresaDetalhes />
             </main>

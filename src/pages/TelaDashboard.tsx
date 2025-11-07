@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./TelaDashboard.css";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,14 +15,12 @@ import api from "../services/api";
 import logoFlap from "../images/Logo-azul-FLAP 1.png";
 import { Toast } from "./Toast";
 
-
 interface TarefaDTO {
   id: number;
   titulo: string;
   status: string;
   prioridade: "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
   posicao: number;
-  tags: string[];
   dtEntrega?: string;
   dtCriacao?: string;
   dtConclusao?: string;
@@ -32,19 +30,16 @@ interface TarefaDTO {
   listaId?: number;
 }
 
-
 interface Empresa {
   id: number;
   nome: string;
 }
-
 
 interface Membro {
   id: number;
   nome: string;
   username: string;
 }
-
 
 interface Lista {
   id: number;
@@ -53,13 +48,11 @@ interface Lista {
   cor?: string;
 }
 
-
 interface ToastState {
   message: string;
   type: 'success' | 'error' | 'warning';
   show: boolean;
 }
-
 
 const prioridadeCores: { [key: string]: string } = {
   BAIXA: "green",
@@ -67,7 +60,6 @@ const prioridadeCores: { [key: string]: string } = {
   ALTA: "orange",
   CRITICA: "red",
 };
-
 
 export default function TelaDashboard() {
   const [tarefas, setTarefas] = useState<TarefaDTO[]>([]);
@@ -78,11 +70,9 @@ export default function TelaDashboard() {
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
   const navigate = useNavigate();
 
-
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
   };
-
 
   const handleSessionExpired = () => {
     showToast("Sessão expirada. Faça login novamente.", "error");
@@ -92,7 +82,6 @@ export default function TelaDashboard() {
     setTimeout(() => navigate("/", { replace: true }), 1500);
   };
 
-
   const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
@@ -101,7 +90,6 @@ export default function TelaDashboard() {
     }
     return auth;
   };
-
 
   const getSaudacao = () => {
     const agora = new Date();
@@ -116,7 +104,6 @@ export default function TelaDashboard() {
     return "Boa noite";
   };
 
-
   useEffect(() => {
     let isSubscribed = true;
     const controller = new AbortController();
@@ -128,24 +115,22 @@ export default function TelaDashboard() {
       try {
         setLoading(true);
         
-        const headers = {
-          headers: {
-            Authorization: `Basic ${auth}`,
-            'Accept-Encoding': 'gzip, deflate'
-          },
-          withCredentials: true,
-          timeout: 30000,
-          signal: controller.signal
-        };
+        console.log("📡 Iniciando carregamento dos dados do dashboard...");
 
+        // ✅ SEM HEADERS DUPLICADOS - O INTERCEPTOR JÁ ADICIONA O AUTHORIZATION
         const [tarefasRes, empresasRes, membrosRes, listasRes] = await Promise.all([
-          api.get("/tarefas", headers),
-          api.get("/empresas", headers),
-          api.get("/usuarios", headers),
-          api.get("/listas", headers),
+          api.get("/tarefas", { signal: controller.signal }),
+          api.get("/empresas", { signal: controller.signal }),
+          api.get("/usuarios", { signal: controller.signal }),
+          api.get("/listas", { signal: controller.signal }),
         ]);
 
         if (!isSubscribed) return;
+
+        console.log("✅ Tarefas carregadas:", tarefasRes.data);
+        console.log("✅ Empresas carregadas:", empresasRes.data);
+        console.log("✅ Membros carregados:", membrosRes.data);
+        console.log("✅ Listas carregadas:", listasRes.data);
 
         const tarefasFiltradas = Array.isArray(tarefasRes.data)
           ? tarefasRes.data.filter((t: TarefaDTO) => t.status !== "ARQUIVADA")
@@ -155,6 +140,8 @@ export default function TelaDashboard() {
         setEmpresas(Array.isArray(empresasRes.data) ? empresasRes.data : []);
         setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
         setListas(Array.isArray(listasRes.data) ? listasRes.data : []);
+        
+        console.log("✅ Dashboard carregado com sucesso!");
       } catch (error: any) {
         if (!isSubscribed) return;
 
@@ -163,6 +150,7 @@ export default function TelaDashboard() {
           return;
         }
 
+        console.error("❌ Erro ao carregar dados:", error);
         setTarefas([]);
         setEmpresas([]);
         setMembros([]);
@@ -184,10 +172,9 @@ export default function TelaDashboard() {
 
     return () => {
       isSubscribed = false;
-      controller.abort(); 
+      controller.abort();
     };
   }, []);
-
 
   const totalTarefas = tarefas.length;
   const tarefasConcluidas = tarefas.filter((t) =>
@@ -206,7 +193,6 @@ export default function TelaDashboard() {
     ? Math.round((tarefasConcluidas / totalTarefas) * 100)
     : 0;
 
-  // Tarefas por prioridade
   const tarefasPorPrioridade = {
     CRITICA: tarefas.filter(t => t.prioridade === "CRITICA").length,
     ALTA: tarefas.filter(t => t.prioridade === "ALTA").length,
@@ -214,7 +200,6 @@ export default function TelaDashboard() {
     BAIXA: tarefas.filter(t => t.prioridade === "BAIXA").length,
   };
 
-  // Tarefas por empresa
   const tarefasPorEmpresa = empresas.map(empresa => ({
     nome: empresa.nome,
     total: tarefas.filter(t => t.empresaId === empresa.id).length,
@@ -224,13 +209,11 @@ export default function TelaDashboard() {
     ).length,
   })).sort((a, b) => b.total - a.total).slice(0, 5);
 
-  // Tarefas por lista/board
   const tarefasPorLista = listas.map(lista => ({
     nome: lista.nome,
     total: tarefas.filter(t => t.listaId === lista.id).length,
   })).sort((a, b) => b.total - a.total);
 
-  // Performance dos membros
   const performanceMembros = membros.map(membro => ({
     nome: membro.nome,
     total: tarefas.filter(t => t.membroIds?.includes(membro.id)).length,
@@ -242,7 +225,6 @@ export default function TelaDashboard() {
     .sort((a, b) => b.concluidas - a.concluidas)
     .slice(0, 5);
 
-  // Tarefas próximas do vencimento (próximos 7 dias)
   const proximasVencer = tarefas.filter(t => {
     if (!t.dtEntrega || t.status?.toLowerCase().includes("conclu")) return false;
     const diff = new Date(t.dtEntrega).getTime() - new Date().getTime();
