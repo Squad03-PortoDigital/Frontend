@@ -1,0 +1,319 @@
+.notificacoes-wrapper {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.notificacoes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-left h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.badge-nao-lidas {
+  background-color: #e74c3c;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.btn-marcar-todas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-marcar-todas:hover:not(:disabled) {
+  background-color: #5568d3;
+}
+
+.btn-marcar-todas:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notificacoes-filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filtro-btn {
+  padding: 10px 20px;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.filtro-btn:hover {
+  background-color: #e8e8e8;
+}
+
+.filtro-btn.active {
+  background-color: #667eea;
+  color: white;
+}
+
+.notificacoes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notificacao-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.notificacao-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.notificacao-card.nao-lida {
+  background-color: #f0f4ff;
+  border-color: #667eea;
+}
+
+.notificacao-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.icon-atribuicao {
+  color: #3498db;
+}
+
+.icon-mencao {
+  color: #9b59b6;
+}
+
+.icon-prazo {
+  color: #e74c3c;
+}
+
+.icon-comentario {
+  color: #2ecc71;
+}
+
+.notificacao-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notificacao-top {
+  display: flex;
+  gap: 12px;
+}
+
+.remetente-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remetente-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.avatar-sistema {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+}
+
+
+.notificacao-info {
+  flex: 1;
+}
+
+.notificacao-info h4 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.notificacao-info p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.tarefa-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background-color: rgba(102, 126, 234, 0.1);
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.tarefa-link span {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 500;
+}
+
+.notificacao-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tempo {
+  font-size: 12px;
+  color: #999;
+}
+
+.acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-marcar-lida,
+.btn-deletar {
+  padding: 6px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.2s;
+}
+
+.btn-marcar-lida:hover {
+  background-color: #e8f5e9;
+  color: #2ecc71;
+}
+
+.btn-deletar:hover {
+  background-color: #ffebee;
+  color: #e74c3c;
+}
+
+.indicador-nao-lida {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 10px;
+  height: 10px;
+  background-color: #e74c3c;
+  border-radius: 50%;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state svg {
+  color: #ddd;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .notificacoes-wrapper {
+    padding: 16px;
+  }
+
+  .notificacoes-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .btn-marcar-todas {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .notificacao-card {
+    padding: 12px;
+  }
+
+  .notificacao-top {
+    flex-direction: column;
+  }
+}

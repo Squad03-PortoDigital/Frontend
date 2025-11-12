@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { RotaProtegida } from "./components/RotaProtegida";
+import TelaNotificacoes from './pages/TelaNotificacoes';
 import Login from "./components/Login";
 import Menu from "./components/Menu";
 import Header from "./components/Header";
@@ -67,6 +68,19 @@ export default function App() {
             <Menu user={usuario as UserProfile | undefined} />
             <main className="app-content kanban-area">
               <KanbanBoard />
+            </main>
+          </div>
+        }
+      />
+    
+      <Route
+        path="/notificacoes"
+        element={
+          <div className="app-grid">
+            <Header />
+            <Menu user={usuario as UserProfile | undefined} />
+            <main className="app-content">
+              <TelaNotificacoes/>
             </main>
           </div>
         }

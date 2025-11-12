@@ -3,6 +3,7 @@ import { Archive, Bell, Calendar, ChartPie, Info, SquareCheckBig, Users, User, X
 import { useState, useEffect } from "react";
 import { usePermissao } from "../contexts/PermissaoContext";
 import "../styles/menu.css";
+import NotificationDot from "./NotificationDot";
 
 interface UserProfile {
   id?: number;
@@ -120,14 +121,18 @@ export default function Menu({ user: userProp }: MenuProps) {
 
         <div className="menu-section">
           <h2 className="menu-item-titulo">Informações:</h2>
+
           <Link to="/calendario" className={`menu-item ${isActive('/calendario')}`}>
             <Calendar size={22} />
             <div className="menu-item-nome">Calendário</div>
           </Link>
-          <div className="menu-item">
+
+          <Link to="/notificacoes" className={`menu-item ${isActive('/notificacoes')}`}>
             <Bell size={22} />
             <div className="menu-item-nome">Notificações</div>
-          </div>
+            <NotificationDot />
+          </Link>
+
         </div>
 
       {temPermissao('USUARIO_CADASTRAR') && (

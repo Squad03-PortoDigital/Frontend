@@ -7,10 +7,10 @@ import api from "../services/api";
 import logoFlap from "../images/Logo-azul-FLAP 1.png";
 import FiltroModal, { type FiltrosAtivos } from "./FiltroModal";
 import { Toast } from "./Toast";
-
+import { useWebSocket } from '../contexts/WebSocketContext'; // ✅ NOVO
+import type { TarefaEvento } from '../services/websocket';
 
 export type StatusTarefa = string;
-
 
 interface Membro {
   membroId: number;
@@ -19,7 +19,6 @@ interface Membro {
   username?: string;
   foto?: string;
 }
-
 
 interface TarefaDTO {
   id: number;
@@ -37,12 +36,10 @@ interface TarefaDTO {
   listaId?: number;
 }
 
-
 interface Empresa {
   id: number;
   nome: string;
 }
-
 
 interface Lista {
   id: number;
@@ -51,13 +48,11 @@ interface Lista {
   cor?: string;
 }
 
-
 interface ToastState {
   message: string;
   type: 'success' | 'error' | 'warning';
   show: boolean;
 }
-
 
 interface Usuario {
   id?: number;
@@ -71,7 +66,6 @@ interface Usuario {
   username?: string;
 }
 
-
 const prioridadeCores: { [key: string]: string } = {
   BAIXA: "green",
   MEDIA: "yellow",
@@ -79,8 +73,8 @@ const prioridadeCores: { [key: string]: string } = {
   CRITICA: "red",
 };
 
-
 export default function TelaKanbanBoard() {
+  const { subscribe } = useWebSocket(); // ✅ NOVO
   const [tarefas, setTarefas] = useState<TarefaDTO[]>([]);
   const [tarefasPorLista, setTarefasPorLista] = useState<{ [listaId: number]: TarefaDTO[] }>({});
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -101,11 +95,9 @@ export default function TelaKanbanBoard() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const navigate = useNavigate();
 
-
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
   };
-
 
   const handleSessionExpired = () => {
     showToast("Sessão expirada. Faça login novamente.", "error");
@@ -115,7 +107,6 @@ export default function TelaKanbanBoard() {
     setTimeout(() => navigate("/", { replace: true }), 1500);
   };
 
-
   const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
@@ -124,7 +115,6 @@ export default function TelaKanbanBoard() {
     }
     return auth;
   };
-
 
   const getSaudacao = () => {
     const agora = new Date();
@@ -139,11 +129,9 @@ export default function TelaKanbanBoard() {
     return "Boa noite";
   };
 
-
   const getPrimeiroNome = (nomeCompleto: string) => {
     return nomeCompleto.split(' ')[0];
   };
-
 
   const getInitials = (nome: string) => {
     if (!nome) return "??";
@@ -154,6 +142,36 @@ export default function TelaKanbanBoard() {
     return nome.substring(0, 2).toUpperCase();
   };
 
+  const recarregarTarefasLista = async (listaId: number) => {
+    const auth = getAuth();
+    if (!auth) return;
+
+    try {
+      const res = await api.get(`/tarefas/lista/${listaId}`, {
+        headers: { 
+          Authorization: `Basic ${auth}`
+        }, 
+        withCredentials: true,
+        timeout: 30000
+      });
+      setTarefasPorLista(prev => ({
+        ...prev,
+        [listaId]: res.data,
+      }));
+      const todasTarefasRes = await api.get("/tarefas", {
+        headers: { 
+          Authorization: `Basic ${auth}`
+        }, 
+        withCredentials: true,
+        timeout: 30000
+      });
+      setTarefas(Array.isArray(todasTarefasRes.data) ? todasTarefasRes.data : []);
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      }
+    }
+  };
 
   useEffect(() => {
     let isSubscribed = true;
@@ -168,8 +186,7 @@ export default function TelaKanbanBoard() {
         
         const headers = {
           headers: {
-            Authorization: `Basic ${auth}`,
-            'Accept-Encoding': 'gzip, deflate'
+            Authorization: `Basic ${auth}`
           },
           withCredentials: true,
           timeout: 30000,
@@ -272,17 +289,91 @@ export default function TelaKanbanBoard() {
 
     carregarDados();
 
+    // ✅ NOVO: Subscribe aos eventos WebSocket
+    const unsubscribe = subscribe((evento: TarefaEvento) => {
+      if (!isSubscribed) return;
+      
+      console.log('📨 Evento WebSocket:', evento);
+
+      switch (evento.tipo) {
+        case 'CRIADA':
+          if (evento.tarefa && evento.listaId) {
+            setTarefasPorLista(prev => ({
+              ...prev,
+              [evento.listaId!]: [...(prev[evento.listaId!] || []), evento.tarefa]
+            }));
+            showToast(`Nova tarefa: ${evento.tarefa.titulo}`, 'success');
+          }
+          break;
+
+        case 'MOVIDA':
+          if (evento.tarefaId && evento.listaIdOrigem && evento.listaId) {
+            setTarefasPorLista(prev => {
+              const updated = { ...prev };
+              
+              if (updated[evento.listaIdOrigem!]) {
+                updated[evento.listaIdOrigem!] = updated[evento.listaIdOrigem!].filter(
+                  t => t.id !== evento.tarefaId
+                );
+              }
+              
+              if (updated[evento.listaId!] && evento.tarefa) {
+                const existe = updated[evento.listaId!].some(t => t.id === evento.tarefaId);
+                if (!existe) {
+                  updated[evento.listaId!] = [
+                    ...updated[evento.listaId!],
+                    evento.tarefa
+                  ].sort((a, b) => a.posicao - b.posicao);
+                }
+              }
+              
+              return updated;
+            });
+            showToast('Tarefa movida!', 'success');
+          }
+          break;
+
+        case 'ATUALIZADA':
+          if (evento.tarefaId && evento.tarefa && evento.listaId) {
+            setTarefasPorLista(prev => {
+              const updated = { ...prev };
+              
+              if (updated[evento.listaId!]) {
+                updated[evento.listaId!] = updated[evento.listaId!].map(t =>
+                  t.id === evento.tarefaId ? evento.tarefa! : t
+                );
+              }
+              
+              return updated;
+            });
+          }
+          break;
+
+        case 'DELETADA':
+          setTarefasPorLista(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(listaId => {
+              updated[Number(listaId)] = updated[Number(listaId)].filter(
+                t => t.id !== evento.tarefaId
+              );
+            });
+            return updated;
+          });
+          showToast('Tarefa deletada', 'warning');
+          break;
+      }
+    });
+
     return () => {
       isSubscribed = false;
       controller.abort();
+      unsubscribe(); // ✅ NOVO: Apenas unsubscribe
     };
-  }, [navigate]);
-
+  }, [navigate, subscribe]); // ✅ NOVO: Adicione subscribe nas dependências
 
   const aplicarFiltros = (filtros: FiltrosAtivos) => {
     setFiltrosAtivos(filtros);
   };
-
 
   const boards = listas.map((lista) => ({
     id: lista.id,
@@ -290,41 +381,6 @@ export default function TelaKanbanBoard() {
     label: lista.nome,
     isDeletable: true,
   }));
-
-
-  const recarregarTarefasLista = async (listaId: number) => {
-    const auth = getAuth();
-    if (!auth) return;
-
-    try {
-      const res = await api.get(`/tarefas/lista/${listaId}`, {
-        headers: { 
-          Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'
-        }, 
-        withCredentials: true,
-        timeout: 30000
-      });
-      setTarefasPorLista(prev => ({
-        ...prev,
-        [listaId]: res.data,
-      }));
-      const todasTarefasRes = await api.get("/tarefas", {
-        headers: { 
-          Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'
-        }, 
-        withCredentials: true,
-        timeout: 30000
-      });
-      setTarefas(Array.isArray(todasTarefasRes.data) ? todasTarefasRes.data : []);
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        handleSessionExpired();
-      }
-    }
-  };
-
 
   const adicionarBoard = async () => {
     const auth = getAuth();
@@ -337,7 +393,6 @@ export default function TelaKanbanBoard() {
         headers: { 
           Authorization: `Basic ${auth}`, 
           "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'
         },
         withCredentials: true,
         timeout: 30000
@@ -355,7 +410,6 @@ export default function TelaKanbanBoard() {
     }
   };
 
-
   const editarBoard = async (listaId: number, novoNome: string) => {
     const auth = getAuth();
     if (!auth) return;
@@ -366,8 +420,7 @@ export default function TelaKanbanBoard() {
       await api.put(`/listas/${listaId}`, { nome: novoNome, posicao: listaAtual.posicao, cor: listaAtual.cor }, {
         headers: { 
           Authorization: `Basic ${auth}`, 
-          "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'
+          "Content-Type": "application/json"
         },
         withCredentials: true,
         timeout: 30000
@@ -382,7 +435,6 @@ export default function TelaKanbanBoard() {
       }
     }
   };
-
 
   const deletarBoard = async (listaId: number, listaNome: string) => {
     const tarefasNoBoard = tarefasPorLista[listaId] || [];
@@ -402,8 +454,7 @@ export default function TelaKanbanBoard() {
     try {
       await api.delete(`/listas/${listaId}`, {
         headers: { 
-          Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'
+          Authorization: `Basic ${auth}`
         },
         withCredentials: true,
         timeout: 30000
@@ -418,7 +469,6 @@ export default function TelaKanbanBoard() {
       }
     }
   };
-
 
   const adicionarTarefa = async () => {
     if (!listaSelecionada || !novoTitulo.trim()) {
@@ -453,8 +503,7 @@ export default function TelaKanbanBoard() {
       const res = await api.post("/tarefas", novaTarefa, {
         headers: { 
           Authorization: `Basic ${auth}`, 
-          "Content-Type": "application/json",
-          'Accept-Encoding': 'gzip, deflate'
+          "Content-Type": "application/json"
         },
         withCredentials: true,
         timeout: 30000 
@@ -472,7 +521,6 @@ export default function TelaKanbanBoard() {
       }
     }
   };
-
 
   const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
@@ -543,8 +591,7 @@ export default function TelaKanbanBoard() {
         {
           headers: {
             Authorization: `Basic ${auth}`,
-            "Content-Type": "application/json",
-            'Accept-Encoding': 'gzip, deflate'
+            "Content-Type": "application/json"
           },
           withCredentials: true,
           timeout: 30000
@@ -562,11 +609,9 @@ export default function TelaKanbanBoard() {
     }
   };
 
-
   const abrirDetalhamento = (tarefa: TarefaDTO) => {
     navigate(`/detalhamento/${tarefa.id}`);
   };
-
 
   if (loading) {
     return (

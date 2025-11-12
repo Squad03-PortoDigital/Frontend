@@ -1,3 +1,4 @@
+import { useWebSocket } from '../contexts/WebSocketContext';
 import { Button } from "@mui/material";
 import "./TelaDetalhamento.css";
 import agentegpt from "../images/agentegpt-logo.png";
@@ -6,6 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { Toast } from "./Toast";
+import MentionTextarea from "../components/MentionTextarea.tsx";
 
 
 interface Item {
@@ -94,12 +96,12 @@ interface FormatacaoAtiva {
 
 
 export default function TelaDetalhamento() {
+  const { subscribe } = useWebSocket();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const membrosDropdownRef = useRef<HTMLDivElement>(null);
   const descricaoRef = useRef<HTMLDivElement>(null);
-
-
+  const comentariosContainerRef = useRef<HTMLDivElement>(null);
   const [tarefa, setTarefa] = useState<Tarefa | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -345,8 +347,7 @@ export default function TelaDetalhamento() {
 
         const headers = {
           headers: {
-            Authorization: `Basic ${auth}`,
-            'Accept-Encoding': 'gzip, deflate'
+            Authorization: `Basic ${auth}`
           },
           withCredentials: true,
           timeout: 30000,
@@ -492,12 +493,45 @@ export default function TelaDetalhamento() {
 
     carregarTarefa();
 
+    const unsubscribe = subscribe((evento) => {  // ✅ 'subscribe' vem do hook
+      if (!isSubscribed) return;
+      if (evento.tarefaId === Number(id)) {
+        switch (evento.tipo) {
+          case 'ATUALIZADA':
+            if (evento.tarefa) {
+              console.log('✅ Atualizando tarefa via WebSocket:', evento.tarefa);
+
+              setTarefa(evento.tarefa as any);
+              setTitulo(evento.tarefa.titulo || "");
+              setDescricao(evento.tarefa.descricao || "");
+              setStatus(evento.tarefa.status || "A_FAZER");
+              setPrioridade(evento.tarefa.prioridade || "MEDIA");
+
+              if (evento.tarefa.dtEntrega) {
+                const dataEntrega = evento.tarefa.dtEntrega.split('T')[0];
+                setDtEntrega(dataEntrega);
+              }
+
+              setLinks(evento.tarefa.links || []);
+
+              showToast("Tarefa atualizada em tempo real!", "success");
+            }
+            break;
+
+          case 'DELETADA':
+            showToast("Esta tarefa foi deletada!", "warning");
+            setTimeout(() => navigate("/home"), 1500);
+            break;
+        }
+      }
+    });
 
     return () => {
       isSubscribed = false;
       controller.abort();
+      unsubscribe();
     };
-  }, [id, navigate]);
+  }, [id, navigate, subscribe]);
 
 
   useEffect(() => {
@@ -510,7 +544,6 @@ export default function TelaDetalhamento() {
       }
     };
 
-
     if (membrosDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -521,66 +554,76 @@ export default function TelaDetalhamento() {
     };
   }, [membrosDropdownOpen]);
 
+  useEffect(() => {
+  if (comentariosContainerRef.current) {
+    setTimeout(() => {
+      if (comentariosContainerRef.current) {
+        comentariosContainerRef.current.scrollTop = comentariosContainerRef.current.scrollHeight;
+      }
+    }, 100);
+  }
+}, [comentarios]);
+
 
   const adicionarMembroAuto = async (usuarioId: number) => {
-  const auth = getAuth();
-  if (!auth) return;
+    const auth = getAuth();
+    if (!auth) return;
 
-  try {
-    setSalvandoMembro(true);
+    try {
+      setSalvandoMembro(true);
 
-    const estaRemovendo = membrosSelecionados.includes(usuarioId);
+      const estaRemovendo = membrosSelecionados.includes(usuarioId);
 
-    const novosMembros = estaRemovendo
-      ? membrosSelecionados.filter((id) => id !== usuarioId)
-      : [...membrosSelecionados, usuarioId];
+      const novosMembros = estaRemovendo
+        ? membrosSelecionados.filter((id) => id !== usuarioId)
+        : [...membrosSelecionados, usuarioId];
 
-    setMembrosSelecionados(novosMembros);
+      setMembrosSelecionados(novosMembros);
 
-    setTimeout(async () => {
-      try {
-        const payload = {
-          titulo,
-          descricao,
-          status,
-          prioridade,
-          dtEntrega: dtEntrega ? `${dtEntrega}T00:00:00` : null,
-          links,
-          membroIds: novosMembros,
-        };
+      setTimeout(async () => {
+        try {
+          const payload = {
+            titulo,
+            descricao,
+            status,
+            prioridade,
+            dtEntrega: dtEntrega ? `${dtEntrega}T00:00:00` : null,
+            links,
+            membroIds: novosMembros,
+          };
 
-        await api.put(`/tarefas/${id}`, payload, {
-          headers: {
-            Authorization: `Basic ${auth}`,
-            "Content-Type": "application/json",
-            'Accept-Encoding': 'gzip, deflate'
-          },
-          withCredentials: true,
-          timeout: 30000,
-        });
+          await api.put(`/tarefas/${id}`, payload, {
+            headers: {
+              Authorization: `Basic ${auth}`,
+              "Content-Type": "application/json",
+              'Accept-Encoding': 'gzip, deflate'
+            },
+            withCredentials: true,
+            timeout: 30000,
+          });
 
-        showToast(
-          estaRemovendo ? "Membro removido!" : "Membro adicionado!", 
-          "success"
-        );
-        
-        setMembrosDropdownOpen(false);
-      } catch (error: any) {
-        console.error("❌ Erro ao salvar membro:", error);
-        if (error.response?.status === 401) {
-          handleSessionExpired();
-        } else {
-          showToast("Erro ao salvar membro.", "error");
+          showToast(
+            estaRemovendo ? "Membro removido!" : "Membro adicionado!",
+            "success"
+          );
+
+          setMembrosDropdownOpen(false);
+        } catch (error: any) {
+          console.error("❌ Erro ao salvar membro:", error);
+          if (error.response?.status === 401) {
+            handleSessionExpired();
+          } else {
+            showToast("Erro ao salvar membro.", "error");
+          }
+        } finally {
+          setSalvandoMembro(false);
         }
-      } finally {
-        setSalvandoMembro(false);
-      }
-    }, 300);
-  } catch (error) {
-    console.error("Erro ao processar membro:", error);
-    setSalvandoMembro(false);
-  }
-};
+      }, 300);
+    } catch (error) {
+      console.error("Erro ao processar membro:", error);
+      setSalvandoMembro(false);
+    }
+  };
 
 
   const membrosFiltrados = todosUsuarios.filter((u) =>
@@ -1314,54 +1357,58 @@ export default function TelaDetalhamento() {
 
           <div className="detalhamento-comentarios">
             <h2 className="detalhamento-comentarios-title">Comentários</h2>
-            <div className="detalhamento-comentarios-list">
+
+            {/* LISTA DE COMENTÁRIOS COM SCROLL */}
+            <div
+              ref={comentariosContainerRef}
+              className="detalhamento-comentarios-list-container"
+            >
               {comentarios.length > 0 ? (
-                comentarios.map((c) => {
-                  if (!c.usuario) {
-                    console.warn("⚠️ Comentário sem objeto usuario:", c);
-                    return null;
-                  }
-                  return (
-                    <div key={c.id} className="detalhamento-comentarios-item">
-                      <div className="comentario-avatar">
-                        {c.usuario.foto ? (
-                          <img
-                            src={c.usuario.foto}
-                            alt={c.usuario.nome}
-                          />
-                        ) : (
-                          getInitials(c.usuario.nome)
-                        )}
+                <>
+                  {/* ✅ INVERTE A ORDEM: MAIS ANTIGOS PRIMEIRO, NOVOS EMBAIXO */}
+                  {[...comentarios].reverse().map((c) => {
+                    if (!c.usuario) {
+                      console.warn("Comentário sem objeto usuario:", c);
+                      return null;
+                    }
+                    return (
+                      <div key={c.id} className="detalhamento-comentarios-item">
+                        <div className="comentario-avatar">
+                          {c.usuario.foto ? (
+                            <img src={c.usuario.foto} alt={c.usuario.nome} />
+                          ) : (
+                            getInitials(c.usuario.nome)
+                          )}
+                        </div>
+                        <div className="comentario-conteudo">
+                          <strong>{c.usuario.nome}</strong>
+                          <p className="comentario-texto">{c.texto}</p>
+                          <span className="comentario-data">
+                            {new Date(c.dataCriacao).toLocaleString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
                       </div>
-                      <div className="comentario-conteudo">
-                        <strong>{c.usuario.nome}</strong>
-                        <p className="comentario-texto">{c.texto}</p>
-                        <span className="comentario-data">
-                          {new Date(c.dataCriacao).toLocaleString("pt-BR", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </>
               ) : (
                 <p className="empty-message-comentarios">Nenhum comentário ainda.</p>
               )}
             </div>
-            <div className="detalhamento-comentarios-input">
-              <input
-                type="text"
-                placeholder="Adicione um comentário..."
-                value={novoComentario}
-                onChange={(e) => setNovoComentario(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && adicionarComentario()}
-              />
-              <button onClick={adicionarComentario}>Enviar</button>
-            </div>
+
+            {/* INPUT COM AUTOCOMPLETE DE MENÇÕES */}
+            <MentionTextarea
+              value={novoComentario}
+              onChange={setNovoComentario}
+              usuarios={todosUsuarios}
+              placeholder="Adicione um comentário"
+              onSubmit={adicionarComentario}
+            />
           </div>
         </div>
       </div>
