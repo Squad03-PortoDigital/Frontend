@@ -1,31 +1,21 @@
-import { useEffect, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../services/api";
-import "../pages/TelaAjustes.css";
-import LogoAzulFlap from "../images/Logo-azul-FLAP 1.png";
+import React, { useState, useEffect } from "react";
+import "./TelaAjustes.css";
+import { Building2, Plus, Edit2, Archive, Search, X, Upload, RotateCcw, Trash2 } from "lucide-react";
 import { Toast } from "./Toast";
+import { ConfirmModal } from "./ConfirmModal";
 
-interface FormData {
-  nome: string;
-  atuacao: string;
-  cnpj: string;
-  observacao: string;
-  contato: string;
-  email: string;
-  agenteLink: string;
-}
-
-interface BuscaEmpresa {
+interface Empresa {
   id: number;
   nome: string;
-  cnpj: string;
   email: string;
-  contato: string;
-  atuacao: string;
-  observacao: string;
-  foto?: string;
+  cnpj?: string;
+  atuacao?: string;
+  observacao?: string;
+  contato?: string;
   agenteLink?: string;
+  foto?: string;
+  arquivada?: boolean;
+  dataCriacao?: string;
 }
 
 interface ToastState {
@@ -35,47 +25,59 @@ interface ToastState {
 }
 
 export default function AjustesEmpresas() {
-  const [empresas, setEmpresas] = useState<BuscaEmpresa[]>([]);
-  const [formData, setFormData] = useState<FormData>({
-    nome: "",
-    atuacao: "",
-    cnpj: "",
-    observacao: "",
-    contato: "",
-    email: "",
-    agenteLink: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [selectedEmpresaId, setSelectedEmpresaId] = useState<number | null>(null);
+  // Estados para dados
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresasArquivadas, setEmpresasArquivadas] = useState<Empresa[]>([]);
+
+  // Modal de Cadastro/Edição de Empresa
+  const [modalAberto, setModalAberto] = useState(false);
+  const [empresaEditando, setEmpresaEditando] = useState<Empresa | null>(null);
+  const [formNome, setFormNome] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formCnpj, setFormCnpj] = useState("");
+  const [formAtuacao, setFormAtuacao] = useState("");
+  const [formObservacao, setFormObservacao] = useState("");
+  const [formContato, setFormContato] = useState("");
+  const [formAgenteLink, setFormAgenteLink] = useState("");
+  const [formFoto, setFormFoto] = useState<string | null>(null);
+  const [loadingModal, setLoadingModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [empresaParaDeletar, setEmpresaParaDeletar] = useState<Empresa | null>(null);
+
+
+  // Estados de UI
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
-  
-  const navigate = useNavigate();
+  const [abaAtiva, setAbaAtiva] = useState<'ativas' | 'arquivadas'>('ativas');
+  const [busca, setBusca] = useState("");
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [empresaParaArquivar, setEmpresaParaArquivar] = useState<Empresa | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
   };
 
-  // ✅ FUNÇÃO CENTRALIZADA PARA LOGOUT
+  // ===== FUNÇÕES DE AUTENTICAÇÃO =====
   const handleSessionExpired = () => {
     showToast("Sessão expirada. Faça login novamente.", "error");
     localStorage.removeItem("auth");
     localStorage.removeItem("usuario");
     localStorage.removeItem("authenticated");
-    setTimeout(() => navigate("/", { replace: true }), 1500);
+    setTimeout(() => window.location.href = "/", 1500);
   };
 
-  // ✅ FUNÇÃO PARA PEGAR AUTH COM VERIFICAÇÃO
   const getAuth = (): string | null => {
     const auth = localStorage.getItem("auth");
     if (!auth) {
-      navigate("/", { replace: true });
+      handleSessionExpired();
       return null;
     }
     return auth;
   };
 
+  // ===== CARREGAMENTO INICIAL DE DADOS =====
   useEffect(() => {
-    let isSubscribed = true; // ✅ Previne race conditions
+    let isSubscribed = true;
 
     const carregarEmpresas = async () => {
       const auth = getAuth();
@@ -83,31 +85,31 @@ export default function AjustesEmpresas() {
 
       try {
         setLoading(true);
-        const res = await api.get("/empresas", {
+
+        const response = await fetch("https://gabrielfiel.com.br/empresas", {
           headers: { Authorization: `Basic ${auth}` },
-          withCredentials: true,
+          credentials: "include",
         });
 
-        if (!isSubscribed) return;
-
-        if (Array.isArray(res.data)) {
-          setEmpresas(res.data);
-        } else if (res.data.empresas && Array.isArray(res.data.empresas)) {
-          setEmpresas(res.data.empresas);
-        } else {
-          console.error("Formato inesperado de dados:", res.data);
-          setEmpresas([]);
-        }
-      } catch (err: any) {
-        if (!isSubscribed) return;
-        
-        console.error("Erro ao buscar empresas:", err);
-        setEmpresas([]);
-
-        if (err.response?.status === 401) {
+        if (response.status === 401) {
           handleSessionExpired();
-        } else {
-          showToast("Erro ao carregar empresas.", "error");
+          return;
+        }
+
+        if (response.ok && isSubscribed) {
+          const data = await response.json();
+
+          // Separar empresas ativas e arquivadas
+          const ativas = data.filter((e: Empresa) => !e.arquivada);
+          const arquivadas = data.filter((e: Empresa) => e.arquivada);
+
+          setEmpresas(ativas);
+          setEmpresasArquivadas(arquivadas);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar empresas:", error);
+        if (isSubscribed) {
+          showToast("Erro ao carregar empresas. Tente novamente.", "error");
         }
       } finally {
         if (isSubscribed) setLoading(false);
@@ -117,72 +119,300 @@ export default function AjustesEmpresas() {
     carregarEmpresas();
 
     return () => {
-      isSubscribed = false; // ✅ Cleanup
+      isSubscribed = false;
     };
-  }, [navigate]);
+  }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+  const getInitials = (nome: string) => {
+    if (!nome) return "??";
+    const words = nome.trim().split(' ');
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return nome.substring(0, 2).toUpperCase();
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  // ===== MODAL CADASTRO/EDIÇÃO EMPRESA =====
+  const abrirModalNova = () => {
+    setEmpresaEditando(null);
+    setFormNome("");
+    setFormEmail("");
+    setFormCnpj("");
+    setFormAtuacao("");
+    setFormObservacao("");
+    setFormContato("");
+    setFormAgenteLink("");
+    setFormFoto(null);
+    setModalAberto(true);
+  };
+
+  const abrirModalEditar = (empresa: Empresa) => {
+    setEmpresaEditando(empresa);
+    setFormNome(empresa.nome);
+    setFormEmail(empresa.email);
+    setFormCnpj(empresa.cnpj || "");
+    setFormAtuacao(empresa.atuacao || "");
+    setFormObservacao(empresa.observacao || "");
+    setFormContato(empresa.contato || "");
+    setFormAgenteLink(empresa.agenteLink || "");
+    setFormFoto(empresa.foto || null);
+    setModalAberto(true);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Aqui você pode implementar o upload real
+      // Por enquanto, vou só criar uma URL local
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormFoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const salvarEmpresa = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nome.trim()) {
+    if (!formNome.trim()) {
       showToast("O nome da empresa é obrigatório!", "warning");
       return;
     }
 
-    if (!formData.email.trim()) {
-      showToast("O email da empresa é obrigatório!", "warning");
+    if (!formEmail.trim()) {
+      showToast("O email é obrigatório!", "warning");
       return;
     }
 
-    const auth = getAuth();
-    if (!auth) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formEmail)) {
+      showToast("Email inválido!", "warning");
+      return;
+    }
 
-    setLoading(true);
     try {
-      const res = await api.post<BuscaEmpresa>("/empresas", formData, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      });
+      setLoadingModal(true);
+      const auth = getAuth();
+      if (!auth) return;
 
-      setEmpresas((prev) => [...prev, res.data]);
+      const payload = {
+        nome: formNome.trim(),
+        email: formEmail.trim(),
+        cnpj: formCnpj.trim() || null,
+        atuacao: formAtuacao.trim() || null,
+        observacao: formObservacao.trim() || null,
+        contato: formContato.trim() || null,
+        agenteLink: formAgenteLink.trim() || null,
+        foto: formFoto,
+      };
 
-      setFormData({
-        nome: "",
-        atuacao: "",
-        cnpj: "",
-        observacao: "",
-        contato: "",
-        email: "",
-        agenteLink: "",
-      });
+      if (empresaEditando) {
+        // Atualizar empresa
+        const response = await fetch(`https://gabrielfiel.com.br/empresas/${empresaEditando.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${auth}`,
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
 
-      showToast("Empresa cadastrada com sucesso!", "success");
-    } catch (err: any) {
-      console.error("Erro no cadastro:", err);
+        if (response.status === 401) {
+          handleSessionExpired();
+          return;
+        }
 
-      if (err.response?.status === 400) {
-        showToast("Erro ao cadastrar: " + (err.response.data.message || "Dados inválidos"), "error");
-      } else if (err.response?.status === 401) {
-        handleSessionExpired();
-      } else if (err.response?.status === 500) {
-        showToast("Erro interno no servidor. Verifique os dados e tente novamente.", "error");
+        if (response.ok) {
+          showToast("Empresa atualizada com sucesso!", "success");
+          setModalAberto(false);
+
+          // Recarregar empresas
+          const empresasRes = await fetch("https://gabrielfiel.com.br/empresas", {
+            headers: { Authorization: `Basic ${auth}` },
+            credentials: "include",
+          });
+          if (empresasRes.ok) {
+            const data = await empresasRes.json();
+            const ativas = data.filter((e: Empresa) => !e.arquivada);
+            const arquivadas = data.filter((e: Empresa) => e.arquivada);
+            setEmpresas(ativas);
+            setEmpresasArquivadas(arquivadas);
+          }
+        } else {
+          const error = await response.json();
+          showToast(error.message || "Erro ao atualizar empresa.", "error");
+        }
       } else {
-        showToast("Erro ao cadastrar empresa. Tente novamente.", "error");
+        // Criar nova empresa
+        const response = await fetch("https://gabrielfiel.com.br/empresas", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${auth}`,
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+
+        if (response.status === 401) {
+          handleSessionExpired();
+          return;
+        }
+
+        if (response.ok) {
+          showToast("Empresa cadastrada com sucesso!", "success");
+          setModalAberto(false);
+
+          // Recarregar empresas
+          const empresasRes = await fetch("https://gabrielfiel.com.br/empresas", {
+            headers: { Authorization: `Basic ${auth}` },
+            credentials: "include",
+          });
+          if (empresasRes.ok) {
+            const data = await empresasRes.json();
+            const ativas = data.filter((e: Empresa) => !e.arquivada);
+            const arquivadas = data.filter((e: Empresa) => e.arquivada);
+            setEmpresas(ativas);
+            setEmpresasArquivadas(arquivadas);
+          }
+        } else {
+          const error = await response.json();
+          showToast(error.message || "Erro ao cadastrar empresa.", "error");
+        }
       }
+    } catch (error) {
+      console.error("Erro ao salvar empresa:", error);
+      showToast("Falha na conexão com o servidor.", "error");
     } finally {
-      setLoading(false);
+      setLoadingModal(false);
     }
   };
 
-  const empresasSeguras = Array.isArray(empresas) ? empresas : [];
+  // ===== ARQUIVAR/DESARQUIVAR EMPRESA =====
+  const confirmarArquivar = (empresa: Empresa) => {
+    setEmpresaParaArquivar(empresa);
+    setShowArchiveModal(true);
+  };
+
+  const arquivarEmpresa = async () => {
+    if (!empresaParaArquivar) return;
+
+    try {
+      const auth = getAuth();
+      if (!auth) return;
+
+      const novoStatus = !empresaParaArquivar.arquivada;
+
+      const response = await fetch(`https://gabrielfiel.com.br/empresas/${empresaParaArquivar.id}/arquivar`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${auth}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ arquivada: novoStatus }),
+      });
+
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+
+      if (response.ok) {
+        showToast(
+          novoStatus ? "Empresa arquivada com sucesso!" : "Empresa restaurada com sucesso!",
+          "success"
+        );
+
+        // Atualizar listas localmente
+        if (novoStatus) {
+          setEmpresas(prev => prev.filter(e => e.id !== empresaParaArquivar.id));
+          setEmpresasArquivadas(prev => [...prev, { ...empresaParaArquivar, arquivada: true }]);
+        } else {
+          setEmpresasArquivadas(prev => prev.filter(e => e.id !== empresaParaArquivar.id));
+          setEmpresas(prev => [...prev, { ...empresaParaArquivar, arquivada: false }]);
+        }
+      } else {
+        showToast("Erro ao arquivar empresa.", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao arquivar empresa:", error);
+      showToast("Falha na conexão com o servidor.", "error");
+    } finally {
+      setShowArchiveModal(false);
+      setEmpresaParaArquivar(null);
+    }
+  };
+
+  const confirmarExcluir = (empresa: Empresa) => {
+    setEmpresaParaDeletar(empresa);
+    setShowDeleteModal(true);
+  };
+
+  const excluirEmpresaPermanentemente = async () => {
+    if (!empresaParaDeletar) return;
+
+    try {
+      const auth = getAuth();
+      if (!auth) return;
+
+      const response = await fetch(`https://gabrielfiel.com.br/empresas/${empresaParaDeletar.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+
+      if (response.ok || response.status === 204) {
+        showToast("Empresa excluída permanentemente!", "success");
+
+        // Remove da lista de arquivadas
+        setEmpresasArquivadas(prev => prev.filter(e => e.id !== empresaParaDeletar.id));
+      } else {
+        showToast("Erro ao excluir empresa.", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao excluir empresa:", error);
+      showToast("Falha na conexão com o servidor.", "error");
+    } finally {
+      setShowDeleteModal(false);
+      setEmpresaParaDeletar(null);
+    }
+  };
+
+
+  // Filtros
+  const empresasFiltradas = empresas.filter(e =>
+    e.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    e.email.toLowerCase().includes(busca.toLowerCase()) ||
+    e.cnpj?.toLowerCase().includes(busca.toLowerCase()) ||
+    e.atuacao?.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  const empresasArquivadasFiltradas = empresasArquivadas.filter(e =>
+    e.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    e.email.toLowerCase().includes(busca.toLowerCase()) ||
+    e.cnpj?.toLowerCase().includes(busca.toLowerCase()) ||
+    e.atuacao?.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  const empresasExibidas = abaAtiva === 'ativas' ? empresasFiltradas : empresasArquivadasFiltradas;
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        Carregando...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -194,197 +424,330 @@ export default function AjustesEmpresas() {
         />
       )}
 
-      <div className="ajustes-empresas-container">
-        <h1 className="ajustes-empresas-title">Empresas</h1>
+      <ConfirmModal
+        isOpen={showArchiveModal}
+        title={empresaParaArquivar?.arquivada ? "Restaurar Empresa" : "Arquivar Empresa"}
+        message={
+          empresaParaArquivar?.arquivada
+            ? `Tem certeza que deseja restaurar a empresa "${empresaParaArquivar?.nome}"?`
+            : `Tem certeza que deseja arquivar a empresa "${empresaParaArquivar?.nome}"? Ela ficará oculta mas poderá ser restaurada depois.`
+        }
+        confirmText={empresaParaArquivar?.arquivada ? "Restaurar" : "Arquivar"}
+        cancelText="Cancelar"
+        variant="warning" // ✅ FIXO como "warning"
+        onConfirm={arquivarEmpresa}
+        onCancel={() => {
+          setShowArchiveModal(false);
+          setEmpresaParaArquivar(null);
+        }}
+      />
 
-        {loading && (
-          <div className="spinner-overlay">
-            <div className="spinner"></div>
+      <ConfirmModal
+      isOpen={showDeleteModal}
+      title="Excluir Empresa Permanentemente"
+      message={`Tem certeza que deseja EXCLUIR PERMANENTEMENTE a empresa "${empresaParaDeletar?.nome}"? Esta ação NÃO PODE ser desfeita!`}
+      confirmText="Excluir Permanentemente"
+      cancelText="Cancelar"
+      variant="danger"
+      onConfirm={excluirEmpresaPermanentemente}
+      onCancel={() => {
+        setShowDeleteModal(false);
+        setEmpresaParaDeletar(null);
+      }}
+    />
+
+      <div className="empresas-wrapper">
+        <div className="empresas-header">
+          <div className="empresas-titulo">
+            <Building2 size={28} color="#1E52A5" />
+            <h1>Gestão de Empresas</h1>
           </div>
-        )}
+          <p className="empresas-subtitulo">
+            Gerencie as empresas cadastradas na plataforma
+          </p>
+        </div>
 
-        <div className="ajustes-empresas-content">
-          <div className="cadastro-empresa-card">
-            <h2>Cadastro de Empresa</h2>
-            <form className="cadastro-form" onSubmit={handleSubmit}>
-              <div className="form-group-row">
-                <div className="form-group">
-                  <label htmlFor="nome">Nome *</label>
-                  <input
-                    type="text"
-                    id="nome"
-                    placeholder="Nome da empresa"
-                    value={formData.nome}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="atuacao">Área de atuação</label>
-                  <input
-                    type="text"
-                    id="atuacao"
-                    placeholder="Ex: Tecnologia"
-                    value={formData.atuacao}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group-row">
-                <div className="form-group">
-                  <label htmlFor="cnpj">CNPJ</label>
-                  <input
-                    type="text"
-                    id="cnpj"
-                    placeholder="00.000.000/0000-00"
-                    value={formData.cnpj}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="observacao">Observações</label>
-                  <input
-                    type="text"
-                    id="observacao"
-                    placeholder="Informações adicionais"
-                    value={formData.observacao}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group-row">
-                <div className="form-group">
-                  <label htmlFor="agenteLink">Link do Agente</label>
-                  <input
-                    type="url"
-                    id="agenteLink"
-                    placeholder="https://exemplo.com/agente"
-                    value={formData.agenteLink}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="contato">Contato</label>
-                  <input
-                    type="text"
-                    id="contato"
-                    placeholder="(00) 00000-0000"
-                    value={formData.contato}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group-row image-upload-row">
-                <div className="form-group email-field">
-                  <label htmlFor="email">Email *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    placeholder="empresa@email.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="image-upload-area">
-                  <div className="image-placeholder">
-                    <span style={{ color: "#999", fontSize: "0.9rem" }}>Logo</span>
-                  </div>
-                  <button type="button" className="upload-button">
-                    Fazer upload de imagem
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="cadastro-button"
-                disabled={loading}
-              >
-                {loading ? "Cadastrando..." : "Cadastrar"}
-              </button>
-            </form>
-          </div>
-
-          <div className="empresas-cadastradas-card">
-            <h2>Empresas cadastradas</h2>
-
-            {loading && empresasSeguras.length === 0 ? (
-              <p style={{ textAlign: "center", color: "#999" }}>Carregando...</p>
-            ) : empresasSeguras.length === 0 ? (
-              <p style={{ textAlign: "center", color: "#999" }}>
-                Nenhuma empresa cadastrada ainda.
-              </p>
-            ) : (
-              <ul className="empresas-list">
-                {empresasSeguras.map((empresa) => (
-                  <li
-                    key={empresa.id}
-                    className={`empresa-item ${
-                      selectedEmpresaId === empresa.id ? "selected" : ""
-                    }`}
-                    onClick={() => {
-                      setSelectedEmpresaId(empresa.id);
-                      navigate(`/empresa/${empresa.id}`);
-                    }}
-                  >
-                    <span className="dot">•</span>
-                    {empresa.nome}
-                  </li>
-                ))}
-              </ul>
+        <div className="empresas-actions">
+          <div className="search-box">
+            <Search size={20} color="#6B7280" />
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            {busca && (
+              <X
+                size={18}
+                color="#6B7280"
+                className="clear-search"
+                onClick={() => setBusca("")}
+              />
             )}
           </div>
+
+          <div className="tabs">
+            <button
+              className={`tab ${abaAtiva === 'ativas' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('ativas')}
+            >
+              <Building2 size={18} />
+              Empresas ({empresas.length})
+            </button>
+            <button
+              className={`tab ${abaAtiva === 'arquivadas' ? 'active' : ''}`}
+              onClick={() => setAbaAtiva('arquivadas')}
+            >
+              <Archive size={18} />
+              Arquivadas ({empresasArquivadas.length})
+            </button>
+          </div>
+
+          <button className="btn-novo" onClick={abrirModalNova}>
+            <Plus size={18} />
+            Nova Empresa
+          </button>
         </div>
 
-        <div className="ajuda-logo-container">
-          <img src={LogoAzulFlap} alt="Logo Flap" className="ajuda-logo-bg" />
-        </div>
+        <div className="empresas-grid">
+          {empresasExibidas.length > 0 ? (
+            empresasExibidas.map(empresa => (
+              <div
+                key={empresa.id}
+                className={`empresa-card ${empresa.arquivada ? 'arquivada' : ''}`}
+              >
+                <div className="empresa-header">
+                  <div className="empresa-logo">
+                    {empresa.foto ? (
+                      <img src={empresa.foto} alt={empresa.nome} />
+                    ) : (
+                      <div className="logo-placeholder">
+                        {getInitials(empresa.nome)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="empresa-info">
+                    <h3>{empresa.nome}</h3>
+                    <p>{empresa.email}</p>
+                    <div className="empresa-badges">
+                      {empresa.atuacao && (
+                        <span className="atuacao-badge">
+                          {empresa.atuacao}
+                        </span>
+                      )}
+                      {empresa.arquivada && (
+                        <span className="status-badge-arquivada">
+                          Arquivada
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-        <style>
-          {`
-            .spinner-overlay {
-              position: fixed;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              background: rgba(0, 0, 0, 0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              z-index: 1000;
-            }
-            .spinner {
-              border: 6px solid #f3f3f3;
-              border-top: 6px solid #1E52A5;
-              border-radius: 50%;
-              width: 50px;
-              height: 50px;
-              animation: spin 1s linear infinite;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            .empresa-item {
-              transition: all 0.2s ease;
-            }
-            .empresa-item:hover {
-              background-color: #f0f8ff;
-              transform: translateX(2px);
-            }
-            .empresa-item.selected {
-              background-color: #e0e7ff;
-              color: #1E52A5;
-              font-weight: 500;
-            }
-          `}
-        </style>
+                {empresa.cnpj && (
+                  <div className="empresa-detail">
+                    <strong>CNPJ:</strong> {empresa.cnpj}
+                  </div>
+                )}
+
+                {empresa.contato && (
+                  <div className="empresa-detail">
+                    <strong>Contato:</strong> {empresa.contato}
+                  </div>
+                )}
+
+                <div className="empresa-footer">
+                  <span className="data-criacao">
+                    Criado em {empresa.dataCriacao ? new Date(empresa.dataCriacao).toLocaleDateString('pt-BR') : 'N/A'}
+                  </span>
+                  <div className="empresa-acoes">
+                    {/* Botão de Editar (sempre visível) */}
+                    <button
+                      className="btn-icon edit"
+                      onClick={() => abrirModalEditar(empresa)}
+                      title="Editar"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+
+                    {/* Se estiver ARQUIVADA: botão Restaurar + Excluir Permanentemente */}
+                    {empresa.arquivada ? (
+                      <>
+                        <button
+                          className="btn-icon restore"
+                          onClick={() => confirmarArquivar(empresa)}
+                          title="Restaurar"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                        <button
+                          className="btn-icon delete"
+                          onClick={() => confirmarExcluir(empresa)}
+                          title="Excluir Permanentemente"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      /* Se estiver ATIVA: botão Arquivar */
+                      <button
+                        className="btn-icon archive"
+                        onClick={() => confirmarArquivar(empresa)}
+                        title="Arquivar"
+                      >
+                        <Archive size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <Building2 size={64} color="#ccc" />
+              <h3>Nenhuma empresa encontrada</h3>
+              <p>{busca ? 'Tente outra busca' : abaAtiva === 'ativas' ? 'Crie a primeira empresa' : 'Nenhuma empresa arquivada'}</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Modal de Cadastro/Edição */}
+      {modalAberto && (
+        <div className="modal-overlay" onClick={() => setModalAberto(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{empresaEditando ? 'Editar Empresa' : 'Cadastrar Nova Empresa'}</h2>
+              <button className="close-btn" onClick={() => setModalAberto(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form className="modal-body" onSubmit={salvarEmpresa}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Nome *</label>
+                  <input
+                    type="text"
+                    value={formNome}
+                    onChange={(e) => setFormNome(e.target.value)}
+                    placeholder="Nome da empresa"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email *</label>
+                  <input
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    placeholder="empresa@email.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>CNPJ</label>
+                  <input
+                    type="text"
+                    value={formCnpj}
+                    onChange={(e) => setFormCnpj(e.target.value)}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Área de Atuação</label>
+                  <input
+                    type="text"
+                    value={formAtuacao}
+                    onChange={(e) => setFormAtuacao(e.target.value)}
+                    placeholder="Ex: Tecnologia"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Contato</label>
+                  <input
+                    type="text"
+                    value={formContato}
+                    onChange={(e) => setFormContato(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Link do Agente</label>
+                  <input
+                    type="url"
+                    value={formAgenteLink}
+                    onChange={(e) => setFormAgenteLink(e.target.value)}
+                    placeholder="https://exemplo.com/agente"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Observações</label>
+                <textarea
+                  value={formObservacao}
+                  onChange={(e) => setFormObservacao(e.target.value)}
+                  placeholder="Informações adicionais"
+                  rows={3}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Logo da Empresa</label>
+                <div className="upload-area">
+                  {formFoto ? (
+                    <div className="preview-image">
+                      <img src={formFoto} alt="Preview" />
+                      <button
+                        type="button"
+                        className="remove-image"
+                        onClick={() => setFormFoto(null)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="upload-label">
+                      <Upload size={24} />
+                      <span>Clique para fazer upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        hidden
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </form>
+
+            <div className="modal-footer">
+              <button className="btn-cancelar" onClick={() => setModalAberto(false)}>
+                Cancelar
+              </button>
+              <button
+                className="btn-salvar"
+                onClick={salvarEmpresa}
+                disabled={loadingModal}
+              >
+                {loadingModal ? 'Salvando...' : empresaEditando ? 'Atualizar' : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

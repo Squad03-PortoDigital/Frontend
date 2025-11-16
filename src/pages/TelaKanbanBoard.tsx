@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./TelaKanbanBoard.css";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import api from "../services/api";
@@ -32,6 +32,7 @@ interface TarefaDTO {
     posicao: number;
     tags: string[];
     dtEntrega?: string;
+    concluida?: boolean;
     empresa: string;
     empresaId?: number;
     membroIds?: number[];
@@ -246,38 +247,29 @@ export default function TelaKanbanBoard() {
                     setListaSelecionada(listasRes.data[0].id);
 
 
-                const isAdmin = usuarioLogado?.role === "ADMINISTRADOR_MASTER";
-
-
-                if (isAdmin) {
-                    try {
-                        const membrosRes = await api.get("/usuarios", headers);
-                        if (isSubscribed) {
-                            const usuariosComUsername = Array.isArray(membrosRes.data)
-                                ? membrosRes.data.map((u: any) => ({
-                                    id: u.id,
-                                    nome: u.nome,
-                                    email: u.email,
-                                    foto: u.foto,
-                                    role: u.role,
-                                    cargo: u.cargo,
-                                    username: u.email
-                                }))
-                                : [];
-                            setMembros(usuariosComUsername);
-                        }
-                    } catch (error: any) {
-                        console.error("Erro ao carregar usuários:", error);
-                        if (isSubscribed) setMembros([]);
+                // ✅ SEMPRE carrega TODOS os usuários do sistema
+                try {
+                    const membrosRes = await api.get("/usuarios", headers);
+                    if (isSubscribed) {
+                        const usuariosComUsername = Array.isArray(membrosRes.data)
+                            ? membrosRes.data.map((u: any) => ({
+                                id: u.id,
+                                nome: u.nome,
+                                email: u.email,
+                                foto: u.foto,
+                                role: u.role,
+                                cargo: u.cargo,
+                                username: u.email
+                            }))
+                            : [];
+                        setMembros(usuariosComUsername);
+                        console.log('✅ Membros carregados:', usuariosComUsername.length);
                     }
-                } else {
-                    if (usuarioLogado && isSubscribed) {
-                        setMembros([{
-                            ...usuarioLogado,
-                            username: usuarioLogado.email
-                        }]);
-                    }
+                } catch (error: any) {
+                    console.error("Erro ao carregar usuários:", error);
+                    if (isSubscribed) setMembros([]);
                 }
+
 
 
                 if (Array.isArray(listasRes.data) && isSubscribed) {
@@ -706,6 +698,57 @@ export default function TelaKanbanBoard() {
         navigate(`/detalhamento/${tarefa.id}`);
     };
 
+    const marcarComoConcluida = async (tarefaId: number, concluida: boolean) => {
+        try {
+            const auth = getAuth();
+            if (!auth) return;
+
+            const response = await api.patch(
+                `/tarefas/${tarefaId}/concluir`,
+                { concluida },
+                {
+                    headers: {
+                        Authorization: `Basic ${auth}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (response.status === 401) {
+                handleSessionExpired();
+                return;
+            }
+
+            if (response.status === 200) {
+                showToast(
+                    concluida ? "✅ Tarefa marcada como concluída!" : "Tarefa desmarcada!",
+                    "success"
+                );
+
+                // ✅ Atualiza o estado local imediatamente
+                setTarefas(prev =>
+                    prev.map(t =>
+                        t.id === tarefaId
+                            ? {
+                                ...t,
+                                concluida,
+                                dtConclusao: concluida ? new Date().toISOString() : null
+                            }
+                            : t
+                    )
+                );
+            }
+        } catch (error: any) {
+            console.error("Erro ao marcar tarefa:", error);
+            if (error.response?.status === 401) {
+                handleSessionExpired();
+            } else {
+                showToast("Erro ao atualizar tarefa.", "error");
+            }
+        }
+    };
+
+
 
     if (loading) {
         return (
@@ -950,7 +993,7 @@ export default function TelaKanbanBoard() {
                                                 >
                                                     {(provided, snapshot) => (
                                                         <div
-                                                            className="kanban-card"
+                                                            className={`kanban-card ${tarefa.concluida ? 'concluida' : ''}`}
                                                             ref={provided.innerRef}
                                                             {...provided.draggableProps}
                                                             {...provided.dragHandleProps}
@@ -960,19 +1003,40 @@ export default function TelaKanbanBoard() {
                                                                 opacity: snapshot.isDragging ? 0.8 : 1,
                                                             }}
                                                         >
+                                                            {/* ✅ BOTÃO DE CONCLUIR - CANTO SUPERIOR DIREITO */}
+                                                            <button
+                                                                className={`btn-concluir ${tarefa.concluida ? 'concluida' : ''}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();  // Impede de abrir detalhamento
+                                                                    marcarComoConcluida(tarefa.id, !tarefa.concluida);
+                                                                }}
+                                                                title={tarefa.concluida ? "Desmarcar como concluída" : "Marcar como concluída"}
+                                                            >
+                                                                {tarefa.concluida ? (
+                                                                    <CheckCircle2 size={20} />
+                                                                ) : (
+                                                                    <Circle size={20} />
+                                                                )}
+                                                            </button>
+
                                                             <div className="kanban-dots">
                                                                 {[...Array(3)].map((_, i) => (
                                                                     <div key={i} className={`dot ${prioridadeCores[tarefa.prioridade]}`}></div>
                                                                 ))}
                                                             </div>
-                                                            <div className="kanban-text">{tarefa.titulo}</div>
+
+                                                            {/* ✅ TÍTULO COM EFEITO RISCADO SE CONCLUÍDA */}
+                                                            <div className={`kanban-text ${tarefa.concluida ? 'texto-riscado' : ''}`}>
+                                                                {tarefa.titulo}
+                                                            </div>
+
                                                             <div className="kanban-tags">
                                                                 {tarefa.tags && tarefa.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
                                                             </div>
+
                                                             <div className="kanban-footer">
                                                                 <div className="kanban-footer-left">
                                                                     <span>{tarefa.empresa}</span>
-
 
                                                                     {tarefa.membros && tarefa.membros.length > 0 && (
                                                                         <div className="kanban-membros-avatars">
@@ -1043,6 +1107,7 @@ export default function TelaKanbanBoard() {
                                                         </div>
                                                     )}
                                                 </Draggable>
+
                                             ))}
                                         {provided.placeholder}
                                     </div>

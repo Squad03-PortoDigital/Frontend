@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useMemo, useCallback, type ReactNode } from 'react';
 import { websocketService, type TarefaEvento, type NotificacaoDTO } from '../services/websocket';
 
 interface WebSocketContextType {
@@ -18,7 +18,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const [lastNotification, setLastNotification] = useState<NotificacaoDTO | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   
-  // ✅ Monitora se o usuário está autenticado (Basic Auth)
   const [hasToken, setHasToken] = useState(() => {
     const authToken = localStorage.getItem('auth');
     const isAuthenticated = localStorage.getItem('authenticated') === 'true';
@@ -32,7 +31,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     return !!(authToken && isAuthenticated);
   });
 
-  // ✅ Verifica mudanças no token (login/logout)
   useEffect(() => {
     console.log('🔍 Iniciando monitoramento do token...');
     console.log('🔍 Token atual:', hasToken ? 'PRESENTE' : 'AUSENTE');
@@ -51,7 +49,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         });
         setHasToken(currentHasToken);
         
-        // Se perdeu as credenciais, desconecta
         if (!currentHasToken && initialized.current) {
           console.log('🔌 Desconectando WebSocket (logout)');
           websocketService.disconnect();
@@ -63,13 +60,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Verifica imediatamente
     checkToken();
-    
-    // Verifica a cada 500ms
     const interval = setInterval(checkToken, 500);
-    
-    // Também verifica quando a aba volta ao foco
     window.addEventListener('focus', checkToken);
 
     return () => {
@@ -78,17 +70,14 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [hasToken]);
 
-  // ✅ Conecta apenas quando tem token
   useEffect(() => {
     console.log('🔍 useEffect de conexão executado. hasToken:', hasToken, 'initialized:', initialized.current);
     
-    // Não conecta se não tiver token
     if (!hasToken) {
       console.warn('⚠️ Aguardando login para conectar WebSocket...');
       return;
     }
 
-    // Já foi inicializado
     if (initialized.current) {
       console.log('✅ WebSocket já inicializado, pulando...');
       return;
@@ -100,10 +89,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     const authToken = localStorage.getItem('auth');
     console.log('🔑 Token Basic Auth encontrado:', authToken?.substring(0, 30) + '...');
     
-    // Solicita permissão para notificações
     websocketService.requestNotificationPermission();
     
-    // ✅ Registra callbacks ANTES de conectar
     console.log('📝 Registrando callbacks...');
     const unsubscribeNotification = websocketService.onNotification((notificacao: NotificacaoDTO) => {
       console.log('🔔 Nova notificação no Context:', notificacao);
@@ -119,7 +106,6 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     });
     
     console.log('🔌 Chamando websocketService.connect()...');
-    // Conecta com callback para tarefas
     websocketService.connect((evento: TarefaEvento) => {
       console.log('📨 Evento de tarefa recebido no Context:', evento);
       callbacksRef.current.forEach(callback => {
@@ -131,9 +117,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       });
     });
 
-    // ✅ MUDANÇA 1: Aguarda a conexão com timeout maior e marca como conectado imediatamente após confirmação
     let attempts = 0;
-    const maxAttempts = 100; // ✅ AUMENTADO: 10 segundos (100 * 100ms)
+    const maxAttempts = 100;
     
     console.log('⏳ Aguardando conexão WebSocket...');
     const checkConnection = setInterval(() => {
@@ -146,18 +131,16 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       
       if (isConnected) {
         console.log('✅ WebSocket conectado com sucesso!');
-        setIsConnected(true); // ✅ Marca como conectado
+        setIsConnected(true);
         clearInterval(checkConnection);
       } else if (attempts >= maxAttempts) {
         console.error('❌ Timeout: WebSocket não conectou em 10 segundos');
         console.error('❌ Verifique se o backend está rodando e se o token é válido');
         clearInterval(checkConnection);
-        // ✅ MUDANÇA 2: Tenta reconectar automaticamente
         initialized.current = false;
       }
     }, 100);
 
-    // Cleanup ao desmontar ou quando perder o token
     return () => {
       console.log('🧹 Limpando callbacks do WebSocket');
       clearInterval(checkConnection);
@@ -166,24 +149,29 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [hasToken]);
 
-  const subscribe = (callback: (evento: TarefaEvento) => void) => {
+  // ✅ CRÍTICO: Memoiza a função subscribe
+  const subscribe = useCallback((callback: (evento: TarefaEvento) => void) => {
     callbacksRef.current.add(callback);
     console.log('👂 Callback adicionado. Total:', callbacksRef.current.size);
     return () => {
       callbacksRef.current.delete(callback);
       console.log('🔇 Callback removido. Total:', callbacksRef.current.size);
     };
-  };
+  }, []);
+
+  // ✅ SOLUÇÃO: Memoiza o value do Provider
+  const value = useMemo(
+    () => ({
+      isConnected,
+      subscribe,
+      lastNotification,
+      unreadCount,
+    }),
+    [isConnected, subscribe, lastNotification, unreadCount]
+  );
 
   return (
-    <WebSocketContext.Provider 
-      value={{ 
-        isConnected,
-        subscribe,
-        lastNotification,
-        unreadCount
-      }}
-    >
+    <WebSocketContext.Provider value={value}>
       {children}
     </WebSocketContext.Provider>
   );

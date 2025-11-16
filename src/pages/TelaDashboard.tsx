@@ -24,9 +24,10 @@ interface TarefaDTO {
   dtEntrega?: string;
   dtCriacao?: string;
   dtConclusao?: string;
+  concluida?: boolean;  // ✅ ADICIONADO
   empresa: string;
   empresaId?: number;
-  membroIds?: number[];
+  membros?: Membro[];
   listaId?: number;
 }
 
@@ -36,9 +37,12 @@ interface Empresa {
 }
 
 interface Membro {
-  id: number;
-  nome: string;
-  username: string;
+  id: number; 
+  membroId: number;   
+  usuarioId: number;  
+  nome: string;       
+  username?: string; 
+  foto?: string;      
 }
 
 interface Lista {
@@ -117,7 +121,6 @@ export default function TelaDashboard() {
         
         console.log("📡 Iniciando carregamento dos dados do dashboard...");
 
-        // ✅ SEM HEADERS DUPLICADOS - O INTERCEPTOR JÁ ADICIONA O AUTHORIZATION
         const [tarefasRes, empresasRes, membrosRes, listasRes] = await Promise.all([
           api.get("/tarefas", { signal: controller.signal }),
           api.get("/empresas", { signal: controller.signal }),
@@ -176,15 +179,15 @@ export default function TelaDashboard() {
     };
   }, []);
 
+  // ✅ ATUALIZADO - USA concluida
   const totalTarefas = tarefas.length;
-  const tarefasConcluidas = tarefas.filter((t) =>
-    t.status?.toLowerCase().includes("conclu") ||
-    t.status?.toLowerCase().includes("finaliz")
-  ).length;
+  const tarefasConcluidas = tarefas.filter(t => t.concluida === true).length;
 
+  // ✅ ATUALIZADO - USA concluida
   const tarefasVencidas = tarefas.filter((t) =>
-    t.dtEntrega && new Date(t.dtEntrega) < new Date() &&
-    !t.status?.toLowerCase().includes("conclu")
+    t.dtEntrega && 
+    new Date(t.dtEntrega) < new Date() &&
+    !t.concluida  // ✅ Mudou de status para concluida
   ).length;
 
   const tarefasPendentes = totalTarefas - tarefasConcluidas;
@@ -200,12 +203,12 @@ export default function TelaDashboard() {
     BAIXA: tarefas.filter(t => t.prioridade === "BAIXA").length,
   };
 
+  // ✅ ATUALIZADO - USA concluida
   const tarefasPorEmpresa = empresas.map(empresa => ({
     nome: empresa.nome,
     total: tarefas.filter(t => t.empresaId === empresa.id).length,
     concluidas: tarefas.filter(t =>
-      t.empresaId === empresa.id &&
-      (t.status?.toLowerCase().includes("conclu") || t.status?.toLowerCase().includes("finaliz"))
+      t.empresaId === empresa.id && t.concluida === true  // ✅ Mudou
     ).length,
   })).sort((a, b) => b.total - a.total).slice(0, 5);
 
@@ -214,19 +217,29 @@ export default function TelaDashboard() {
     total: tarefas.filter(t => t.listaId === lista.id).length,
   })).sort((a, b) => b.total - a.total);
 
-  const performanceMembros = membros.map(membro => ({
-    nome: membro.nome,
-    total: tarefas.filter(t => t.membroIds?.includes(membro.id)).length,
-    concluidas: tarefas.filter(t =>
-      t.membroIds?.includes(membro.id) &&
-      (t.status?.toLowerCase().includes("conclu") || t.status?.toLowerCase().includes("finaliz"))
-    ).length,
-  })).filter(m => m.total > 0)
+  // ✅ ATUALIZADO - USA concluida
+  const performanceMembros = membros.map(membro => {
+    const tarefasDoMembro = tarefas.filter(t => 
+      t.membros?.some(m => m.usuarioId === membro.id)
+    );
+    
+    const tarefasConcluidasDoMembro = tarefasDoMembro.filter(t => 
+      t.concluida === true  // ✅ Mudou de status para concluida
+    );
+
+    return {
+      nome: membro.nome,
+      total: tarefasDoMembro.length,
+      concluidas: tarefasConcluidasDoMembro.length,
+    };
+  })
+    .filter(m => m.total > 0)
     .sort((a, b) => b.concluidas - a.concluidas)
     .slice(0, 5);
 
+  // ✅ ATUALIZADO - USA concluida
   const proximasVencer = tarefas.filter(t => {
-    if (!t.dtEntrega || t.status?.toLowerCase().includes("conclu")) return false;
+    if (!t.dtEntrega || t.concluida) return false;  // ✅ Mudou de status para concluida
     const diff = new Date(t.dtEntrega).getTime() - new Date().getTime();
     const days = diff / (1000 * 60 * 60 * 24);
     return days > 0 && days <= 7;
