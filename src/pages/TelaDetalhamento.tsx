@@ -2,12 +2,14 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { Button } from "@mui/material";
 import "./TelaDetalhamento.css";
 import agentegpt from "../images/agentegpt-logo.png";
-import { MoveLeft } from "lucide-react";
+import { MoveLeft, Trash, Pencil, Check } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { Toast } from "./Toast";
 import MentionTextarea from "../components/MentionTextarea.tsx";
+import DropboxFiles from "../components/DropboxFiles";
+import { usePermissao } from "../contexts/PermissaoContext";
 
 
 interface Item {
@@ -62,7 +64,7 @@ interface Tarefa {
   descricao?: string;
   status: string;
   prioridade: string;
-  dtEntrega?: string;
+  dtEntrega?: string | null;
   dtCriacao?: string;
   empresa?: {
     id: number;
@@ -104,6 +106,7 @@ export default function TelaDetalhamento() {
   const comentariosContainerRef = useRef<HTMLDivElement>(null);
   const [tarefa, setTarefa] = useState<Tarefa | null>(null);
   const [loading, setLoading] = useState(true);
+  const { temPermissao } = usePermissao();
 
 
   const [titulo, setTitulo] = useState("");
@@ -115,8 +118,6 @@ export default function TelaDetalhamento() {
   const [links, setLinks] = useState<string[]>([]);
   const [novoLink, setNovoLink] = useState("");
 
-
-  const [statusOpen, setStatusOpen] = useState(false);
   const [prioridadeOpen, setPrioridadeOpen] = useState(false);
   const [membrosDropdownOpen, setMembrosDropdownOpen] = useState(false);
   const [mostrarModalArquivar, setMostrarModalArquivar] = useState(false);
@@ -129,6 +130,9 @@ export default function TelaDetalhamento() {
   const [novoChecklistTitulo, setNovoChecklistTitulo] = useState("");
   const [novoItemNome, setNovoItemNome] = useState("");
   const [checklistSelecionada, setChecklistSelecionada] = useState<number | null>(null);
+  const [editingChecklistId, setEditingChecklistId] = useState<number | null>(null);
+  const [editingChecklistNome, setEditingChecklistNome] = useState("");
+
 
 
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
@@ -171,7 +175,6 @@ export default function TelaDetalhamento() {
       const payload = {
         titulo,
         descricao,
-        status,
         prioridade,
         dtEntrega: dtEntregaFormatada,
         links,
@@ -203,6 +206,104 @@ export default function TelaDetalhamento() {
       }
     }
   };
+
+  const salvarPrioridadeAuto = async (novaPrioridade: string) => {
+    setPrioridade(novaPrioridade);
+    setPrioridadeOpen(false);
+
+    const auth = getAuth();
+    if (!auth) return;
+
+    try {
+      let dtEntregaFormatada = null;
+      if (dtEntrega) {
+        dtEntregaFormatada = `${dtEntrega}T00:00:00`;
+      }
+
+      const payload = {
+        titulo,
+        descricao,
+        status: tarefa?.status || "A_FAZER",
+        prioridade: novaPrioridade, // ✅ Usa a nova prioridade
+        dtEntrega: dtEntregaFormatada,
+        links,
+        membroIds: membrosSelecionados,
+      };
+
+      await api.put(`/tarefas/${id}`, payload, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+          'Accept-Encoding': 'gzip, deflate'
+        },
+        withCredentials: true,
+        timeout: 30000,
+      });
+
+      showToast("Prioridade atualizada!", "success");
+
+      if (tarefa) {
+        setTarefa({ ...tarefa, prioridade: novaPrioridade });
+      }
+
+    } catch (error: any) {
+      console.error("❌ Erro ao salvar prioridade:", error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao salvar prioridade.", "error");
+      }
+    }
+  };
+
+  const salvarDataEntregaAuto = async (novaData: string) => {
+    setDtEntrega(novaData);
+
+    const auth = getAuth();
+    if (!auth) return;
+
+    try {
+      let dtEntregaFormatada = null;
+      if (novaData) {
+        dtEntregaFormatada = `${novaData}T00:00:00`;
+      }
+
+      const payload = {
+        titulo,
+        descricao,
+        status: tarefa?.status || "A_FAZER",
+        prioridade,
+        dtEntrega: dtEntregaFormatada, // ✅ Usa a nova data
+        links,
+        membroIds: membrosSelecionados,
+      };
+
+      await api.put(`/tarefas/${id}`, payload, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+          'Accept-Encoding': 'gzip, deflate'
+        },
+        withCredentials: true,
+        timeout: 30000,
+      });
+
+      showToast("Data de entrega atualizada!", "success");
+
+      if (tarefa) {
+        setTarefa({ ...tarefa, dtEntrega: dtEntregaFormatada });
+      }
+
+    } catch (error: any) {
+      console.error("❌ Erro ao salvar data de entrega:", error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao salvar data de entrega.", "error");
+      }
+    }
+  };
+
 
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
@@ -276,7 +377,6 @@ export default function TelaDetalhamento() {
       const payload = {
         titulo,
         descricao: htmlBruto,
-        status,
         prioridade,
         dtEntrega: dtEntregaFormatada,
         links,
@@ -493,7 +593,7 @@ export default function TelaDetalhamento() {
 
     carregarTarefa();
 
-    const unsubscribe = subscribe((evento) => {  // ✅ 'subscribe' vem do hook
+    const unsubscribe = subscribe((evento) => {
       if (!isSubscribed) return;
       if (evento.tarefaId === Number(id)) {
         switch (evento.tipo) {
@@ -555,14 +655,14 @@ export default function TelaDetalhamento() {
   }, [membrosDropdownOpen]);
 
   useEffect(() => {
-  if (comentariosContainerRef.current) {
-    setTimeout(() => {
-      if (comentariosContainerRef.current) {
-        comentariosContainerRef.current.scrollTop = comentariosContainerRef.current.scrollHeight;
-      }
-    }, 100);
-  }
-}, [comentarios]);
+    if (comentariosContainerRef.current) {
+      setTimeout(() => {
+        if (comentariosContainerRef.current) {
+          comentariosContainerRef.current.scrollTop = comentariosContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    }
+  }, [comentarios]);
 
 
   const adicionarMembroAuto = async (usuarioId: number) => {
@@ -585,7 +685,6 @@ export default function TelaDetalhamento() {
           const payload = {
             titulo,
             descricao,
-            status,
             prioridade,
             dtEntrega: dtEntrega ? `${dtEntrega}T00:00:00` : null,
             links,
@@ -704,8 +803,7 @@ export default function TelaDetalhamento() {
       const payload = {
         nome: novoItemNome,
         tarefaId: Number(id),
-        checklistId: checklistId,
-        status: false
+        checklistId: checklistId
       };
 
 
@@ -789,6 +887,102 @@ export default function TelaDetalhamento() {
       showToast("Erro ao atualizar item. Tente novamente.", "error");
     }
   };
+
+  const salvarNomeChecklist = async (checklistId: number) => {
+    if (!editingChecklistNome.trim()) {
+      showToast("O nome não pode estar vazio!", "warning");
+      return;
+    }
+
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.put(`/checklists/${checklistId}`, {
+        titulo: editingChecklistNome,
+      }, {
+        headers: {
+          "Authorization": `Basic ${auth}`,
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip, deflate"
+        },
+        withCredentials: true,
+        timeout: 30000,
+      });
+
+      setChecklists(checklists.map(c =>
+        c.id === checklistId ? { ...c, titulo: editingChecklistNome } : c
+      ));
+
+      setEditingChecklistId(null);
+      setEditingChecklistNome("");
+      showToast("Nome atualizado!", "success");
+    } catch (error: any) {
+      console.error("Erro ao salvar nome da checklist:", error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao salvar nome.", "error");
+      }
+    }
+  };
+
+  const excluirChecklist = async (checklistId: number) => {
+    const confirmar = window.confirm("Tem certeza que deseja excluir esta checklist?");
+    if (!confirmar) return;
+
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.delete(`/checklists/${checklistId}`, {
+        headers: {
+          "Authorization": `Basic ${auth}`,
+          "Accept-Encoding": "gzip, deflate"
+        },
+        withCredentials: true,
+        timeout: 30000,
+      });
+
+      setChecklists(checklists.filter(c => c.id !== checklistId));
+      setEditingChecklistId(null);
+      showToast("Checklist excluída!", "success");
+    } catch (error: any) {
+      console.error("Erro ao excluir checklist:", error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao excluir checklist.", "error");
+      }
+    }
+  };
+
+  const excluirItem = async (checklistId: number, itemId: number) => {
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.delete(`/itens/${itemId}`, {
+        headers: {
+          "Authorization": `Basic ${auth}`,
+          "Accept-Encoding": "gzip, deflate"
+        },
+        withCredentials: true,
+        timeout: 30000,
+      });
+
+      setChecklists(checklists.map(c =>
+        c.id === checklistId
+          ? { ...c, itens: c.itens.filter(i => i.id !== itemId) }
+          : c
+      ));
+
+      showToast("Item excluído!", "success");
+    } catch (error: any) {
+      console.error("Erro ao excluir item:", error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showToast("Erro ao excluir item.", "error");
+      }
+    }
+  };
+
+
 
 
   const adicionarComentario = async () => {
@@ -904,15 +1098,6 @@ export default function TelaDetalhamento() {
       </div>
     );
   }
-
-
-  const statusLabels: { [key: string]: string } = {
-    A_FAZER: "To Do",
-    EM_PROGRESSO: "In Progress",
-    EM_REVISAO: "Review",
-    CONCLUIDA: "Closed",
-  };
-
 
   const prioridadeLabels: { [key: string]: string } = {
     BAIXA: "Baixa",
@@ -1067,33 +1252,25 @@ export default function TelaDetalhamento() {
                 )}
               </div>
 
-
-              <div className="detalhamento-title-info dropdown-container" onClick={() => setStatusOpen(!statusOpen)}>
-                <span>Status: {statusLabels[status] || status} ▼</span>
-                {statusOpen && (
-                  <ul className="dropdown">
-                    {Object.entries(statusLabels).map(([key, label]) => (
-                      <li key={key} onClick={(e) => { e.stopPropagation(); setStatus(key); setStatusOpen(false); }}>
-                        {label}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-
               <div className="detalhamento-title-info dropdown-container" onClick={() => setPrioridadeOpen(!prioridadeOpen)}>
                 <span>Prioridade: {prioridadeLabels[prioridade] || prioridade} ▼</span>
                 {prioridadeOpen && (
                   <ul className="dropdown">
                     {Object.entries(prioridadeLabels).map(([key, label]) => (
-                      <li key={key} onClick={(e) => { e.stopPropagation(); setPrioridade(key); setPrioridadeOpen(false); }}>
+                      <li
+                        key={key}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          salvarPrioridadeAuto(key); // ✅ MUDANÇA AQUI
+                        }}
+                      >
                         {label}
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
+
 
 
               <div className="detalhamento-title-info">
@@ -1102,11 +1279,12 @@ export default function TelaDetalhamento() {
                   <input
                     type="date"
                     value={dtEntrega}
-                    onChange={(e) => setDtEntrega(e.target.value)}
+                    onChange={(e) => salvarDataEntregaAuto(e.target.value)} // ✅ MUDANÇA AQUI
                     className="date-input"
                   />
                 </label>
               </div>
+
             </div>
           </div>
 
@@ -1116,12 +1294,14 @@ export default function TelaDetalhamento() {
             <div className="detalhamento-body-item descricao-item">
               <div className="descricao-header">
                 <h2>Descrição</h2>
-                <button
-                  onClick={handleEditarClick}
-                  className="descricao-edit-btn"
-                >
-                  {isEditingDescricao ? '✓ Pronto' : '✏️ Editar'}
-                </button>
+                {temPermissao('TAREFA_EDITAR_GERAL') && (
+                  <button
+                    onClick={handleEditarClick}
+                    className="descricao-edit-btn"
+                  >
+                    {isEditingDescricao ? '✓ Pronto' : '✏️ Editar'}
+                  </button>
+                )}
               </div>
 
               {isEditingDescricao && (
@@ -1253,88 +1433,216 @@ export default function TelaDetalhamento() {
 
             <div className="detalhamento-body-item">
               <h2>Checklists</h2>
-              <div className="add-item-container">
-                <input
-                  type="text"
-                  placeholder="Nova checklist"
-                  value={novoChecklistTitulo}
-                  onChange={(e) => setNovoChecklistTitulo(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && adicionarChecklist()}
-                  className="add-item-input"
-                />
-                <button onClick={adicionarChecklist} className="add-item-button">
-                  Criar Checklist
-                </button>
-              </div>
+              {temPermissao('TAREFA_EDITAR_GERAL') && (
+                <div className="add-item-container">
+                  <input
+                    type="text"
+                    placeholder="Nova checklist"
+                    value={novoChecklistTitulo}
+                    onChange={(e) => setNovoChecklistTitulo(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && adicionarChecklist()}
+                    className="add-item-input"
+                  />
+                  <button onClick={adicionarChecklist} className="add-item-button">
+                    Criar Checklist
+                  </button>
+                </div>
+              )}
 
 
               {checklists.length > 0 ? (
                 checklists.map((checklist) => (
                   <div key={checklist.id} className="checklist-item">
-                    <h3 style={{ marginBottom: '8px', color: checklist.cor || '#667eea' }}>{checklist.titulo}</h3>
 
+                    {/* ✅ Header com lápis discreto */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      {editingChecklistId === checklist.id ? (
+                        // Modo de edição do nome
+                        <input
+                          type="text"
+                          value={editingChecklistNome}
+                          onChange={(e) => setEditingChecklistNome(e.target.value)}
+                          onBlur={() => salvarNomeChecklist(checklist.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              salvarNomeChecklist(checklist.id);
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingChecklistId(null);
+                              setEditingChecklistNome("");
+                            }
+                          }}
+                          autoFocus
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            border: '2px solid #667eea',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            outline: 'none',
+                            flex: 1
+                          }}
+                        />
+                      ) : (
+                        // Modo normal
+                        <h3 style={{ margin: 0, color: checklist.cor || "#667eea", flex: 1 }}>
+                          {checklist.titulo}
+                        </h3>
+                      )}
 
+                      {/* ✅ Lápis discreto (hover effect) */}
+                      <button
+                        onClick={() => {
+                          if (editingChecklistId === checklist.id) {
+                            setEditingChecklistId(null);
+                            setEditingChecklistNome("");
+                          } else {
+                            setEditingChecklistId(checklist.id);
+                            setEditingChecklistNome(checklist.titulo);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          opacity: editingChecklistId === checklist.id ? 1 : 0.3,
+                          transition: 'opacity 0.2s ease',
+                          padding: '4px',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={(e) => {
+                          if (editingChecklistId !== checklist.id) {
+                            e.currentTarget.style.opacity = '0.3';
+                          }
+                        }}
+                        title={editingChecklistId === checklist.id ? "Sair do modo de edição" : "Editar checklist"}
+                      >
+                        {editingChecklistId === checklist.id ? <Check size={15} /> : <Pencil size={15} />}
+                      </button>
+                      <button
+                        onClick={() => excluirChecklist(checklist.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          opacity: 0.3,
+                          transition: 'opacity 0.2s ease',
+                          padding: '4px',
+                          color: '#dc3545'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.3'}
+                        title="Excluir checklist"
+                      >
+                        <Trash size={15} />
+                      </button>
+                    </div>
+
+                    {/* ✅ Botões de ação (só aparecem no modo de edição) */}
+                    {editingChecklistId === checklist.id && (
+                      <div style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
+                      </div>
+                    )}
+
+                    {/* ✅ Lista de itens */}
                     {Array.isArray(checklist.itens) && checklist.itens.length > 0 ? (
                       <ul className="task-list">
                         {checklist.itens.map((item) => (
                           <li key={item.id} className={`task-item ${item.status ? "done" : ""}`}>
-                            <div className="task-content">
+                            <div className="task-content" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                               <input
                                 type="checkbox"
                                 checked={item.status}
                                 onChange={() => toggleItem(checklist.id, item.id)}
-                                style={{ cursor: 'pointer' }}
                               />
-                              <span onClick={() => toggleItem(checklist.id, item.id)}>
+                              <span
+                                onClick={() => toggleItem(checklist.id, item.id)}
+                                style={{ flex: 1, cursor: 'pointer' }}
+                              >
                                 {item.nome}
                               </span>
+
+                              {/* ✅ Botão de excluir item (só aparece no modo de edição) */}
+                              {editingChecklistId === checklist.id && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    excluirItem(checklist.id, item.id);
+                                  }}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    opacity: 0.3,
+                                    transition: 'opacity 0.2s ease',
+                                    padding: '4px',
+                                    color: '#dc3545'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.3'}
+                                  title="Excluir item"
+                                >
+                                  <Trash size={15}></Trash>
+                                </button>
+                              )}
                             </div>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="empty-message">
-                        Nenhum item nesta checklist.
-                      </p>
+                      <p className="empty-message">Nenhum item nesta checklist.</p>
                     )}
 
-
-                    {checklistSelecionada === checklist.id ? (
-                      <div className="add-item-container">
-                        <input
-                          type="text"
-                          placeholder="Novo item"
-                          value={novoItemNome}
-                          onChange={(e) => setNovoItemNome(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && adicionarItem(checklist.id)}
-                          className="add-item-input"
-                        />
-                        <button onClick={() => adicionarItem(checklist.id)} className="add-item-button">
-                          Adicionar
+                    {/* ✅ Adicionar item (fica igual ao atual) */}
+                    <div className="add-item-container">
+                      {checklistSelecionada === checklist.id ? (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Novo item"
+                            value={novoItemNome}
+                            onChange={(e) => setNovoItemNome(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                adicionarItem(checklist.id);
+                              }
+                            }}
+                            className="add-item-input"
+                          />
+                          <button onClick={() => adicionarItem(checklist.id)} className="add-item-button">
+                            Adicionar
+                          </button>
+                          <button
+                            onClick={() => {
+                              setChecklistSelecionada(null);
+                              setNovoItemNome("");
+                            }}
+                            className="cancel-button"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => setChecklistSelecionada(checklist.id)} className="add-item-button">
+                          + Adicionar Item
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setChecklistSelecionada(checklist.id)}
-                        className="add-item-button"
-                      >
-                        + Adicionar Item
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
                 <p className="empty-message">Nenhuma checklist criada ainda.</p>
               )}
+
             </div>
           </div>
 
 
           <div className="detalhamento-footer">
             <div className="detalhamento-footer-left">
-              <Button variant="outlined" onClick={() => navigate("/home")}>
-                Cancelar
-              </Button>
               <Button
                 variant="outlined"
                 color="warning"
@@ -1409,7 +1717,9 @@ export default function TelaDetalhamento() {
               placeholder="Adicione um comentário"
               onSubmit={adicionarComentario}
             />
+
           </div>
+          <DropboxFiles />
         </div>
       </div>
 

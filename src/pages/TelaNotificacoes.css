@@ -1,7 +1,41 @@
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --notif-bg: #f8f9fb;
+  --notif-card-bg: #ffffff;
+  --notif-card-border: #e0e0e0;
+  --notif-card-nao-lida-bg: #f0f4ff;
+  --notif-card-nao-lida-border: #667eea;
+  --notif-text-primary: #333333;
+  --notif-text-secondary: #666666;
+  --notif-text-tertiary: #999999;
+  --notif-filtro-bg: #f5f5f5;
+  --notif-filtro-hover: #e8e8e8;
+  --notif-icon-bg: #f5f5f5;
+  --notif-tarefa-link-bg: rgba(102, 126, 234, 0.1);
+}
+
+.dark-theme {
+  --notif-bg: #0f1419;
+  --notif-card-bg: #1a1f2e;
+  --notif-card-border: #2d3748;
+  --notif-card-nao-lida-bg: #252b3b;
+  --notif-card-nao-lida-border: #667eea;
+  --notif-text-primary: #e8eaed;
+  --notif-text-secondary: #9ca3af;
+  --notif-text-tertiary: #6b7280;
+  --notif-filtro-bg: #252b3b;
+  --notif-filtro-hover: #374151;
+  --notif-icon-bg: #252b3b;
+  --notif-tarefa-link-bg: rgba(102, 126, 234, 0.2);
+}
+
 .notificacoes-wrapper {
   padding: 24px;
   max-width: 900px;
   margin: 0 auto;
+  background: var(--notif-bg);
+  min-height: 100vh;
+  transition: background-color 0.3s ease;
 }
 
 .notificacoes-header {
@@ -21,6 +55,8 @@
   font-size: 28px;
   font-weight: 600;
   margin: 0;
+  color: var(--notif-text-primary);
+  transition: color 0.3s ease;
 }
 
 .badge-nao-lidas {
@@ -49,6 +85,8 @@
 
 .btn-marcar-todas:hover:not(:disabled) {
   background-color: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .btn-marcar-todas:disabled {
@@ -64,18 +102,18 @@
 
 .filtro-btn {
   padding: 10px 20px;
-  background-color: #f5f5f5;
+  background-color: var(--notif-filtro-bg);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--notif-text-secondary);
   transition: all 0.2s;
 }
 
 .filtro-btn:hover {
-  background-color: #e8e8e8;
+  background-color: var(--notif-filtro-hover);
 }
 
 .filtro-btn.active {
@@ -93,8 +131,8 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
+  background-color: var(--notif-card-bg);
+  border: 1px solid var(--notif-card-border);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
@@ -107,8 +145,8 @@
 }
 
 .notificacao-card.nao-lida {
-  background-color: #f0f4ff;
-  border-color: #667eea;
+  background-color: var(--notif-card-nao-lida-bg);
+  border-color: var(--notif-card-nao-lida-border);
 }
 
 .notificacao-icon {
@@ -118,8 +156,9 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #f5f5f5;
+  background-color: var(--notif-icon-bg);
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 .icon-atribuicao {
@@ -185,7 +224,6 @@
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
 }
 
-
 .notificacao-info {
   flex: 1;
 }
@@ -194,14 +232,16 @@
   margin: 0 0 6px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--notif-text-primary);
+  transition: color 0.3s ease;
 }
 
 .notificacao-info p {
   margin: 0;
   font-size: 14px;
-  color: #666;
+  color: var(--notif-text-secondary);
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 .tarefa-link {
@@ -210,9 +250,10 @@
   gap: 6px;
   margin-top: 8px;
   padding: 6px 10px;
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: var(--notif-tarefa-link-bg);
   border-radius: 6px;
   width: fit-content;
+  transition: background-color 0.3s ease;
 }
 
 .tarefa-link span {
@@ -229,7 +270,8 @@
 
 .tempo {
   font-size: 12px;
-  color: #999;
+  color: var(--notif-text-tertiary);
+  transition: color 0.3s ease;
 }
 
 .acoes {
@@ -244,7 +286,7 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  color: #999;
+  color: var(--notif-text-tertiary);
   transition: all 0.2s;
 }
 
@@ -274,23 +316,27 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--notif-text-tertiary);
 }
 
 .empty-state svg {
-  color: #ddd;
+  color: var(--notif-card-border);
   margin-bottom: 16px;
+  transition: color 0.3s ease;
 }
 
 .empty-state h3 {
   margin: 0 0 8px 0;
   font-size: 20px;
-  color: #666;
+  color: var(--notif-text-secondary);
+  transition: color 0.3s ease;
 }
 
 .empty-state p {
   margin: 0;
   font-size: 16px;
+  color: var(--notif-text-tertiary);
+  transition: color 0.3s ease;
 }
 
 @media (max-width: 768px) {

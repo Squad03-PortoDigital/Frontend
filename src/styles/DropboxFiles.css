@@ -1,0 +1,358 @@
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --dropbox-bg: #ffffff;
+  --dropbox-hover: #f9fafb;
+  --dropbox-selected: #eff6ff;
+  --dropbox-border: #e5e7eb;
+  --dropbox-text: #111827;
+  --dropbox-text-secondary: #6b7280;
+  --dropbox-text-muted: #9ca3af;
+}
+
+.dark-theme {
+  --dropbox-bg: #1a1f2e;
+  --dropbox-hover: #252b3b;
+  --dropbox-selected: #2d3748;
+  --dropbox-border: #2d3748;
+  --dropbox-text: #e8eaed;
+  --dropbox-text-secondary: #9ca3af;
+  --dropbox-text-muted: #6b7280;
+}
+
+.dropbox-files-container {
+  background: var(--dropbox-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+/* ===== HEADER ===== */
+.dropbox-files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--dropbox-border);
+}
+
+.dropbox-files-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropbox-files-title h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--dropbox-text);
+  margin: 0;
+}
+
+.dropbox-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== TOGGLE DE VISUALIZAÇÃO ===== */
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--dropbox-hover);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.view-toggle-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #264fa2;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-toggle-btn:hover {
+  background: var(--dropbox-bg);
+  color: var(--dropbox-text);
+}
+
+.view-toggle-btn.active {
+  background: #264fa2;
+  color: white;
+}
+
+/* ✅ BOTÃO ABRIR NO DROPBOX COM TOOLTIP */
+.dropbox-open-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #264fa2; /* ✅ Mesma cor do toggle ativo */
+  border: none;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropbox-open-btn:hover {
+  background: #264fa2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* ✅ TOOLTIP */
+.dropbox-open-btn::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: #1f2937;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+}
+
+.dropbox-open-btn::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.dropbox-open-btn:hover::before,
+.dropbox-open-btn:hover::after {
+  opacity: 1;
+}
+
+/* ===== VISUALIZAÇÃO EM LISTA ===== */
+.dropbox-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 350px; /* ✅ Aumentado: 300px → 350px (sem breadcrumb) */
+  overflow-y: auto;
+}
+
+.dropbox-files-list .dropbox-file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--dropbox-hover);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+/* ===== VISUALIZAÇÃO EM GRADE ===== */
+.dropbox-files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  max-height: 350px; /* ✅ Aumentado: 300px → 350px (sem breadcrumb) */
+  overflow-y: auto;
+}
+
+.dropbox-files-grid .dropbox-file-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--dropbox-hover);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  text-align: center;
+}
+
+.dropbox-files-grid .file-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dropbox-bg);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.dropbox-files-grid .file-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.dropbox-files-grid .file-info {
+  width: 100%;
+}
+
+.dropbox-files-grid .file-name {
+  font-size: 0.75rem;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.dropbox-files-grid .file-actions {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+  opacity: 1;
+}
+
+/* ===== ESTILOS COMUNS ===== */
+.dropbox-file-item:hover {
+  background: var(--dropbox-selected);
+  border-color: var(--dropbox-border);
+}
+
+.dropbox-file-item.selected {
+  background: var(--dropbox-selected);
+  border-color: #667eea;
+}
+
+.file-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dropbox-bg);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--dropbox-text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--dropbox-text-muted);
+}
+
+.file-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.dropbox-file-item:hover .file-actions {
+  opacity: 1;
+}
+
+.file-action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dropbox-bg);
+  border: 1px solid var(--dropbox-border);
+  border-radius: 6px;
+  color: var(--dropbox-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.file-action-btn:hover {
+  background: var(--dropbox-hover);
+  border-color:#264fa2;
+  color: #264fa2;
+}
+
+/* ===== EMPTY STATE ===== */
+.dropbox-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.dropbox-empty p {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  color: var(--dropbox-text-muted);
+}
+
+/* ===== SCROLLBAR ===== */
+.dropbox-files-list::-webkit-scrollbar,
+.dropbox-files-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropbox-files-list::-webkit-scrollbar-track,
+.dropbox-files-grid::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.dropbox-files-list::-webkit-scrollbar-thumb,
+.dropbox-files-grid::-webkit-scrollbar-thumb {
+  background: var(--dropbox-border);
+  border-radius: 10px;
+}
+
+.dropbox-files-list::-webkit-scrollbar-thumb:hover,
+.dropbox-files-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--dropbox-text-muted);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 400px) {
+  .dropbox-files-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+  
+  .dropbox-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+}

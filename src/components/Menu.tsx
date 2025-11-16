@@ -28,7 +28,7 @@ export default function Menu({ user: userProp }: MenuProps) {
   const [user, setUser] = useState<UserProfile | null>(userProp || null);
   const [isOpen, setIsOpen] = useState(true);
   const { temPermissao } = usePermissao();
-  
+
   const loadUser = () => {
     const usuarioSalvo = localStorage.getItem("usuario");
     if (usuarioSalvo) {
@@ -127,28 +127,29 @@ export default function Menu({ user: userProp }: MenuProps) {
             <div className="menu-item-nome">Calendário</div>
           </Link>
 
-          <Link to="/notificacoes" className={`menu-item ${isActive('/notificacoes')}`}>
+          <Link to="/notificacoes" className={`menu-item ${isActive('/notificacoes')}`} style={{ position: 'relative' }}>
             <Bell size={22} />
             <div className="menu-item-nome">Notificações</div>
             <NotificationDot />
           </Link>
 
+
         </div>
 
-      {temPermissao('USUARIO_CADASTRAR') && (
-        <div className="menu-section">
-          <h2 className="menu-item-titulo">Gestor:</h2>
-          <Link to="/equipe" className={`menu-item ${isActive('/equipe')}`}>
-            <Users size={22} />
-            <div className="menu-item-nome">Equipe</div>
-          </Link>
-          <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
-            <Building2 size={22} />
-            <div className="menu-item-nome">Empresas</div>
-          </Link>
-        </div>
+        {temPermissao('USUARIO_CADASTRAR') && (
+          <div className="menu-section">
+            <h2 className="menu-item-titulo">Gestor:</h2>
+            <Link to="/equipe" className={`menu-item ${isActive('/equipe')}`}>
+              <Users size={22} />
+              <div className="menu-item-nome">Equipe</div>
+            </Link>
+            <Link to="/ajustes" className={`menu-item ${isActive('/ajustes')}`}>
+              <Building2 size={22} />
+              <div className="menu-item-nome">Empresas</div>
+            </Link>
+          </div>
         )}
-        
+
         <div className="menu-section">
           <h2 className="menu-item-titulo">Mais:</h2>
           <Link to="/ajuda" className={`menu-item ${isActive('/ajuda')}`}>

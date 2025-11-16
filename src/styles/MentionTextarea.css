@@ -1,3 +1,26 @@
+/* ===== VARIÁVEIS DE TEMA - MENTION COMPONENT ===== */
+:root {
+  --mention-bg: #ffffff;
+  --mention-input-bg: #ffffff;
+  --mention-border: #e2e8f0;
+  --mention-text: #1a202c;
+  --mention-text-secondary: #718096;
+  --mention-placeholder: #a0aec0;
+  --mention-hover: #f7fafc;
+  --mention-scrollbar: #cbd5e0;
+}
+
+.dark-theme {
+  --mention-bg: #1a1f2e;
+  --mention-input-bg: #252b3b;
+  --mention-border: #2d3748;
+  --mention-text: #e8eaed;
+  --mention-text-secondary: #9ca3af;
+  --mention-placeholder: #6b7280;
+  --mention-hover: #374151;
+  --mention-scrollbar: #4b5563;
+}
+
 .mention-textarea-wrapper {
   position: relative;
   width: 100%;
@@ -12,19 +35,21 @@
 
 .mention-textarea {
   flex: 1;
-  padding: 12px 16px;
-  border: 1px solid #e2e8f0;
+  padding: 10px 14px; /* ✅ REDUZIDO: 12px 16px → 10px 14px */
+  border: 1px solid var(--mention-border);
   border-radius: 12px;
   font-family: inherit;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.4; /* ✅ REDUZIDO: 1.5 → 1.4 */
   resize: none;
   transition: all 0.2s;
-  min-height: 48px;
-  max-height: 120px;
+  min-height: 40px; /* ✅ REDUZIDO: 48px → 40px */
+  max-height: 80px; /* ✅ REDUZIDO: 120px → 80px */
   overflow-y: auto;
   word-wrap: break-word;
   white-space: pre-wrap;
+  background: var(--mention-input-bg);
+  color: var(--mention-text);
 }
 
 .mention-textarea:focus {
@@ -34,7 +59,7 @@
 }
 
 .mention-textarea::placeholder {
-  color: #a0aec0;
+  color: var(--mention-placeholder);
 }
 
 /* ✅ SCROLLBAR DO TEXTAREA */
@@ -47,13 +72,13 @@
 }
 
 .mention-textarea::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
+  background: var(--mention-scrollbar);
   border-radius: 10px;
 }
 
 .mention-send-button {
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 10px 20px; /* ✅ REDUZIDO: 12px 24px → 10px 20px */
+  background: #264fa2;
   color: white;
   border: none;
   border-radius: 12px;
@@ -61,7 +86,7 @@
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  height: 48px;
+  height: 40px; /* ✅ REDUZIDO: 48px → 40px */
   flex-shrink: 0;
   box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
 }
@@ -75,6 +100,12 @@
   transform: translateY(0);
 }
 
+.mention-send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ===== DROPDOWN DE SUGESTÕES ===== */
 .mention-suggestions {
   position: absolute;
@@ -83,8 +114,8 @@
   right: 60px;
   max-height: 200px;
   overflow-y: auto;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--mention-bg);
+  border: 1px solid var(--mention-border);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
@@ -101,7 +132,7 @@
 
 .mention-suggestion-item:hover,
 .mention-suggestion-item.selected {
-  background: #f7fafc;
+  background: var(--mention-hover);
 }
 
 .mention-suggestion-item:first-child {
@@ -148,10 +179,29 @@
 .mention-user-name {
   font-size: 14px;
   font-weight: 500;
-  color: #1a202c;
+  color: var(--mention-text);
 }
 
 .mention-user-tag {
   font-size: 12px;
-  color: #718096;
+  color: var(--mention-text-secondary);
+}
+
+/* ===== SCROLLBAR DO DROPDOWN ===== */
+.mention-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mention-suggestions::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.mention-suggestions::-webkit-scrollbar-thumb {
+  background: var(--mention-scrollbar);
+  border-radius: 10px;
+}
+
+.mention-suggestions::-webkit-scrollbar-thumb:hover {
+  background: var(--mention-text-secondary);
 }

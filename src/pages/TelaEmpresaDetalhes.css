@@ -1,3 +1,40 @@
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --empresa-bg: #f5f6f8;
+  --empresa-card-bg: #ffffff;
+  --empresa-text-primary: #2b2b2b;
+  --empresa-text-secondary: #444444;
+  --empresa-text-tertiary: #555555;
+  --empresa-label: #555555;
+  --empresa-value-bg: #fafafa;
+  --empresa-value-border: #e0e0e0;
+  --empresa-border: #f0f0f0;
+  --empresa-scrollbar-track: #f1f1f1;
+  --empresa-scrollbar-thumb: #c1c1c1;
+  --empresa-scrollbar-hover: #a8a8a8;
+  --empresa-comentario-text: #4a5568;
+  --empresa-comentario-date: #a0aec0;
+  --empresa-empty: #a0aec0;
+}
+
+.dark-theme {
+  --empresa-bg: #0f1419;
+  --empresa-card-bg: #1a1f2e;
+  --empresa-text-primary: #e8eaed;
+  --empresa-text-secondary: #e8eaed;
+  --empresa-text-tertiary: #9ca3af;
+  --empresa-label: #9ca3af;
+  --empresa-value-bg: #252b3b;
+  --empresa-value-border: #374151;
+  --empresa-border: #2d3748;
+  --empresa-scrollbar-track: #1a1f2e;
+  --empresa-scrollbar-thumb: #4b5563;
+  --empresa-scrollbar-hover: #667eea;
+  --empresa-comentario-text: #9ca3af;
+  --empresa-comentario-date: #6b7280;
+  --empresa-empty: #6b7280;
+}
+
 /* CONTAINER PRINCIPAL */
 .empresa-detalhe-container {
   padding: 40px;
@@ -5,12 +42,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #f5f6f8;
+  background-color: var(--empresa-bg);
+  transition: background-color 0.3s ease;
 }
 
 /* CARD */
 .empresa-detalhe-card {
-  background-color: #ffffff;
+  background-color: var(--empresa-card-bg);
   padding: 40px 50px;
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
@@ -18,16 +56,18 @@
   flex-direction: column;
   gap: 25px;
   width: 900px;
+  transition: all 0.3s ease;
 }
 
 /* TÍTULO */
 .empresa-detalhe-card h2 {
   font-size: 22px;
-  color: #2b2b2b;
+  color: var(--empresa-text-primary);
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: color 0.3s ease;
 }
 
 /* LINHAS DE DETALHE */
@@ -52,22 +92,24 @@
 .empresa-detalhe-label {
   font-size: 14px;
   font-weight: 500;
-  color: #555;
+  color: var(--empresa-label);
   margin-bottom: 6px;
+  transition: color 0.3s ease;
 }
 
 /* VALORES */
 .empresa-detalhe-value {
   font-size: 15px;
-  color: #444;
+  color: var(--empresa-text-secondary);
   padding: 12px 14px;
-  border: 1px solid #e0e0e0;
-  background-color: #fafafa;
+  border: 1px solid var(--empresa-value-border);
+  background-color: var(--empresa-value-bg);
   border-radius: 6px;
   width: 300px;
   height: 20px;
   display: flex;
   align-items: center;
+  transition: all 0.3s ease;
 }
 
 /* IMAGEM DA EMPRESA */
@@ -80,12 +122,14 @@
 /* BOTÃO VOLTAR */
 .voltar-btn {
   background-color: transparent;
-  color: #2b2b2b;
+  color: var(--empresa-text-primary);
   border: none;
   font-size: 15px;
   cursor: pointer;
   margin-bottom: 10px;
+  transition: color 0.3s ease;
 }
+
 .voltar-btn:hover {
   text-decoration: underline;
 }
@@ -93,15 +137,15 @@
 /* RODAPÉ DO CARD */
 .card-footer {
   display: flex;
-  justify-content: flex-start; /* ou flex-end para direita */
+  justify-content: flex-start;
   align-items: center;
   margin-top: 20px;
 }
 
 .action-buttons {
   display: flex;
-  gap: 12px;       /* espaçamento entre os botões */
-  flex-wrap: nowrap; /* garante que fiquem na mesma linha */
+  gap: 12px;
+  flex-wrap: nowrap;
 }
 
 /* BOTÕES */
@@ -117,6 +161,7 @@
   font-weight: 500;
   cursor: pointer;
   line-height: 1;
+  border: none;
 }
 
 /* BOTÃO EDITAR */
@@ -127,14 +172,17 @@
   box-shadow: 0 6px 18px rgba(30, 82, 165, 0.12);
   transition: transform 0.08s ease, box-shadow 0.12s ease, background-color 0.12s;
 }
+
 .edit-button:hover {
   transform: translateY(-2px);
   background-color: #17448f;
   box-shadow: 0 10px 24px rgba(30, 82, 165, 0.14);
 }
+
 .edit-button:active {
   transform: translateY(0);
 }
+
 .edit-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -148,43 +196,19 @@
   box-shadow: 0 6px 18px rgba(173, 0, 3, 0.12);
   transition: transform 0.08s ease, box-shadow 0.12s ease, background-color 0.12s;
 }
+
 .delete-button:hover {
   background-color: #9b1b1b;
 }
+
 .delete-button:active {
   transform: translateY(0);
 }
+
 .delete-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   box-shadow: none;
-}
-
-/* RESPONSIVO */
-@media (max-width: 720px) {
-  .empresa-detalhe-card {
-    width: 100%;
-    padding: 20px;
-  }
-  .empresa-detalhe-row {
-    flex-direction: column;
-    gap: 15px;
-  }
-  .empresa-detalhe-value {
-    width: 100%;
-  }
-  .card-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .action-buttons {
-    flex-direction: column;
-    width: 100%;
-    gap: 10px;
-  }
-  .action-buttons button {
-    width: 100%;
-  }
 }
 
 /* Ícones dentro dos botões */
@@ -197,16 +221,19 @@
 
 /* ===== SEÇÃO DE COMENTÁRIOS ===== */
 .detalhamento-comentarios {
-  background: white;
+  background: var(--empresa-card-bg);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
 .detalhamento-comentarios-title {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 16px;
+  color: var(--empresa-text-primary);
+  transition: color 0.3s ease;
 }
 
 /* ✅ CONTAINER COM SCROLL FIXO */
@@ -223,24 +250,25 @@
 }
 
 .detalhamento-comentarios-list-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--empresa-scrollbar-track);
   border-radius: 10px;
 }
 
 .detalhamento-comentarios-list-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--empresa-scrollbar-thumb);
   border-radius: 10px;
 }
 
 .detalhamento-comentarios-list-container::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--empresa-scrollbar-hover);
 }
 
 .detalhamento-comentarios-item {
   display: flex;
   gap: 12px;
   padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--empresa-border);
+  transition: border-color 0.3s ease;
 }
 
 .detalhamento-comentarios-item:last-child {
@@ -272,20 +300,59 @@
   flex: 1;
 }
 
+.comentario-conteudo strong {
+  color: var(--empresa-text-primary);
+  transition: color 0.3s ease;
+}
+
 .comentario-texto {
   margin: 4px 0;
-  color: #4a5568;
+  color: var(--empresa-comentario-text);
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 .comentario-data {
   font-size: 12px;
-  color: #a0aec0;
+  color: var(--empresa-comentario-date);
+  transition: color 0.3s ease;
 }
 
 .empty-message-comentarios {
   text-align: center;
-  color: #a0aec0;
+  color: var(--empresa-empty);
   padding: 40px 0;
+  transition: color 0.3s ease;
 }
 
+/* RESPONSIVO */
+@media (max-width: 720px) {
+  .empresa-detalhe-card {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .empresa-detalhe-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .empresa-detalhe-value {
+    width: 100%;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+}

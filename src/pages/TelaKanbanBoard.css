@@ -1,11 +1,43 @@
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --kanban-bg: #f8f9fb;
+  --kanban-card-bg: #ffffff;
+  --kanban-card-hover: #f9fafb;
+  --kanban-column-bg: #fdfdfd;
+  --kanban-text-primary: #333333;
+  --kanban-text-secondary: #666666;
+  --kanban-text-tertiary: #999999;
+  --kanban-border: #e0e0e0;
+  --kanban-border-light: #f0f0f0;
+  --kanban-input-bg: #ffffff;
+  --kanban-scrollbar: #ccc;
+  --kanban-scrollbar-track: #f1f1f1;
+}
+
+.dark-theme {
+  --kanban-bg: #0f1419;
+  --kanban-card-bg: #1a1f2e;
+  --kanban-card-hover: #252b3b;
+  --kanban-column-bg: #1a1f2e;
+  --kanban-text-primary: #e8eaed;
+  --kanban-text-secondary: #9ca3af;
+  --kanban-text-tertiary: #6b7280;
+  --kanban-border: #2d3748;
+  --kanban-border-light: #374151;
+  --kanban-input-bg: #252b3b;
+  --kanban-scrollbar: #4b5563;
+  --kanban-scrollbar-track: #1a1f2e;
+}
+
 .kanban-wrapper {
   display: flex;
   flex-direction: column;
   gap: 24px;
   padding: 24px;
-  background: #f8f9fb;
+  background: var(--kanban-bg);
   min-height: 100vh;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 /* ==== TOPO ==== */
@@ -17,7 +49,7 @@
 }
 
 .kanban-card-top {
-  background: white;
+  background: var(--kanban-card-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -34,14 +66,14 @@
 
 .kanban-card-top h3 {
   font-size: 14px;
-  color: #666;
+  color: var(--kanban-text-secondary);
   margin-bottom: 12px;
   font-weight: 500;
 }
 
 .kanban-card-top p {
   font-size: 14px;
-  color: #333;
+  color: var(--kanban-text-primary);
   margin: 10px 0;
 }
 
@@ -69,13 +101,13 @@
 .welcome-text h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #000;
+  color: var(--kanban-text-primary);
   margin-bottom: 8px;
 }
 
 .welcome-text p {
   font-size: 14px;
-  color: #666;
+  color: var(--kanban-text-secondary);
   margin: 0;
 }
 
@@ -109,9 +141,9 @@
 }
 
 .filter-btn {
-  background: white;
-  color: #333;
-  border: 2px solid #e0e0e0;
+  background: var(--kanban-card-bg);
+  color: var(--kanban-text-primary);
+  border: 2px solid var(--kanban-border);
   position: relative;
 }
 
@@ -169,7 +201,7 @@
 }
 
 .kanban-columns::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--kanban-scrollbar-track);
   border-radius: 10px;
 }
 
@@ -186,7 +218,7 @@
   min-width: 320px;
   max-width: 320px;
   flex-shrink: 0;
-  background: #fdfdfd;
+  background: var(--kanban-column-bg);
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -195,6 +227,7 @@
   gap: 12px;
   max-height: 540px;
   overflow-y: auto;
+  transition: all 0.3s ease;
 }
 
 /* Scrollbar vertical da coluna */
@@ -207,7 +240,7 @@
 }
 
 .kanban-column::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: var(--kanban-scrollbar);
   border-radius: 10px;
 }
 
@@ -220,14 +253,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 6px 12px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--kanban-border);
   margin-bottom: 8px;
 }
 
 .kanban-column-header h4 {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--kanban-text-primary);
   cursor: pointer;
   user-select: none;
   transition: color 0.2s;
@@ -240,12 +273,12 @@
 .kanban-column-header input {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--kanban-text-primary);
   border: 2px solid #1E52A5;
   border-radius: 6px;
   padding: 6px 10px;
   outline: none;
-  background: white;
+  background: var(--kanban-input-bg);
 }
 
 .column-icons {
@@ -283,7 +316,7 @@
 
 /* ==== FORMULÁRIO NOVA TAREFA ==== */
 .nova-tarefa {
-  background: white;
+  background: var(--kanban-card-bg);
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
@@ -306,13 +339,15 @@
 .nova-tarefa input {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--kanban-border);
   border-radius: 8px;
   margin-bottom: 12px;
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
   box-sizing: border-box;
+  background: var(--kanban-input-bg);
+  color: var(--kanban-text-primary);
 }
 
 .nova-tarefa input:focus {
@@ -321,20 +356,21 @@
 }
 
 .nova-tarefa input::placeholder {
-  color: #999;
+  color: var(--kanban-text-tertiary);
 }
 
 .nova-tarefa select {
   width: 100%;
   padding: 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--kanban-border);
   border-radius: 8px;
   margin-bottom: 12px;
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
   box-sizing: border-box;
-  background: white;
+  background: var(--kanban-input-bg);
+  color: var(--kanban-text-primary);
   cursor: pointer;
 }
 
@@ -372,7 +408,7 @@
 
 /* ==== CARDS ==== */
 .kanban-card {
-  background: white;
+  background: var(--kanban-card-bg);
   border-radius: 10px;
   padding: 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
@@ -388,6 +424,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   transform: translateY(-4px);
   border-color: #1E52A5;
+  background: var(--kanban-card-hover);
 }
 
 .kanban-dots {
@@ -424,7 +461,7 @@
 
 .kanban-text {
   font-size: 14px;
-  color: #333;
+  color: var(--kanban-text-primary);
   font-weight: 500;
   line-height: 1.5;
 }
@@ -457,9 +494,9 @@
   align-items: center;
   margin-top: 12px;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--kanban-text-secondary);
   padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--kanban-border-light);
 }
 
 .kanban-footer-left {
@@ -472,7 +509,7 @@
 
 .kanban-footer-left > span {
   font-weight: 600;
-  color: #333;
+  color: var(--kanban-text-primary);
   white-space: nowrap;
 }
 

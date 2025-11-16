@@ -347,7 +347,7 @@ export default function TelaDashboard() {
                   </div>
                 ))
               ) : (
-                <p className="empty-state">Nenhuma empresa com tarefas</p>
+                <div className="empty-state">Nenhuma empresa com tarefas</div>
               )}
             </div>
           </div>
@@ -383,7 +383,7 @@ export default function TelaDashboard() {
                   </div>
                 ))
               ) : (
-                <p className="empty-state">Nenhum membro com tarefas atribuídas</p>
+                <div className="empty-state">Nenhum membro com tarefas atribuídas</div>
               )}
             </div>
           </div>
@@ -433,7 +433,7 @@ export default function TelaDashboard() {
                   </div>
                 ))
               ) : (
-                <p className="empty-state">Nenhuma tarefa próxima do vencimento</p>
+                <div className="empty-state">Nenhuma tarefa próxima do vencimento</div>
               )}
             </div>
           </div>

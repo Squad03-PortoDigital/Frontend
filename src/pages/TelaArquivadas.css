@@ -1,7 +1,31 @@
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --arquivadas-bg: #f8f9fb;
+  --arquivadas-card-bg: #ffffff;
+  --arquivadas-text-primary: #333333;
+  --arquivadas-text-secondary: #666666;
+  --arquivadas-text-tertiary: #999999;
+  --arquivadas-border: #f0f0f0;
+  --arquivadas-btn-bg: #f0f0f0;
+  --arquivadas-btn-hover: #e0e0e0;
+}
+
+.dark-theme {
+  --arquivadas-bg: #0f1419;
+  --arquivadas-card-bg: #1a1f2e;
+  --arquivadas-text-primary: #e8eaed;
+  --arquivadas-text-secondary: #9ca3af;
+  --arquivadas-text-tertiary: #6b7280;
+  --arquivadas-border: #2d3748;
+  --arquivadas-btn-bg: #252b3b;
+  --arquivadas-btn-hover: #374151;
+}
+
 .arquivadas-wrapper {
   padding: 24px;
-  background: #f8f9fb;
+  background: var(--arquivadas-bg);
   min-height: 100vh;
+  transition: background-color 0.3s ease;
 }
 
 .arquivadas-header {
@@ -17,14 +41,16 @@
 
 .arquivadas-titulo h1 {
   font-size: 28px;
-  color: #333;
+  color: var(--arquivadas-text-primary);
   margin: 0;
+  transition: color 0.3s ease;
 }
 
 .arquivadas-subtitulo {
   font-size: 14px;
-  color: #666;
+  color: var(--arquivadas-text-secondary);
   margin-left: 40px;
+  transition: color 0.3s ease;
 }
 
 .arquivadas-grid {
@@ -34,7 +60,7 @@
 }
 
 .tarefa-arquivada-card {
-  background: white;
+  background: var(--arquivadas-card-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -73,8 +99,8 @@
   height: 32px;
   border: none;
   border-radius: 6px;
-  background: #f0f0f0;
-  color: #666;
+  background: var(--arquivadas-btn-bg);
+  color: var(--arquivadas-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -83,7 +109,7 @@
 }
 
 .btn-icon:hover {
-  background: #e0e0e0;
+  background: var(--arquivadas-btn-hover);
   transform: scale(1.1);
 }
 
@@ -108,19 +134,21 @@
 .tarefa-titulo {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--arquivadas-text-primary);
   margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
 .tarefa-descricao {
   font-size: 14px;
-  color: #666;
+  color: var(--arquivadas-text-secondary);
   line-height: 1.5;
   margin-bottom: 16px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.3s ease;
 }
 
 .tarefa-footer {
@@ -128,9 +156,10 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--arquivadas-border);
   font-size: 12px;
-  color: #999;
+  color: var(--arquivadas-text-tertiary);
+  transition: all 0.3s ease;
 }
 
 .tarefa-empresa {
@@ -145,10 +174,12 @@
 
 .empty-state h3 {
   font-size: 20px;
-  color: #666;
+  color: var(--arquivadas-text-tertiary);
   margin: 16px 0 8px;
+  transition: color 0.3s ease;
 }
 
 .empty-state p {
-  color: #999;
+  color: var(--arquivadas-text-tertiary);
+  transition: color 0.3s ease;
 }

@@ -1,11 +1,37 @@
+/* ===== VARIÁVEIS DE TEMA ===== */
+:root {
+  --bg-page: #f8f9fb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8f9fb;
+  --bg-empty-state: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --border-color: #e0e0e0;
+  --border-light: #f0f0f0;
+}
+
+.dark-theme {
+  --bg-page: #0f1419;
+  --bg-card: #1a1f2e;
+  --bg-card-hover: #252b3b;
+  --bg-empty-state: #252b3b;
+  --text-primary: #e8eaed;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --border-color: #2d3748;
+  --border-light: #374151;
+}
+
 .dashboard-wrapper {
   display: flex;
   flex-direction: column;
   gap: 24px;
   padding: 24px;
-  background: #f8f9fb;
+  background: var(--bg-page);
   min-height: 100vh;
-  position: relative; /* ✅ PARA O HAMBURGER FUNCIONAR */
+  position: relative;
+  transition: background-color 0.3s ease;
 }
 
 .hamburger-btn {
@@ -17,15 +43,14 @@
   display: none;
   align-items: center;
   justify-content: center;
-  background: white;
-  border: 2px solid #e0e0e0;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   cursor: pointer;
-  z-index: 1001; /* ✅ MAIOR QUE O MENU (z-index: 999) */
+  z-index: 1001;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-
 
 .hamburger-btn:hover {
   border-color: #1E52A5;
@@ -45,7 +70,7 @@
 }
 
 .dashboard-card-top {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -68,7 +93,7 @@
 
 .card-top-header h3 {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
   margin: 0;
 }
@@ -82,7 +107,7 @@
 
 .dashboard-card-top p {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -103,13 +128,13 @@
 .welcome-text h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #000;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .welcome-text p {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -123,7 +148,7 @@
   display: flex;
   gap: 20px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
 }
 
 .stat-item {
@@ -131,7 +156,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #333;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -143,7 +168,7 @@
 }
 
 .dashboard-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -164,13 +189,13 @@
   gap: 10px;
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--border-light);
 }
 
 .card-header h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -194,7 +219,7 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .priority-dot {
@@ -205,7 +230,7 @@
 
 .priority-bar {
   height: 10px;
-  background: #f0f0f0;
+  background: var(--border-light);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -240,14 +265,15 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #f8f9fb;
+  background: var(--bg-card-hover);
   border-radius: 8px;
   transition: all 0.3s ease;
 }
 
 .empresa-item:hover {
-  background: linear-gradient(135deg, #E8F0FC 0%, #D1E3F8 100%);
+  background: var(--bg-card-hover);
   transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(30, 82, 165, 0.2);
 }
 
 .empresa-rank {
@@ -270,13 +296,13 @@
 .empresa-nome {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .empresa-stats {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .empresa-badge {
@@ -285,7 +311,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--bg-card);
   border: 2px solid #1E52A5;
   color: #1E52A5;
   border-radius: 50%;
@@ -326,13 +352,13 @@
 .membro-nome {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 6px;
 }
 
 .membro-progress {
   height: 6px;
-  background: #f0f0f0;
+  background: var(--border-light);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -349,7 +375,7 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 /* ==== GRID DE LISTAS ==== */
@@ -361,7 +387,8 @@
 
 .lista-item {
   padding: 16px;
-  background: linear-gradient(135deg, #E8F0FC 0%, #D1E3F8 100%);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -378,7 +405,7 @@
 .lista-nome {
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -400,8 +427,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -436,13 +463,13 @@
 .proxima-titulo {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .proxima-empresa {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .proxima-data {
@@ -455,11 +482,26 @@
 }
 
 /* ==== ESTADO VAZIO ==== */
+/* ==== ESTADO VAZIO ==== */
 .empty-state {
   text-align: center;
-  color: #999;
+  color: var(--text-tertiary) !important;
   font-size: 14px;
   padding: 40px 20px;
+  background: transparent !important;
+  border-radius: 8px;
+  margin: 0;
+}
+
+/* FORÇA O FUNDO TRANSPARENTE EM TODOS OS CONTEXTOS */
+.dashboard-card .empty-state,
+.membro-list .empty-state,
+.proximas-list .empty-state,
+.empresa-list .empty-state,
+div.empty-state,
+p.empty-state {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* ==== RESPONSIVIDADE ==== */
@@ -474,19 +516,18 @@
 }
 
 @media (max-width: 768px) {
-  /* ✅ AJUSTES PARA MOBILE */
   .dashboard-wrapper {
-    padding-left: 24px; /* Remove espaço do menu */
+    padding-left: 24px;
   }
 
   .hamburger-btn {
-    display: flex; /* Mostra o hamburger */
-    left: 24px; /* Reposiciona no canto */
+    display: flex;
+    left: 24px;
   }
 
   .dashboard-top {
     grid-template-columns: 1fr;
-    margin-top: 60px; /* Espaço para o hamburger */
+    margin-top: 60px;
   }
 
   .lista-grid {
@@ -510,4 +551,5 @@
     width: 100%;
     text-align: center;
   }
+
 }
