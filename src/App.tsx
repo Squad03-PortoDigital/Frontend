@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { RotaProtegida } from "./components/RotaProtegida";
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import TelaNotificacoes from './pages/TelaNotificacoes';
 import Login from "./components/Login";
 import Menu from "./components/Menu";
@@ -31,6 +32,26 @@ interface UserProfile {
   };
 }
 
+// Componente wrapper para rotas autenticadas com WebSocket
+const AuthenticatedLayout = ({ 
+  children, 
+  user,
+  className = "app-content"
+}: { 
+  children: React.ReactNode;
+  user?: UserProfile;
+  className?: string;
+}) => (
+  <WebSocketProvider>
+    <div className="app-grid">
+      <Header />
+      <Menu user={user} />
+      <main className={className}>
+        {children}
+      </main>
+    </div>
+  </WebSocketProvider>
+);
 
 export default function App() {
   const [usuario, setUsuario] = useState<UserProfile | null>(null);
@@ -56,33 +77,25 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Tela de login */}
+      {/* Tela de login - SEM WebSocket */}
       <Route path="/" element={<Login />} />
 
       {/* Home - Kanban Board */}
       <Route
         path="/home"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content kanban-area">
-              <KanbanBoard />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined} className="app-content kanban-area">
+            <KanbanBoard />
+          </AuthenticatedLayout>
         }
       />
     
       <Route
         path="/notificacoes"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaNotificacoes/>
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaNotificacoes />
+          </AuthenticatedLayout>
         }
       />
 
@@ -90,44 +103,30 @@ export default function App() {
       <Route
         path="/detalhamento/:id"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaDetalhamento />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaDetalhamento />
+          </AuthenticatedLayout>
         }
       />
     
       <Route
-          path="/equipe"
-          element={
-            <RotaProtegida permissaesRequeridas="USUARIO_CADASTRAR"
-            todasPermissoes={true}>
-            <div className="app-grid">
-              <Header />
-              <Menu user={usuario as UserProfile | undefined} />
-              <main className="app-content">
+        path="/equipe"
+        element={
+          <RotaProtegida permissaesRequeridas="USUARIO_CADASTRAR" todasPermissoes={true}>
+            <AuthenticatedLayout user={usuario as UserProfile | undefined}>
               <TelaEquipe />
-            </main>
-          </div>
+            </AuthenticatedLayout>
           </RotaProtegida>
         }
       />
-    
 
-      {/*Tela de tarefas arquivadas */}
+      {/* Tela de tarefas arquivadas */}
       <Route
-        path="/arquivadas"
+        path="/finalizadas"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaArquivadas />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaArquivadas />
+          </AuthenticatedLayout>
         }
       />
 
@@ -135,13 +134,9 @@ export default function App() {
       <Route
         path="/perfil"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaPerfil />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaPerfil />
+          </AuthenticatedLayout>
         }
       />
 
@@ -149,13 +144,9 @@ export default function App() {
       <Route
         path="/dashboard"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaDashboard />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaDashboard />
+          </AuthenticatedLayout>
         }
       />
 
@@ -163,13 +154,9 @@ export default function App() {
       <Route
         path="/calendario"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaCalendario />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaCalendario />
+          </AuthenticatedLayout>
         }
       />
 
@@ -177,13 +164,9 @@ export default function App() {
       <Route
         path="/ajuda"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <Ajuda />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <Ajuda />
+          </AuthenticatedLayout>
         }
       />
 
@@ -191,13 +174,9 @@ export default function App() {
       <Route
         path="/ajustes"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <TelaAjustes />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <TelaAjustes />
+          </AuthenticatedLayout>
         }
       />
 
@@ -205,13 +184,9 @@ export default function App() {
       <Route
         path="/empresa/:id"
         element={
-          <div className="app-grid">
-            <Header />
-            <Menu user={usuario as UserProfile | undefined} />
-            <main className="app-content">
-              <EmpresaDetalhes />
-            </main>
-          </div>
+          <AuthenticatedLayout user={usuario as UserProfile | undefined}>
+            <EmpresaDetalhes />
+          </AuthenticatedLayout>
         }
       />
     </Routes>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./TelaArquivadas.css";
 import { useNavigate } from "react-router-dom";
-import { Archive, Eye, RotateCcw, Trash2 } from "lucide-react";
+import { CircleCheckBig, Eye, RotateCcw, Trash2 } from "lucide-react";
 import api from "../services/api";
 import { Toast } from "./Toast";
 
@@ -66,7 +66,7 @@ export default function TelaArquivadas() {
   };
 
   const desarquivarTarefa = async (id: number, titulo: string) => {
-    const confirmar = window.confirm(`Deseja restaurar a tarefa "${titulo}"?`);
+    const confirmar = window.confirm(`Deseja reabrir a tarefa "${titulo}"?`);
     if (!confirmar) return;
 
     try {
@@ -75,10 +75,10 @@ export default function TelaArquivadas() {
         headers: { Authorization: `Basic ${auth}` },
         withCredentials: true,
       });
-      showToast("Tarefa restaurada!", "success");
+      showToast("Tarefa reaberta!", "success");
       await carregarTarefasArquivadas();
     } catch (error) {
-      showToast("Erro ao restaurar tarefa.", "error");
+      showToast("Erro ao reabrir tarefa.", "error");
     }
   };
 
@@ -111,7 +111,7 @@ export default function TelaArquivadas() {
         alignItems: "center",
         height: "100vh",
       }}>
-        <p>Carregando tarefas arquivadas...</p>
+        <p>Carregando tarefas finalizadas...</p>
       </div>
     );
   }
@@ -129,11 +129,11 @@ export default function TelaArquivadas() {
       <div className="arquivadas-wrapper">
         <div className="arquivadas-header">
           <div className="arquivadas-titulo">
-            <Archive size={28} color="#FF9800" />
-            <h1>Tarefas Arquivadas</h1>
+            <CircleCheckBig size={28} color="#10b981" />
+            <h1>Tarefas Finalizadas</h1>
           </div>
           <p className="arquivadas-subtitulo">
-            {tarefas.length} {tarefas.length === 1 ? 'tarefa arquivada' : 'tarefas arquivadas'}
+            {tarefas.length} {tarefas.length === 1 ? 'tarefa finalizada' : 'tarefas finalizadas'}
           </p>
         </div>
 
@@ -156,7 +156,7 @@ export default function TelaArquivadas() {
                     <button
                       className="btn-icon restore"
                       onClick={() => desarquivarTarefa(tarefa.id, tarefa.titulo)}
-                      title="Restaurar"
+                      title="Reabrir"
                     >
                       <RotateCcw size={18} />
                     </button>
@@ -171,10 +171,6 @@ export default function TelaArquivadas() {
                 </div>
 
                 <h3 className="tarefa-titulo">{tarefa.titulo}</h3>
-
-                {tarefa.descricao && (
-                  <p className="tarefa-descricao">{tarefa.descricao}</p>
-                )}
 
                 <div className="tarefa-footer">
                   {tarefa.empresa && (
@@ -191,9 +187,9 @@ export default function TelaArquivadas() {
           </div>
         ) : (
           <div className="empty-state">
-            <Archive size={64} color="#ccc" />
-            <h3>Nenhuma tarefa arquivada</h3>
-            <p>As tarefas arquivadas aparecerão aqui</p>
+            <CircleCheckBig size={64} color="#ccc" />
+            <h3>Nenhuma tarefa finalizada</h3>
+            <p>As tarefas finalizadas aparecerão aqui</p>
           </div>
         )}
       </div>

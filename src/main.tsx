@@ -5,16 +5,14 @@ import App from "./App";
 import { PermissaoProvider } from './contexts/PermissaoContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import "./styles/login.css";
-import { WebSocketProvider } from './contexts/WebSocketContext';
 
+// main.tsx
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <BrowserRouter>
-      <ThemeProvider>
-        <WebSocketProvider>
-          <PermissaoProvider>
-            <App />
-          </PermissaoProvider>
-        </WebSocketProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+  <BrowserRouter>
+    <ThemeProvider>
+      <PermissaoProvider>
+        <App />
+      </PermissaoProvider>
+    </ThemeProvider>
+  </BrowserRouter>
 );

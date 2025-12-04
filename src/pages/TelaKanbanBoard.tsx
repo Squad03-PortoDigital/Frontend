@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./TelaKanbanBoard.css";
-import { Plus, Trash2, CheckCircle2, Circle } from "lucide-react";
+import { Plus, Trash2} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import api from "../services/api";
@@ -698,58 +698,6 @@ export default function TelaKanbanBoard() {
         navigate(`/detalhamento/${tarefa.id}`);
     };
 
-    const marcarComoConcluida = async (tarefaId: number, concluida: boolean) => {
-        try {
-            const auth = getAuth();
-            if (!auth) return;
-
-            const response = await api.patch(
-                `/tarefas/${tarefaId}/concluir`,
-                { concluida },
-                {
-                    headers: {
-                        Authorization: `Basic ${auth}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (response.status === 401) {
-                handleSessionExpired();
-                return;
-            }
-
-            if (response.status === 200) {
-                showToast(
-                    concluida ? "✅ Tarefa marcada como concluída!" : "Tarefa desmarcada!",
-                    "success"
-                );
-
-                // ✅ Atualiza o estado local imediatamente
-                setTarefas(prev =>
-                    prev.map(t =>
-                        t.id === tarefaId
-                            ? {
-                                ...t,
-                                concluida,
-                                dtConclusao: concluida ? new Date().toISOString() : null
-                            }
-                            : t
-                    )
-                );
-            }
-        } catch (error: any) {
-            console.error("Erro ao marcar tarefa:", error);
-            if (error.response?.status === 401) {
-                handleSessionExpired();
-            } else {
-                showToast("Erro ao atualizar tarefa.", "error");
-            }
-        }
-    };
-
-
-
     if (loading) {
         return (
             <div
@@ -1003,21 +951,6 @@ export default function TelaKanbanBoard() {
                                                                 opacity: snapshot.isDragging ? 0.8 : 1,
                                                             }}
                                                         >
-                                                            {/* ✅ BOTÃO DE CONCLUIR - CANTO SUPERIOR DIREITO */}
-                                                            <button
-                                                                className={`btn-concluir ${tarefa.concluida ? 'concluida' : ''}`}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();  // Impede de abrir detalhamento
-                                                                    marcarComoConcluida(tarefa.id, !tarefa.concluida);
-                                                                }}
-                                                                title={tarefa.concluida ? "Desmarcar como concluída" : "Marcar como concluída"}
-                                                            >
-                                                                {tarefa.concluida ? (
-                                                                    <CheckCircle2 size={20} />
-                                                                ) : (
-                                                                    <Circle size={20} />
-                                                                )}
-                                                            </button>
 
                                                             <div className="kanban-dots">
                                                                 {[...Array(3)].map((_, i) => (

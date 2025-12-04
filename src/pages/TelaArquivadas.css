@@ -65,7 +65,7 @@
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   transition: all 0.3s ease;
-  border-left: 4px solid #FF9800;
+  border-left: 4px solid #10b981;
 }
 
 .tarefa-arquivada-card:hover {
@@ -135,7 +135,7 @@
   font-size: 18px;
   font-weight: 600;
   color: var(--arquivadas-text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 22px;
   transition: color 0.3s ease;
 }
 

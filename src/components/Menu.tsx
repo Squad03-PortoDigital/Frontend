@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Archive, Bell, Calendar, ChartPie, Info, SquareCheckBig, Users, User, X, Building2, SquareKanban } from "lucide-react";
+import { Bell, Calendar, ChartPie, Info, Users, User, X, Building2, SquareKanban, CircleCheckBig } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePermissao } from "../contexts/PermissaoContext";
 import "../styles/menu.css";
@@ -98,25 +98,21 @@ export default function Menu({ user: userProp }: MenuProps) {
         <div className="menu-section">
           <h2 className="menu-item-titulo">Kanban:</h2>
 
+          <Link to="/dashboard" className={`menu-item ${isActive('/dashboard')}`}>
+            <ChartPie size={22} />
+            <div className="menu-item-nome">Dashboard</div>
+          </Link>
+
           <Link to="/home" className={`menu-item ${isActive('/home')}`}>
             <SquareKanban size={22} />
             <div className="menu-item-nome">Kanban</div>
           </Link>
 
-          <Link to="/arquivadas" className="menu-item">
-            <Archive size={22} />
-            <div className="menu-item-nome">Arquivados</div>
+          <Link to="/finalizadas" className="menu-item">
+            <CircleCheckBig size={22} />
+            <div className="menu-item-nome">Finalizadas</div>
           </Link>
 
-          <div className="menu-item">
-            <SquareCheckBig size={22} />
-            <div className="menu-item-nome">Finalizados</div>
-          </div>
-
-          <Link to="/dashboard" className={`menu-item ${isActive('/dashboard')}`}>
-            <ChartPie size={22} />
-            <div className="menu-item-nome">Dashboard</div>
-          </Link>
         </div>
 
         <div className="menu-section">

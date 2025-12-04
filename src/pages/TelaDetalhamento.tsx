@@ -2,7 +2,7 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { Button } from "@mui/material";
 import "./TelaDetalhamento.css";
 import agentegpt from "../images/agentegpt-logo.png";
-import { MoveLeft, Trash, Pencil, Check } from "lucide-react";
+import { MoveLeft, Trash, Pencil, Check, CheckCircle2, Circle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -78,6 +78,8 @@ interface Tarefa {
   checklists?: Checklist[];
   comentarios?: Comentario[];
   membros?: MembroDTO[];
+  dropboxPath: string;
+  arquivada?: boolean;
 }
 
 
@@ -112,7 +114,6 @@ export default function TelaDetalhamento() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [isEditingDescricao, setIsEditingDescricao] = useState(false);
-  const [status, setStatus] = useState("A_FAZER");
   const [prioridade, setPrioridade] = useState("MEDIA");
   const [dtEntrega, setDtEntrega] = useState("");
   const [links, setLinks] = useState<string[]>([]);
@@ -120,10 +121,10 @@ export default function TelaDetalhamento() {
 
   const [prioridadeOpen, setPrioridadeOpen] = useState(false);
   const [membrosDropdownOpen, setMembrosDropdownOpen] = useState(false);
-  const [mostrarModalArquivar, setMostrarModalArquivar] = useState(false);
 
 
   const progresso = tarefa?.progresso || 0;
+  const isFinalizada = tarefa?.status === "ARQUIVADA";
 
 
   const [checklists, setChecklists] = useState<Checklist[]>([]);
@@ -541,7 +542,6 @@ export default function TelaDetalhamento() {
         setTarefa(tarefaData);
         setTitulo(tarefaData.titulo || "");
         setDescricao(tarefaData.descricao || "");
-        setStatus(tarefaData.status || "A_FAZER");
         setPrioridade(tarefaData.prioridade || "MEDIA");
 
 
@@ -604,7 +604,6 @@ export default function TelaDetalhamento() {
               setTarefa(evento.tarefa as any);
               setTitulo(evento.tarefa.titulo || "");
               setDescricao(evento.tarefa.descricao || "");
-              setStatus(evento.tarefa.status || "A_FAZER");
               setPrioridade(evento.tarefa.prioridade || "MEDIA");
 
               if (evento.tarefa.dtEntrega) {
@@ -729,37 +728,49 @@ export default function TelaDetalhamento() {
     u.nome.toLowerCase().includes(pesquisaMembros.toLowerCase())
   );
 
-  const arquivarTarefa = async () => {
+  const toggleArquivada = async () => {
+    if (!id) return;
     const auth = getAuth();
     if (!auth) return;
 
+    const arquivada = tarefa?.status === "ARQUIVADA";
 
     try {
-      await api.patch(`/tarefas/${id}/arquivar`, {}, {
+      const rota = arquivada
+        ? `/tarefas/${id}/desarquivar`
+        : `/tarefas/${id}/arquivar`;
+
+      await api.patch(rota, null, {
         headers: {
           Authorization: `Basic ${auth}`,
-          'Accept-Encoding': 'gzip, deflate'
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip, deflate",
         },
         withCredentials: true,
         timeout: 30000,
       });
 
-
-      showToast("Tarefa arquivada com sucesso!", "success");
-      setTimeout(() => navigate("/home"), 1000);
+      // Atualiza localmente o status (opcional, se não vier via WebSocket)
+      setTarefa((prev) =>
+        prev
+          ? { ...prev, status: arquivada ? "A_FAZER" : "ARQUIVADA" }
+          : prev
+      );
+      if (arquivada) {
+        showToast("Tarefa reaberta.", "success");
+      } else {
+        showToast("Tarefa finalizada!", "success");
+      }
     } catch (error: any) {
-      console.error("❌ Erro ao arquivar:", error);
-
-
+      console.error("Erro ao alternar arquivada:", error);
       if (error.response?.status === 401) {
         handleSessionExpired();
       } else {
-        showToast("Erro ao arquivar tarefa.", "error");
+        showToast("Erro ao atualizar tarefa.", "error");
       }
-    } finally {
-      setMostrarModalArquivar(false);
     }
   };
+
 
 
   const adicionarChecklist = async () => {
@@ -1144,8 +1155,24 @@ export default function TelaDetalhamento() {
               </div>
               <span>Ir para o ChatGPT</span>
             </div>
+            {!isFinalizada && temPermissao('TAREFA_EDITAR_GERAL') && tarefa && (
+              <button
+                className={
+                  `detalhamento-finish-btn ${tarefa.status === 'ARQUIVADA' ? 'concluida' : ''}`
+                }
+                onClick={toggleArquivada}
+                title={tarefa.status === 'ARQUIVADA'
+                  ? "Desmarcar como finalizada"
+                  : "Marcar como finalizada"}
+              >
+                {tarefa.status === 'ARQUIVADA' ? (
+                  <CheckCircle2 size={25} />
+                ) : (
+                  <Circle size={25} />
+                )}
+              </button>
+            )}
           </div>
-
 
           <div className="detalhamento-title">
             <div className="detalhamento-title-text">
@@ -1294,7 +1321,7 @@ export default function TelaDetalhamento() {
             <div className="detalhamento-body-item descricao-item">
               <div className="descricao-header">
                 <h2>Descrição</h2>
-                {temPermissao('TAREFA_EDITAR_GERAL') && (
+                {!isFinalizada && temPermissao('TAREFA_EDITAR_GERAL') && (
                   <button
                     onClick={handleEditarClick}
                     className="descricao-edit-btn"
@@ -1433,7 +1460,7 @@ export default function TelaDetalhamento() {
 
             <div className="detalhamento-body-item">
               <h2>Checklists</h2>
-              {temPermissao('TAREFA_EDITAR_GERAL') && (
+              {!isFinalizada && temPermissao('TAREFA_EDITAR_GERAL') && (
                 <div className="add-item-container">
                   <input
                     type="text"
@@ -1639,20 +1666,6 @@ export default function TelaDetalhamento() {
 
             </div>
           </div>
-
-
-          <div className="detalhamento-footer">
-            <div className="detalhamento-footer-left">
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={() => setMostrarModalArquivar(true)}
-                className="btn-arquivar"
-              >
-                📦 Arquivar
-              </Button>
-            </div>
-          </div>
         </div>
 
 
@@ -1719,42 +1732,9 @@ export default function TelaDetalhamento() {
             />
 
           </div>
-          <DropboxFiles />
+          <DropboxFiles dropboxPath={tarefa.dropboxPath} />
         </div>
       </div>
-
-
-      {mostrarModalArquivar && (
-        <div
-          className="modal-overlay"
-          onClick={() => setMostrarModalArquivar(false)}
-        >
-          <div
-            className="modal-arquivar"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3>Arquivar Tarefa?</h3>
-            <p>
-              Tem certeza que deseja arquivar esta tarefa? Ela será movida para a seção de tarefas arquivadas.
-            </p>
-            <div className="modal-arquivar-actions">
-              <Button
-                variant="outlined"
-                onClick={() => setMostrarModalArquivar(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="contained"
-                className="btn-arquivar-confirm"
-                onClick={arquivarTarefa}
-              >
-                Sim, Arquivar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

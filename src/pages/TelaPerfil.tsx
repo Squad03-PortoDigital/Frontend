@@ -9,9 +9,11 @@ import {
   Save,
   Loader2,
   X,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { Toast } from "./Toast";
 import { usuarioApi } from "../services/api";
+import api from "../services/api";
 import { dispatchUserUpdate } from "../utils/userEvents";
 
 export interface UserProfile {
@@ -45,6 +47,9 @@ const TelaPerfil: React.FC = () => {
     type: 'success',
     show: false
   });
+  const [googleConectado, setGoogleConectado] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+
 
   const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
     setToast({ message, type, show: true });
@@ -85,6 +90,41 @@ const TelaPerfil: React.FC = () => {
 
     loadUserData();
   }, []);
+
+  // ✅ Verificar status do Google Calendar
+  useEffect(() => {
+    const verificarGoogleStatus = async () => {
+      try {
+        const auth = localStorage.getItem("auth");
+        const response = await api.get("/google/status", {
+          headers: { Authorization: `Basic ${auth}` },
+          withCredentials: true,
+        });
+        setGoogleConectado(response.data.conectado);
+      } catch (error) {
+        console.error("Erro ao verificar status do Google:", error);
+      }
+    };
+
+    if (user) {
+      verificarGoogleStatus();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleStatus = params.get('google');
+
+    if (googleStatus === 'success') {
+      showToast('Google Calendar conectado com sucesso!', 'success');
+      setGoogleConectado(true);
+      window.history.replaceState({}, '', '/perfil');
+    } else if (googleStatus === 'error') {
+      showToast('Erro ao conectar Google Calendar', 'error');
+      window.history.replaceState({}, '', '/perfil');
+    }
+  }, []);
+
 
   // ✅ Manipular mudança de avatar COM ENVIO PARA O BACKEND
   const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -141,6 +181,48 @@ const TelaPerfil: React.FC = () => {
 
     reader.readAsDataURL(file);
   };
+
+  const handleConectarGoogle = async () => {
+    setLoadingGoogle(true);
+    try {
+      const auth = localStorage.getItem("auth");
+      const response = await api.get("/google/authorize", {
+        headers: { Authorization: `Basic ${auth}` },
+        withCredentials: true,
+      });
+
+      // Abrir popup do Google OAuth
+      window.location.href = response.data.authUrl;
+    } catch (error) {
+      console.error("Erro ao conectar Google Calendar:", error);
+      showToast("Erro ao conectar com Google Calendar", "error");
+      setLoadingGoogle(false);
+    }
+  };
+
+  const handleDesconectarGoogle = async () => {
+    if (!window.confirm("Deseja realmente desconectar o Google Calendar?")) {
+      return;
+    }
+
+    setLoadingGoogle(true);
+    try {
+      const auth = localStorage.getItem("auth");
+      await api.delete("/google/disconnect", {
+        headers: { Authorization: `Basic ${auth}` },
+        withCredentials: true,
+      });
+
+      setGoogleConectado(false);
+      showToast("Google Calendar desconectado com sucesso!", "success");
+    } catch (error) {
+      console.error("Erro ao desconectar Google Calendar:", error);
+      showToast("Erro ao desconectar Google Calendar", "error");
+    } finally {
+      setLoadingGoogle(false);
+    }
+  };
+
 
   const handleChange = (field: keyof UserProfile, value: string) => {
     if (user) {
@@ -455,16 +537,96 @@ const TelaPerfil: React.FC = () => {
                     />
                   </div>
 
-                  <label>Cargo</label>
-                  <input
-                    type="text"
-                    value={user.role?.nome || "—"}
-                    readOnly
-                    style={{
-                      backgroundColor: '#f5f5f5',
-                      cursor: 'default',
-                    }}
-                  />
+                  <div style={{
+                    marginTop: '24px',
+                    paddingTop: '24px',
+                    borderTop: '1px solid #e0e0e0'
+                  }}>
+                    <h3 style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      marginBottom: '12px',
+                      color: '#1E1E1E'
+                    }}>
+                      Integrações
+                    </h3>
+
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '16px',
+                      backgroundColor: googleConectado ? '#ecfdf5' : '#f5f5f5',
+                      borderRadius: '8px',
+                      border: `1px solid ${googleConectado ? '#10b981' : '#e0e0e0'}`,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <CalendarIcon size={24} color={googleConectado ? '#10b981' : '#717680'} />
+                        <div>
+                          <p style={{
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            color: '#1E1E1E',
+                            marginBottom: '4px'
+                          }}>
+                            Google Calendar
+                          </p>
+                          <p style={{
+                            fontSize: '12px',
+                            color: '#717680'
+                          }}>
+                            {googleConectado
+                              ? 'Conectado - Sincronização ativa'
+                              : 'Não conectado'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {googleConectado ? (
+                        <button
+                          onClick={handleDesconectarGoogle}
+                          disabled={loadingGoogle}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#fee2e2',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '6px',
+                            cursor: loadingGoogle ? 'not-allowed' : 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#dc2626',
+                            transition: 'all 0.3s',
+                            opacity: loadingGoogle ? 0.7 : 1,
+                          }}
+                        >
+                          {loadingGoogle ? 'Desconectando...' : 'Desconectar'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleConectarGoogle}
+                          disabled={loadingGoogle}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            backgroundColor: '#1E52A5',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: loadingGoogle ? 'not-allowed' : 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: 'white',
+                            transition: 'all 0.3s',
+                            opacity: loadingGoogle ? 0.7 : 1,
+                          }}
+                        >
+                          <CalendarIcon size={16} />
+                          {loadingGoogle ? 'Conectando...' : 'Conectar'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </form>
               </div>
             </div>

@@ -19,12 +19,14 @@
   --dropbox-text-muted: #6b7280;
 }
 
+/* Container principal */
 .dropbox-files-container {
   background: var(--dropbox-bg);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   transition: all 0.3s ease;
+  min-height: 380px;
 }
 
 /* ===== HEADER ===== */
@@ -54,6 +56,53 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ===== BOTÃO DE UPLOAD ===== */
+.dropbox-upload-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropbox-upload-btn:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16,185,129,0.4);
+}
+
+.dropbox-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botão Nova Pasta */
+.dropbox-btn {
+  background: #264fa2;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropbox-btn:hover {
+  background: #1e3a8a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102,126,234,0.4);
 }
 
 /* ===== TOGGLE DE VISUALIZAÇÃO ===== */
@@ -89,7 +138,7 @@
   color: white;
 }
 
-/* ✅ BOTÃO ABRIR NO DROPBOX COM TOOLTIP */
+/* ===== BOTÃO ABRIR NO DROPBOX COM TOOLTIP ===== */
 .dropbox-open-btn {
   position: relative;
   width: 36px;
@@ -97,7 +146,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #264fa2; /* ✅ Mesma cor do toggle ativo */
+  background: #264fa2;
   border: none;
   border-radius: 8px;
   color: white;
@@ -107,14 +156,14 @@
 }
 
 .dropbox-open-btn:hover {
-  background: #264fa2;
+  background: #1e3a8a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(102,126,234,0.4);
 }
 
-/* ✅ TOOLTIP */
+/* Tooltip */
 .dropbox-open-btn::before {
-  content: attr(data-tooltip);
+  content: attr(title);
   position: absolute;
   bottom: calc(100% + 8px);
   left: 50%;
@@ -150,12 +199,51 @@
   opacity: 1;
 }
 
+/* ===== BREADCRUMB ===== */
+.dropbox-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--dropbox-hover);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--dropbox-text-secondary);
+}
+
+.dropbox-breadcrumb button {
+  background: transparent;
+  border: none;
+  color: #264fa2;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.dropbox-breadcrumb button:hover {
+  background: var(--dropbox-selected);
+  color: #1e3a8a;
+}
+
+/* ===== LOADING ===== */
+.dropbox-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  font-size: 0.875rem;
+  color: var(--dropbox-text-muted);
+}
+
 /* ===== VISUALIZAÇÃO EM LISTA ===== */
 .dropbox-files-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 350px; /* ✅ Aumentado: 300px → 350px (sem breadcrumb) */
+  max-height: 350px;
   overflow-y: auto;
 }
 
@@ -176,7 +264,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 12px;
-  max-height: 350px; /* ✅ Aumentado: 300px → 350px (sem breadcrumb) */
+  max-height: 350px;
   overflow-y: auto;
 }
 
@@ -231,6 +319,8 @@
 .dropbox-file-item:hover {
   background: var(--dropbox-selected);
   border-color: var(--dropbox-border);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .dropbox-file-item.selected {
@@ -299,8 +389,19 @@
 
 .file-action-btn:hover {
   background: var(--dropbox-hover);
-  border-color:#264fa2;
+  border-color: #264fa2;
   color: #264fa2;
+  transform: scale(1.1);
+}
+
+/* ===== RENAME INPUT ===== */
+.rename-input {
+  padding: 6px 8px;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  border: 1px solid var(--dropbox-border);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ===== EMPTY STATE ===== */
@@ -320,27 +421,91 @@
   color: var(--dropbox-text-muted);
 }
 
-/* ===== SCROLLBAR ===== */
-.dropbox-files-list::-webkit-scrollbar,
-.dropbox-files-grid::-webkit-scrollbar {
-  width: 6px;
+/* ===== MODAL PREVIEW ===== */
+.dropbox-modal {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(0,0,0,0.8);
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
 }
 
-.dropbox-files-list::-webkit-scrollbar-track,
-.dropbox-files-grid::-webkit-scrollbar-track {
-  background: transparent;
+.dropbox-modal-content {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* Remove default iframe border and resize */
+.dropbox-modal-content iframe {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  max-width: 100%;
+  max-height: 80vh;
+  display: block;
+}
+
+/* Style modal images */
+.dropbox-modal-content img {
+  border-radius: 10px;
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+/* Style modal close button */
+.dropbox-modal-content button {
+  background-color: #264fa2;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: flex-end;
+}
+
+.dropbox-modal-content button:hover {
+  background-color: #1e3a8a;
+}
+
+/* Style modal links */
+.dropbox-modal-content a {
+  color: #264fa2;
+  font-weight: 600;
+  text-decoration: underline;
+  font-size: 1rem;
+}
+
+/* Scrollbar for modal */
+.dropbox-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dropbox-modal::-webkit-scrollbar-track {
+  background: #f1f1f1;
   border-radius: 10px;
 }
 
-.dropbox-files-list::-webkit-scrollbar-thumb,
-.dropbox-files-grid::-webkit-scrollbar-thumb {
-  background: var(--dropbox-border);
+.dropbox-modal::-webkit-scrollbar-thumb {
+  background: #888;
   border-radius: 10px;
 }
 
-.dropbox-files-list::-webkit-scrollbar-thumb:hover,
-.dropbox-files-grid::-webkit-scrollbar-thumb:hover {
-  background: var(--dropbox-text-muted);
+.dropbox-modal::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -349,7 +514,7 @@
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 8px;
   }
-  
+
   .dropbox-header-actions {
     flex-direction: column;
     align-items: stretch;

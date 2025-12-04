@@ -24,7 +24,6 @@ interface TarefaDTO {
   dtEntrega?: string;
   dtCriacao?: string;
   dtConclusao?: string;
-  concluida?: boolean;  // ✅ ADICIONADO
   empresa: string;
   empresaId?: number;
   membros?: Membro[];
@@ -37,12 +36,12 @@ interface Empresa {
 }
 
 interface Membro {
-  id: number; 
-  membroId: number;   
-  usuarioId: number;  
-  nome: string;       
-  username?: string; 
-  foto?: string;      
+  id: number;
+  membroId: number;
+  usuarioId: number;
+  nome: string;
+  username?: string;
+  foto?: string;
 }
 
 interface Lista {
@@ -54,7 +53,7 @@ interface Lista {
 
 interface ToastState {
   message: string;
-  type: 'success' | 'error' | 'warning';
+  type: "success" | "error" | "warning";
   show: boolean;
 }
 
@@ -71,10 +70,17 @@ export default function TelaDashboard() {
   const [membros, setMembros] = useState<Membro[]>([]);
   const [listas, setListas] = useState<Lista[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<ToastState>({ message: '', type: 'success', show: false });
+  const [toast, setToast] = useState<ToastState>({
+    message: "",
+    type: "success",
+    show: false,
+  });
   const navigate = useNavigate();
 
-  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "warning"
+  ) => {
     setToast({ message, type, show: true });
   };
 
@@ -100,7 +106,7 @@ export default function TelaDashboard() {
     const horaBrasilia = agora.toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
       hour: "numeric",
-      hour12: false
+      hour12: false,
     });
     const hora = parseInt(horaBrasilia);
     if (hora >= 5 && hora < 12) return "Bom dia";
@@ -118,37 +124,29 @@ export default function TelaDashboard() {
 
       try {
         setLoading(true);
-        
-        console.log("📡 Iniciando carregamento dos dados do dashboard...");
 
-        const [tarefasRes, empresasRes, membrosRes, listasRes] = await Promise.all([
-          api.get("/tarefas", { signal: controller.signal }),
-          api.get("/empresas", { signal: controller.signal }),
-          api.get("/usuarios", { signal: controller.signal }),
-          api.get("/listas", { signal: controller.signal }),
-        ]);
+        const [tarefasRes, empresasRes, membrosRes, listasRes] =
+          await Promise.all([
+            api.get("/tarefas", { signal: controller.signal }),
+            api.get("/empresas", { signal: controller.signal }),
+            api.get("/usuarios", { signal: controller.signal }),
+            api.get("/listas", { signal: controller.signal }),
+          ]);
 
         if (!isSubscribed) return;
 
-        console.log("✅ Tarefas carregadas:", tarefasRes.data);
-        console.log("✅ Empresas carregadas:", empresasRes.data);
-        console.log("✅ Membros carregados:", membrosRes.data);
-        console.log("✅ Listas carregadas:", listasRes.data);
-
-        const tarefasFiltradas = Array.isArray(tarefasRes.data)
-          ? tarefasRes.data.filter((t: TarefaDTO) => t.status !== "ARQUIVADA")
+        const tarefasArray: TarefaDTO[] = Array.isArray(tarefasRes.data)
+          ? tarefasRes.data
           : [];
 
-        setTarefas(tarefasFiltradas);
+        setTarefas(tarefasArray);
         setEmpresas(Array.isArray(empresasRes.data) ? empresasRes.data : []);
         setMembros(Array.isArray(membrosRes.data) ? membrosRes.data : []);
         setListas(Array.isArray(listasRes.data) ? listasRes.data : []);
-        
-        console.log("✅ Dashboard carregado com sucesso!");
       } catch (error: any) {
         if (!isSubscribed) return;
 
-        if (error.name === 'AbortError') {
+        if (error.name === "AbortError") {
           console.log("📋 Requisição cancelada");
           return;
         }
@@ -158,11 +156,14 @@ export default function TelaDashboard() {
         setEmpresas([]);
         setMembros([]);
         setListas([]);
-        
+
         if (error.response?.status === 401) {
           handleSessionExpired();
-        } else if (error.code === 'ECONNABORTED') {
-          showToast("Tempo limite de requisição excedido. Tente novamente.", "error");
+        } else if (error.code === "ECONNABORTED") {
+          showToast(
+            "Tempo limite de requisição excedido. Tente novamente.",
+            "error"
+          );
         } else {
           showToast("Erro ao carregar dados do dashboard.", "error");
         }
@@ -179,82 +180,98 @@ export default function TelaDashboard() {
     };
   }, []);
 
-  // ✅ ATUALIZADO - USA concluida
+  // ✅ Agora considera finalizada quando status === "ARQUIVADA"
   const totalTarefas = tarefas.length;
-  const tarefasConcluidas = tarefas.filter(t => t.concluida === true).length;
-
-  // ✅ ATUALIZADO - USA concluida
-  const tarefasVencidas = tarefas.filter((t) =>
-    t.dtEntrega && 
-    new Date(t.dtEntrega) < new Date() &&
-    !t.concluida  // ✅ Mudou de status para concluida
+  const tarefasConcluidas = tarefas.filter(
+    (t) => t.status === "ARQUIVADA"
   ).length;
+
+  const tarefasVencidas = tarefas.filter((t) => {
+    if (!t.dtEntrega) return false;
+    const vencida = new Date(t.dtEntrega) < new Date();
+    const finalizada = t.status === "ARQUIVADA";
+    return vencida && !finalizada;
+  }).length;
 
   const tarefasPendentes = totalTarefas - tarefasConcluidas;
 
-  const taxaConclusao = totalTarefas > 0
-    ? Math.round((tarefasConcluidas / totalTarefas) * 100)
-    : 0;
+  const taxaConclusao =
+    totalTarefas > 0
+      ? Math.round((tarefasConcluidas / totalTarefas) * 100)
+      : 0;
 
   const tarefasPorPrioridade = {
-    CRITICA: tarefas.filter(t => t.prioridade === "CRITICA").length,
-    ALTA: tarefas.filter(t => t.prioridade === "ALTA").length,
-    MEDIA: tarefas.filter(t => t.prioridade === "MEDIA").length,
-    BAIXA: tarefas.filter(t => t.prioridade === "BAIXA").length,
+    CRITICA: tarefas.filter((t) => t.prioridade === "CRITICA").length,
+    ALTA: tarefas.filter((t) => t.prioridade === "ALTA").length,
+    MEDIA: tarefas.filter((t) => t.prioridade === "MEDIA").length,
+    BAIXA: tarefas.filter((t) => t.prioridade === "BAIXA").length,
   };
 
-  // ✅ ATUALIZADO - USA concluida
-  const tarefasPorEmpresa = empresas.map(empresa => ({
-    nome: empresa.nome,
-    total: tarefas.filter(t => t.empresaId === empresa.id).length,
-    concluidas: tarefas.filter(t =>
-      t.empresaId === empresa.id && t.concluida === true  // ✅ Mudou
-    ).length,
-  })).sort((a, b) => b.total - a.total).slice(0, 5);
+  const tarefasPorEmpresa = empresas
+    .map((empresa) => ({
+      nome: empresa.nome,
+      total: tarefas.filter((t) => t.empresaId === empresa.id).length,
+      concluidas: tarefas.filter(
+        (t) => t.empresaId === empresa.id && t.status === "ARQUIVADA"
+      ).length,
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
 
-  const tarefasPorLista = listas.map(lista => ({
-    nome: lista.nome,
-    total: tarefas.filter(t => t.listaId === lista.id).length,
-  })).sort((a, b) => b.total - a.total);
+  const tarefasPorLista = listas
+    .map((lista) => ({
+      nome: lista.nome,
+      total: tarefas.filter((t) => t.listaId === lista.id).length,
+    }))
+    .sort((a, b) => b.total - a.total);
 
-  // ✅ ATUALIZADO - USA concluida
-  const performanceMembros = membros.map(membro => {
-    const tarefasDoMembro = tarefas.filter(t => 
-      t.membros?.some(m => m.usuarioId === membro.id)
-    );
-    
-    const tarefasConcluidasDoMembro = tarefasDoMembro.filter(t => 
-      t.concluida === true  // ✅ Mudou de status para concluida
-    );
+  const performanceMembros = membros
+    .map((membro) => {
+      const tarefasDoMembro = tarefas.filter((t) =>
+        t.membros?.some((m) => m.usuarioId === membro.id)
+      );
 
-    return {
-      nome: membro.nome,
-      total: tarefasDoMembro.length,
-      concluidas: tarefasConcluidasDoMembro.length,
-    };
-  })
-    .filter(m => m.total > 0)
+      const tarefasConcluidasDoMembro = tarefasDoMembro.filter(
+        (t) => t.status === "ARQUIVADA"
+      );
+
+      return {
+        nome: membro.nome,
+        total: tarefasDoMembro.length,
+        concluidas: tarefasConcluidasDoMembro.length,
+      };
+    })
+    .filter((m) => m.total > 0)
     .sort((a, b) => b.concluidas - a.concluidas)
     .slice(0, 5);
 
-  // ✅ ATUALIZADO - USA concluida
-  const proximasVencer = tarefas.filter(t => {
-    if (!t.dtEntrega || t.concluida) return false;  // ✅ Mudou de status para concluida
-    const diff = new Date(t.dtEntrega).getTime() - new Date().getTime();
-    const days = diff / (1000 * 60 * 60 * 24);
-    return days > 0 && days <= 7;
-  }).sort((a, b) =>
-    new Date(a.dtEntrega!).getTime() - new Date(b.dtEntrega!).getTime()
-  ).slice(0, 5);
+  const proximasVencer = tarefas
+    .filter((t) => {
+      if (!t.dtEntrega) return false;
+      if (t.status === "ARQUIVADA") return false;
+      const diff =
+        new Date(t.dtEntrega).getTime() - new Date().getTime();
+      const days = diff / (1000 * 60 * 60 * 24);
+      return days > 0 && days <= 7;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.dtEntrega!).getTime() -
+        new Date(b.dtEntrega!).getTime()
+    )
+    .slice(0, 5);
 
   if (loading) {
     return (
-      <div className="dashboard-wrapper" style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-      }}>
+      <div
+        className="dashboard-wrapper"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <p>Carregando dashboard...</p>
       </div>
     );
@@ -279,7 +296,9 @@ export default function TelaDashboard() {
               <h3>Taxa de Conclusão</h3>
             </div>
             <div className="dashboard-number">{taxaConclusao}%</div>
-            <p>{tarefasConcluidas} de {totalTarefas} tarefas</p>
+            <p>
+              {tarefasConcluidas} de {totalTarefas} tarefas
+            </p>
           </div>
 
           <div className="dashboard-card-top">
@@ -297,7 +316,11 @@ export default function TelaDashboard() {
                 <h3>{getSaudacao()}!</h3>
                 <p>Visão geral do seu projeto</p>
               </div>
-              <img src={logoFlap} alt="FLAP Logo" className="flap-logo" />
+              <img
+                src={logoFlap}
+                alt="FLAP Logo"
+                className="flap-logo"
+              />
             </div>
             <div className="dashboard-stats">
               <div className="stat-item">
@@ -321,21 +344,33 @@ export default function TelaDashboard() {
               <h3>Tarefas por Prioridade</h3>
             </div>
             <div className="priority-list">
-              {Object.entries(tarefasPorPrioridade).map(([prioridade, count]) => (
-                <div key={prioridade} className="priority-item">
-                  <div className="priority-label">
-                    <div className={`priority-dot ${prioridadeCores[prioridade]}`}></div>
-                    <span>{prioridade}</span>
+              {Object.entries(tarefasPorPrioridade).map(
+                ([prioridade, count]) => (
+                  <div key={prioridade} className="priority-item">
+                    <div className="priority-label">
+                      <div
+                        className={`priority-dot ${prioridadeCores[prioridade]}`}
+                      ></div>
+                      <span>{prioridade}</span>
+                    </div>
+                    <div className="priority-bar">
+                      <div
+                        className={`priority-fill ${prioridadeCores[prioridade]}`}
+                        style={{
+                          width: `${
+                            totalTarefas > 0
+                              ? (count / totalTarefas) * 100
+                              : 0
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+                    <span className="priority-count">
+                      {count}
+                    </span>
                   </div>
-                  <div className="priority-bar">
-                    <div
-                      className={`priority-fill ${prioridadeCores[prioridade]}`}
-                      style={{ width: `${totalTarefas > 0 ? (count / totalTarefas) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                  <span className="priority-count">{count}</span>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </div>
 
@@ -348,19 +383,31 @@ export default function TelaDashboard() {
             <div className="empresa-list">
               {tarefasPorEmpresa.length > 0 ? (
                 tarefasPorEmpresa.map((empresa, index) => (
-                  <div key={empresa.nome} className="empresa-item">
-                    <div className="empresa-rank">#{index + 1}</div>
+                  <div
+                    key={empresa.nome}
+                    className="empresa-item"
+                  >
+                    <div className="empresa-rank">
+                      #{index + 1}
+                    </div>
                     <div className="empresa-info">
-                      <div className="empresa-nome">{empresa.nome}</div>
+                      <div className="empresa-nome">
+                        {empresa.nome}
+                      </div>
                       <div className="empresa-stats">
-                        {empresa.concluidas}/{empresa.total} concluídas
+                        {empresa.concluidas}/{empresa.total}{" "}
+                        concluídas
                       </div>
                     </div>
-                    <div className="empresa-badge">{empresa.total}</div>
+                    <div className="empresa-badge">
+                      {empresa.total}
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="empty-state">Nenhuma empresa com tarefas</div>
+                <div className="empty-state">
+                  Nenhuma empresa com tarefas
+                </div>
               )}
             </div>
           </div>
@@ -374,29 +421,47 @@ export default function TelaDashboard() {
             <div className="membro-list">
               {performanceMembros.length > 0 ? (
                 performanceMembros.map((membro) => (
-                  <div key={membro.nome} className="membro-item">
+                  <div
+                    key={membro.nome}
+                    className="membro-item"
+                  >
                     <div className="membro-avatar">
                       {membro.nome.charAt(0).toUpperCase()}
                     </div>
                     <div className="membro-info">
-                      <div className="membro-nome">{membro.nome}</div>
+                      <div className="membro-nome">
+                        {membro.nome}
+                      </div>
                       <div className="membro-progress">
                         <div
                           className="membro-progress-bar"
                           style={{
-                            width: `${membro.total > 0 ? (membro.concluidas / membro.total) * 100 : 0}%`
+                            width: `${
+                              membro.total > 0
+                                ? (membro.concluidas /
+                                    membro.total) *
+                                  100
+                                : 0
+                            }%`,
                           }}
                         ></div>
                       </div>
                     </div>
                     <div className="membro-stats">
-                      <CheckCircle2 size={16} color="#36B37E" />
-                      <span>{membro.concluidas}/{membro.total}</span>
+                      <CheckCircle2
+                        size={16}
+                        color="#36B37E"
+                      />
+                      <span>
+                        {membro.concluidas}/{membro.total}
+                      </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="empty-state">Nenhum membro com tarefas atribuídas</div>
+                <div className="empty-state">
+                  Nenhum membro com tarefas atribuídas
+                </div>
               )}
             </div>
           </div>
@@ -409,9 +474,16 @@ export default function TelaDashboard() {
             </div>
             <div className="lista-grid">
               {tarefasPorLista.map((lista) => (
-                <div key={lista.nome} className="lista-item">
-                  <div className="lista-nome">{lista.nome}</div>
-                  <div className="lista-count">{lista.total}</div>
+                <div
+                  key={lista.nome}
+                  className="lista-item"
+                >
+                  <div className="lista-nome">
+                    {lista.nome}
+                  </div>
+                  <div className="lista-count">
+                    {lista.total}
+                  </div>
                 </div>
               ))}
             </div>
@@ -429,24 +501,38 @@ export default function TelaDashboard() {
                   <div
                     key={tarefa.id}
                     className="proxima-item"
-                    onClick={() => navigate(`/detalhamento/${tarefa.id}`)}
+                    onClick={() =>
+                      navigate(`/detalhamento/${tarefa.id}`)
+                    }
                   >
                     <div className="proxima-dots">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`dot ${prioridadeCores[tarefa.prioridade]}`}></div>
+                        <div
+                          key={i}
+                          className={`dot ${prioridadeCores[tarefa.prioridade]}`}
+                        ></div>
                       ))}
                     </div>
                     <div className="proxima-info">
-                      <div className="proxima-titulo">{tarefa.titulo}</div>
-                      <div className="proxima-empresa">{tarefa.empresa}</div>
+                      <div className="proxima-titulo">
+                        {tarefa.titulo}
+                      </div>
+                      <div className="proxima-empresa">
+                        {tarefa.empresa}
+                      </div>
                     </div>
                     <div className="proxima-data">
-                      {tarefa.dtEntrega && new Date(tarefa.dtEntrega).toLocaleDateString("pt-BR")}
+                      {tarefa.dtEntrega &&
+                        new Date(
+                          tarefa.dtEntrega
+                        ).toLocaleDateString("pt-BR")}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="empty-state">Nenhuma tarefa próxima do vencimento</div>
+                <div className="empty-state">
+                  Nenhuma tarefa próxima do vencimento
+                </div>
               )}
             </div>
           </div>

@@ -57,13 +57,12 @@
 /* ===== HEADER ===== */
 .detalhamento-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: flex-start;  /* controla via margin-left no agente */
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--detalhamento-border);
 }
-
 .detalhamento-header-empresa {
   display: flex;
   align-items: center;
@@ -114,6 +113,7 @@
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.875rem;
+  margin-left: auto;   /* empurra este bloco para a direita */
 }
 
 .detalhamento-header-agente:hover {
@@ -824,6 +824,37 @@
   background: #1e3a75;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(38, 79, 162, 0.3);
+}
+.detalhamento-finish-btn {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.detalhamento-finish-btn:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+  transform: scale(1.15);
+}
+
+/* estado finalizada */
+.detalhamento-finish-btn.concluida {
+  color: #10b981;
+}
+
+.detalhamento-finish-btn.concluida:hover {
+  background: #d1fae5;
+  color: #059669;
+  transform: scale(1.15);
 }
 
 .item-list {
