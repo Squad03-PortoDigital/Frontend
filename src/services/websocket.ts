@@ -59,7 +59,7 @@ class WebSocketService {
 
     // ✅ CORREÇÃO: Busca o token Basic Auth correto
     const token = localStorage.getItem('auth'); // ← Era 'token', agora é 'auth'
-    const wsUrl = 'https://gabrielfiel.com.br/ws';
+    const wsUrl = 'http://3.233.245.239:8080/ws';
     
     console.log('🔌 Conectando ao WebSocket:', wsUrl);
     console.log('🔑 Token Basic Auth disponível:', token ? 'SIM ✅' : 'NÃO ❌');

@@ -86,7 +86,7 @@ export default function AjustesEmpresas() {
       try {
         setLoading(true);
 
-        const response = await fetch("https://gabrielfiel.com.br/empresas", {
+        const response = await fetch("http://3.233.245.239:8080/empresas", {
           headers: { Authorization: `Basic ${auth}` },
           credentials: "include",
         });
@@ -209,7 +209,7 @@ export default function AjustesEmpresas() {
 
       if (empresaEditando) {
         // Atualizar empresa
-        const response = await fetch(`https://gabrielfiel.com.br/empresas/${empresaEditando.id}`, {
+        const response = await fetch(`http://3.233.245.239:8080/empresas/${empresaEditando.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -229,7 +229,7 @@ export default function AjustesEmpresas() {
           setModalAberto(false);
 
           // Recarregar empresas
-          const empresasRes = await fetch("https://gabrielfiel.com.br/empresas", {
+          const empresasRes = await fetch("http://3.233.245.239:8080/empresas", {
             headers: { Authorization: `Basic ${auth}` },
             credentials: "include",
           });
@@ -246,7 +246,7 @@ export default function AjustesEmpresas() {
         }
       } else {
         // Criar nova empresa
-        const response = await fetch("https://gabrielfiel.com.br/empresas", {
+        const response = await fetch("http://3.233.245.239:8080/empresas", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -266,7 +266,7 @@ export default function AjustesEmpresas() {
           setModalAberto(false);
 
           // Recarregar empresas
-          const empresasRes = await fetch("https://gabrielfiel.com.br/empresas", {
+          const empresasRes = await fetch("http://3.233.245.239:8080/empresas", {
             headers: { Authorization: `Basic ${auth}` },
             credentials: "include",
           });
@@ -305,7 +305,7 @@ export default function AjustesEmpresas() {
 
       const novoStatus = !empresaParaArquivar.arquivada;
 
-      const response = await fetch(`https://gabrielfiel.com.br/empresas/${empresaParaArquivar.id}/arquivar`, {
+      const response = await fetch(`http://3.233.245.239:8080/empresas/${empresaParaArquivar.id}/arquivar`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -358,7 +358,7 @@ export default function AjustesEmpresas() {
       const auth = getAuth();
       if (!auth) return;
 
-      const response = await fetch(`https://gabrielfiel.com.br/empresas/${empresaParaDeletar.id}`, {
+      const response = await fetch(`http://3.233.245.239:8080/empresas/${empresaParaDeletar.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Basic ${auth}`,

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://gabrielfiel.com.br/',
+  baseURL: 'http://3.233.245.239:8080/',
   withCredentials: true,
 });
 
